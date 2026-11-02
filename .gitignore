@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# Środowisko i sekrety
+.env
+*.env.local
+
+# Prawdziwe wyciągi bankowe NIGDY nie trafiają do repo
+data/private/
+*.csv
+!data/samples/*.csv
+!backend/tests/fixtures/*.csv
+
+# IDE / system
+.idea/
+.vscode/
+.DS_Store
