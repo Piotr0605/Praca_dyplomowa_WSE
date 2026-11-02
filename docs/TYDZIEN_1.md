@@ -118,8 +118,9 @@ od pierwszego tygodnia, każdą kolejną funkcję dokładamy w znane miejsce i o
 - [x] Sprawdź: `docker --version`, `docker compose version`, `python --version`, `node --version`
 
 ### Wtorek 3.11: baza w Dockerze
-- [ ] `docker-compose.yml` z usługą `db` (obraz `postgres:16`, zmienne z `.env`, wolumen `pgdata`, `healthcheck` z `pg_isready`)
-- [ ] `docker compose up db` i połączenie z bazą z DBeaver/pgAdmin
+- [x] `docker-compose.yml` z usługą `db` (obraz `postgres:16`, zmienne z `.env`, wolumen `pgdata`, `healthcheck` z `pg_isready`)
+- [x] `docker compose up db`, połączenie z bazą z kontenera (`psql`) i z hosta (port z `DB_HOST_PORT`), dane przetrwały restart
+- [ ] (opcjonalnie) podgląd bazy w DBeaver/pgAdmin
 
 ```yaml
 services:
