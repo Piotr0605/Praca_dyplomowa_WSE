@@ -11,7 +11,7 @@ przy pomocy modelu językowego (OpenAI / Anthropic).
 
 | Warstwa         | Technologie                                                    |
 |-----------------|----------------------------------------------------------------|
-| Backend         | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0, Alembic     |
+| Backend         | Python 3.13, FastAPI, Pydantic v2, SQLAlchemy 2.0, Alembic     |
 | Analityka       | Pandas                                                          |
 | AI              | OpenAI API / Anthropic API (wymienny „provider”)                |
 | Baza danych     | PostgreSQL 16 (Docker)                                          |

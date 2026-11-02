@@ -112,10 +112,10 @@ od pierwszego tygodnia, każdą kolejną funkcję dokładamy w znane miejsce i o
 ## 3. Dzień po dniu
 
 ### Poniedziałek 2.11: środowisko
-- [ ] Zainstaluj: **Git**, **Docker Desktop** (Windows: z WSL2), **Python 3.12+**, **Node.js LTS**, **VS Code**
+- [x] Zainstaluj: **Git**, **Docker Desktop** (Windows: z WSL2), **Python 3.13**, **Node.js LTS**, **VS Code**
   (rozszerzenia: Python, Pylance, Ruff, ESLint, Tailwind CSS IntelliSense, Docker)
-- [ ] Sklonuj repozytorium, utwórz `.env` z `.env.example`
-- [ ] Sprawdź: `docker --version`, `docker compose version`, `python --version`, `node --version`
+- [x] Sklonuj repozytorium, utwórz `.env` z `.env.example`
+- [x] Sprawdź: `docker --version`, `docker compose version`, `python --version`, `node --version`
 
 ### Wtorek 3.11: baza w Dockerze
 - [ ] `docker-compose.yml` z usługą `db` (obraz `postgres:16`, zmienne z `.env`, wolumen `pgdata`, `healthcheck` z `pg_isready`)
