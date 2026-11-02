@@ -26,7 +26,7 @@ Mamy ok. 11 tygodni, w tym okres świąteczny. Dlatego:
 
 | Decyzja | Propozycja | Uzasadnienie |
 |---|---|---|
-| Bank dla parsera | **do wyboru** (mBank / PKO BP / ING / Santander…) — bank, z którego masz własny wyciąg | Na własnych danych od razu przetestujesz problem „znikających pieniędzy” |
+| Bank dla parsera | **ING** (profil wbudowany) + importer uniwersalny z kreatorem mapowania | Własne dane do testów; inne banki przez profil bez pisania kodu |
 | Hashowanie haseł | **Argon2** (`pwdlib[argon2]` lub `argon2-cffi`) | Zwycięzca Password Hashing Competition, zalecany przez OWASP |
 | JWT | `PyJWT`, access token ~60 min, nagłówek `Authorization: Bearer` | Prosty i wystarczający dla projektu; refresh token jako SHOULD |
 | Sterownik DB | `psycopg` 3 + SQLAlchemy 2.0 (styl `Mapped[...]`) | Aktualny standard |
@@ -63,6 +63,11 @@ category_rules                      ← „pamięć” poprawek użytkownika
   match_type ('contains' | 'exact_counterparty' | 'regex'),
   category_id (FK), priority, source ('system' | 'user'), created_at
 
+bank_profiles                       ← mapowanie kolumn CSV (wbudowane + zapisane przez użytkownika)
+  id (PK), user_id (FK, NULL = profil wbudowany, np. ING), bank_name,
+  config JSONB (kodowanie, separator, wiersz nagłówka, mapowanie kolumn,
+  format daty, separator dziesiętny, znak kwoty), created_at
+
 ai_advice
   id (PK), user_id (FK), period_start, period_end,
   provider, model, prompt_payload JSONB (zanonimizowane agregaty!),
@@ -86,7 +91,8 @@ na zasobie użytkownika A.
 | PATCH/DELETE | `/api/transactions/{id}` | edycja (w tym zmiana kategorii → tworzy regułę) / usunięcie |
 | GET/POST/PATCH/DELETE | `/api/categories` | kategorie użytkownika + systemowe |
 | GET/DELETE | `/api/rules` | podgląd/usuwanie zapamiętanych reguł |
-| GET | `/api/imports/banks` | lista obsługiwanych banków |
+| GET | `/api/imports/banks` | lista profili banków (wbudowane + użytkownika) |
+| POST | `/api/imports/detect` | auto-wykrycie formatu CSV → propozycja mapowania kolumn |
 | POST | `/api/imports/preview` | wgranie CSV → podgląd + proponowane kategorie (bez zapisu) |
 | POST | `/api/imports/confirm` | zapis zaimportowanych transakcji |
 | GET | `/api/analytics/summary?from&to` | przychody, wydatki, saldo okresu |
@@ -137,9 +143,31 @@ Każdy etap = osobna gałąź / PR, zakończony checklistą „Definition of Don
 
 **DoD:** użytkownik loguje się w przeglądarce i ręcznie dodaje/edytuje wydatki.
 
-### Etap 4 · Tydzień 4 (23–29 XI) — Import CSV (Pandas)
-- [ ] Analiza formatu CSV wybranego banku (kodowanie np. `cp1250`, separator `;`, nagłówek z metadanymi, przecinek dziesiętny, format daty)
-- [ ] `parsers/base.py` (`BaseBankParser`: `detect()`, `parse() -> DataFrame`), `parsers/<bank>.py`, `parsers/registry.py`
+### Etap 4 · Tydzień 4 (23–29 XI) — Import CSV (Pandas): ING + importer uniwersalny
+
+Podejście dwupoziomowe. W pełni automatyczny parser „dla wszystkich banków” nie istnieje, bo banki różnią się
+kodowaniem, separatorem, liczbą wierszy metadanych nad tabelą, nazwami kolumn, formatem dat, znakiem kwoty
+(jedna kolumna ze znakiem albo osobne „Uznania”/„Obciążenia”) i blokadami kartowymi. Da się jednak zrobić importer
+uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użytkownika:
+
+1. **Profil ING** (dedykowany, dokładnie przetestowany na prawdziwym pliku): pewny import bez pytań.
+2. **Importer uniwersalny** dla każdego innego banku:
+   - wykrycie kodowania (próba `utf-8-sig` → `cp1250` → `iso-8859-2`),
+   - wykrycie separatora (`csv.Sniffer` na próbce: `;` `,` `\t`),
+   - znalezienie wiersza nagłówka (pierwszy wiersz zawierający słowa typu „data”, „kwota”, „tytuł”, „opis”),
+   - zgadywanie roli kolumn po nazwach (słownik synonimów) i po zawartości (czy wartości parsują się jako data / kwota),
+   - **kreator mapowania w UI**: użytkownik potwierdza lub poprawia, która kolumna to data, kwota, opis, kontrahent,
+   - zapisanie mapowania jako **profil banku** użytkownika (tabela `bank_profiles`, JSON z ustawieniami), więc kolejny
+     import z tego banku jest już automatyczny.
+3. Profile wbudowane (ING i ewentualne kolejne) to te same pliki konfiguracyjne co profile użytkownika, tylko dostarczone z aplikacją.
+   Dodanie banku = nowy profil JSON, bez pisania kodu.
+
+- [ ] Analiza prawdziwego CSV z ING (kodowanie, separator, wiersze metadanych, kolumny, format daty i kwot, blokady)
+- [ ] `parsers/profile.py` (model profilu: kodowanie, separator, wiersz nagłówka, mapowanie kolumn, format daty, separator dziesiętny, sposób wyznaczania znaku kwoty)
+- [ ] `parsers/detector.py` (auto-wykrywanie: kodowanie, separator, nagłówek, role kolumn) + `parsers/generic.py` (parsowanie wg profilu do wspólnego `DataFrame`)
+- [ ] `parsers/profiles/ing.json` + testy na sztucznym pliku w formacie ING
+- [ ] tabela `bank_profiles` (migracja), endpoint `POST /imports/detect` (zwraca propozycję mapowania)
+- [ ] Frontend: krok „Mapowanie kolumn” pokazywany tylko wtedy, gdy plik nie pasuje do żadnego profilu
 - [ ] `services/import_service.py`: czyszczenie (białe znaki, wielkie litery, usunięcie prefiksów typu „PŁATNOŚĆ KARTĄ”), normalizacja opisu, `dedup_hash` = hash(data, kwota, opis znormalizowany)
 - [ ] `POST /imports/preview` i `/imports/confirm`, zapis `ImportBatch`
 - [ ] Sztuczny plik `backend/tests/fixtures/<bank>_sample.csv` + testy parsera (kwoty, daty, polskie znaki, duplikaty)

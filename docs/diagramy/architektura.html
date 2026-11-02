@@ -1,0 +1,580 @@
+<title>Mapa systemu finansów</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Układ: nagłówek z zakładkami; każda zakładka to jedno narzędzie (drzewo + panel, diagram + kroki, karty + oś dni). */
+:root {
+  --bg: #F3F6F7; --surface: #FFFFFF; --sunk: #E9EEF0; --ink: #14212B; --muted: #5A6B77; --line: #D3DCE1;
+  --accent: #0D7A64;
+  --c-user: #46525C; --c-fe: #2F62D0; --c-api: #0D7A64; --c-svc: #A86A12; --c-data: #6A50C9; --c-ai: #BE3466; --c-ext: #46525C; --c-test: #5A6B77;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E151B; --surface: #16212A; --sunk: #1C2934; --ink: #E4ECF1; --muted: #91A2AF; --line: #2A3A46;
+  --accent: #3CC7A4;
+  --c-user: #A9B6C0; --c-fe: #81A4F6; --c-api: #3CC7A4; --c-svc: #E6AE52; --c-data: #AA97F2; --c-ai: #F27FA6; --c-ext: #A9B6C0; --c-test: #91A2AF;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0E151B; --surface: #16212A; --sunk: #1C2934; --ink: #E4ECF1; --muted: #91A2AF; --line: #2A3A46;
+  --accent: #3CC7A4;
+  --c-user: #A9B6C0; --c-fe: #81A4F6; --c-api: #3CC7A4; --c-svc: #E6AE52; --c-data: #AA97F2; --c-ai: #F27FA6; --c-ext: #A9B6C0; --c-test: #91A2AF;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 32px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-size: clamp(26px, 4vw, 38px); line-height: 1.1; margin: 4px 0 0; text-wrap: balance; letter-spacing: -.01em; }
+h2 { font-family: var(--f-display); font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--f-display); font-size: 17px; margin: 0; }
+p { margin: 0; }
+.lead { color: var(--muted); max-width: 68ch; margin-top: 8px; }
+nav.tabs { display: flex; gap: 4px; background: var(--sunk); padding: 4px; border-radius: 999px; flex-wrap: wrap; }
+nav.tabs a { font-weight: 500; text-decoration: none; color: var(--muted); padding: 7px 16px; border-radius: 999px; font-size: 14px; }
+nav.tabs a[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+nav.tabs a:focus-visible, button:focus-visible, .tree-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section.view { padding-top: 24px; display: grid; gap: 20px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+button { font: inherit; color: inherit; cursor: pointer; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 12px; font-size: 14px; font-weight: 500; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+code, .mono { font-family: var(--f-mono); font-size: .9em; }
+
+/* --- Struktura --- */
+.split { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .split { grid-template-columns: minmax(0, 1fr); } }
+.tree { padding: 12px 8px; font-family: var(--f-mono); font-size: 13.5px; overflow-x: auto; }
+.tree ul { list-style: none; margin: 0; padding-left: 18px; border-left: 1px dashed var(--line); margin-left: 9px; }
+.tree > ul { border-left: 0; padding-left: 0; margin-left: 0; }
+.tree-row { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: 0; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+.tree-row:hover { background: var(--sunk); }
+.tree-row[aria-selected="true"] { background: var(--sunk); box-shadow: inset 0 0 0 1px var(--line); }
+.tree-row .tw { width: 12px; color: var(--muted); flex: none; transition: transform .15s; display: inline-block; }
+.tree-row[aria-expanded="true"] .tw { transform: rotate(90deg); }
+.tree-row .wk { margin-left: auto; font-size: 11px; color: var(--muted); padding-left: 12px; }
+.tree-row .nm.dir { font-weight: 500; }
+.tree-row .nm.ign { color: var(--muted); text-decoration: line-through; }
+.detail { padding: 22px; display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.detail .path { font-family: var(--f-mono); font-size: 13px; color: var(--muted); word-break: break-all; }
+.detail ul.files { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.detail ul.files li { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 10px; font-size: 14px; }
+.detail ul.files code { color: var(--ink); white-space: nowrap; }
+.detail ul.files span { color: var(--muted); }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pipe { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; }
+.pipe b { font-weight: 500; background: var(--sunk); border: 1px solid var(--line); padding: 3px 9px; border-radius: 6px; }
+.pipe i { font-style: normal; color: var(--muted); }
+.subhead { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+
+/* --- Przepływ --- */
+.scen { display: flex; flex-wrap: wrap; gap: 8px; }
+.scen button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-size: 14px; }
+.scen button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+.diagram { overflow-x: auto; padding: 8px; }
+.diagram svg { display: block; min-width: 920px; width: 100%; height: auto; }
+svg text { font-family: var(--f-body); fill: var(--ink); }
+svg .sub { font-family: var(--f-mono); font-size: 11px; fill: var(--muted); }
+svg .node { cursor: pointer; transition: opacity .2s; }
+svg .node rect.box { fill: var(--surface); stroke-width: 1.5; }
+svg .node.dim { opacity: .28; }
+svg .node.on rect.box { stroke-width: 3; }
+svg .node.sel rect.box { stroke-dasharray: 5 3; }
+svg .edge { fill: none; stroke: var(--line); stroke-width: 1.5; }
+svg .active { fill: none; stroke: var(--accent); stroke-width: 3; stroke-dasharray: 8 6; animation: flow 0.9s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -14; } }
+@media (prefers-reduced-motion: reduce) { svg .active { animation: none; stroke-dasharray: none; } .tree-row .tw { transition: none; } }
+svg .boundary { fill: none; stroke: var(--muted); stroke-dasharray: 6 5; stroke-width: 1.2; }
+svg .blabel { font-family: var(--f-mono); font-size: 12px; fill: var(--muted); letter-spacing: .04em; }
+.flowgrid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .flowgrid { grid-template-columns: minmax(0, 1fr); } }
+.stepcard { padding: 20px; display: grid; gap: 12px; }
+.stepnow { font-size: 17px; min-height: 3.2em; }
+.controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.counter { font-family: var(--f-mono); font-size: 13px; color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+ol.steps { position: relative; margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; max-height: 360px; overflow-y: auto; }
+ol.steps button { width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 6px; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; font-size: 14px; color: var(--muted); }
+ol.steps button:hover { background: var(--sunk); }
+ol.steps button[aria-current="step"] { background: var(--sunk); color: var(--ink); }
+ol.steps .n { font-family: var(--f-mono); font-size: 12px; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.nodeinfo { padding: 20px; display: grid; gap: 10px; }
+.privacy { font-size: 14px; border-left: 3px solid var(--c-ai); padding: 4px 0 4px 12px; color: var(--muted); }
+
+/* --- Tydzień 1 --- */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.card { padding: 18px; display: grid; gap: 10px; align-content: start; }
+.card .hd { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+.card dl { margin: 0; display: grid; gap: 8px; }
+.card dt { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.card dd { margin: 0; font-size: 14px; }
+.days { display: grid; gap: 0; }
+.day { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+.day:first-child { border-top: 0; }
+.day .d { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.day .d strong { display: block; font-family: var(--f-display); font-size: 16px; color: var(--ink); font-weight: 600; }
+.day ul { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
+@media (max-width: 560px) { .day { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.result { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px; }
+.result div { padding: 14px; }
+.result code { display: block; font-size: 13px; color: var(--accent); margin-bottom: 4px; word-break: break-all; }
+.result span { font-size: 14px; color: var(--muted); }
+.callout { padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Praca dyplomowa WSE · system analizy finansów osobistych</div>
+      <h1>Mapa systemu: foldery, przepływ danych, tydzień 1</h1>
+    </div>
+    <nav class="tabs" aria-label="Widoki">
+      <a href="#struktura" data-tab="struktura">Struktura folderów</a>
+      <a href="#przeplyw" data-tab="przeplyw">Przepływ danych</a>
+      <a href="#tydzien-1" data-tab="tydzien-1">Tydzień 1</a>
+    </nav>
+  </header>
+
+  <!-- STRUKTURA -->
+  <section class="view" id="v-struktura">
+    <div>
+      <h2>Gdzie co leży w repozytorium</h2>
+      <p class="lead">Kliknij folder lub plik, żeby zobaczyć, za co odpowiada, w którym tygodniu powstaje i jaki element przepływu danych realizuje. Kolor oznacza warstwę architektury.</p>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="split">
+      <div class="panel tree" id="tree" role="tree" aria-label="Struktura folderów"></div>
+      <div class="panel detail" id="detail" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- PRZEPŁYW -->
+  <section class="view" id="v-przeplyw" hidden>
+    <div>
+      <h2>Jak informacja płynie przez aplikację</h2>
+      <p class="lead">Wybierz scenariusz i przechodź krok po kroku albo włącz odtwarzanie. Kliknij dowolny blok, żeby zobaczyć, co robi i w którym folderze jest jego kod. Przerywana ramka to Twój komputer: wszystko w środku działa lokalnie w Docker Compose.</p>
+    </div>
+    <div class="scen" id="scen" role="group" aria-label="Scenariusze"></div>
+    <div class="panel diagram"><svg id="svg" viewBox="0 0 1200 620" role="img" aria-label="Diagram przepływu danych między warstwami aplikacji"></svg></div>
+    <div class="flowgrid">
+      <div class="panel stepcard">
+        <div class="controls">
+          <button class="btn" id="prev" aria-label="Poprzedni krok">← Wstecz</button>
+          <button class="btn primary" id="play">▶ Odtwórz</button>
+          <button class="btn" id="next" aria-label="Następny krok">Dalej →</button>
+          <span class="counter" id="counter"></span>
+        </div>
+        <p class="stepnow" id="stepnow" aria-live="polite"></p>
+        <ol class="steps" id="steps"></ol>
+      </div>
+      <div class="panel nodeinfo" id="nodeinfo" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- TYDZIEŃ 1 -->
+  <section class="view" id="v-tydzien-1" hidden>
+    <div>
+      <h2>Tydzień 1 (2–8 listopada): fundament</h2>
+      <p class="lead">Na koniec tygodnia jedno polecenie <code>docker compose up --build</code> stawia bazę, backend i frontend, a przeglądarka pokazuje „API: OK, Baza: OK”. Nie ma jeszcze funkcji biznesowych. Budujemy połączenia między warstwami, przez które później popłyną transakcje, analizy i porady.</p>
+    </div>
+    <div class="result" id="result"></div>
+    <div class="panel callout">
+      <p>Zobacz, jak zapytanie <code>GET /api/health</code> przechodzi przez wszystkie warstwy, które powstają w tym tygodniu.</p>
+      <button class="btn primary" id="goHealth">Pokaż przepływ /api/health</button>
+    </div>
+    <h2>Technologie: co to jest, jak działa, po co nam</h2>
+    <div class="cards" id="cards"></div>
+    <h2>Dzień po dniu</h2>
+    <div class="panel" style="padding: 4px 20px;"><div class="days" id="days"></div></div>
+  </section>
+</div>
+
+<script>
+const LAYERS = {
+  user: { name: "Użytkownik", c: "--c-user" },
+  fe:   { name: "Frontend", c: "--c-fe" },
+  api:  { name: "API", c: "--c-api" },
+  svc:  { name: "Logika biznesowa", c: "--c-svc" },
+  data: { name: "Dane", c: "--c-data" },
+  ai:   { name: "Moduł AI", c: "--c-ai" },
+  ext:  { name: "Infrastruktura / zewnętrzne", c: "--c-ext" },
+  test: { name: "Testy i dokumentacja", c: "--c-test" },
+};
+const col = l => `var(${LAYERS[l].c})`;
+
+/* ---------- Drzewo folderów ---------- */
+const TREE = { n: "Praca_dyplomowa_WSE/", l: "ext", w: "Tydz. 0", d: "Korzeń repozytorium. Całość uruchamia się jednym poleceniem docker compose up --build.", open: true, k: [
+  { n: "docker-compose.yml", l: "ext", w: "Tydz. 1", d: "Opis trzech kontenerów (db, backend, frontend), ich sieci, portów i wolumenu na dane bazy. Backend startuje dopiero, gdy baza jest zdrowa (healthcheck)." },
+  { n: ".env.example", l: "ext", w: "Tydz. 0", d: "Wzór konfiguracji: hasło bazy, sekret JWT, wybór dostawcy AI i klucze API. Prawdziwy plik .env nigdy nie trafia do Gita." },
+  { n: ".github/workflows/", l: "ext", w: "Tydz. 1", d: "GitHub Actions. Przy każdym pushu GitHub uruchamia lint (Ruff) i testy (pytest) na czystej maszynie z PostgreSQL.", f: [["ci.yml", "lint + testy przy każdym pushu"]] },
+  { n: "backend/", l: "api", w: "Tydz. 1", d: "Serwer aplikacji w Pythonie (FastAPI). Warstwy: api → services → repositories → models. Moduł AI i parsery są osobnymi pakietami.", open: true, f: [["Dockerfile", "obraz backendu"], ["requirements.txt", "zależności Pythona"], ["alembic.ini", "konfiguracja migracji"]], k: [
+    { n: "app/", l: "api", w: "Tydz. 1", open: true, d: "Kod aplikacji FastAPI.", node: "api", k: [
+      { n: "main.py", l: "api", w: "Tydz. 1", node: "api", d: "Punkt wejścia: tworzy aplikację FastAPI, ustawia CORS i podłącza routery. Tu Uvicorn „wchodzi” do aplikacji." },
+      { n: "core/", l: "api", w: "Tydz. 1–2", node: "auth", d: "Elementy wspólne dla całej aplikacji: konfiguracja, połączenie z bazą, bezpieczeństwo.", f: [["config.py", "Settings z pydantic-settings, czyta .env (tydz. 1)"], ["database.py", "engine, SessionLocal, get_db, Base (tydz. 1)"], ["security.py", "hash Argon2, tworzenie i weryfikacja JWT (tydz. 2)"]] },
+      { n: "api/", l: "api", w: "Tydz. 1–7", node: "api", d: "Warstwa HTTP. Endpointy przyjmują zapytanie, sprawdzają token, wołają serwis i zwracają JSON. Nie liczą niczego same.", f: [["deps.py", "get_db, get_current_user (Dependency Injection)"], ["routes/health.py", "GET /api/health (tydz. 1)"], ["routes/auth.py", "rejestracja, logowanie, /me (tydz. 2)"], ["routes/transactions.py", "CRUD transakcji (tydz. 3)"], ["routes/imports.py", "detect, preview, confirm (tydz. 4)"], ["routes/analytics.py", "agregacje do wykresów (tydz. 6)"], ["routes/advice.py", "porady AI (tydz. 7)"]] },
+      { n: "schemas/", l: "api", w: "Tydz. 2–7", node: "pyd", d: "Schematy Pydantic: kształt danych wchodzących i wychodzących z API. Błędne dane kończą się odpowiedzią 422 z opisem błędu, zanim dotkną bazy.", f: [["user.py", "UserCreate, UserOut, Token"], ["transaction.py", "TransactionCreate, TransactionOut, filtry"], ["analytics.py", "CategorySum, MonthlyTrend"], ["advice.py", "AdviceRequest, AdviceOut"]] },
+      { n: "services/", l: "svc", w: "Tydz. 2–7", node: "imp", d: "Logika biznesowa: tu dzieje się wszystko, co ważne. Serwisy nie wiedzą nic o HTTP, więc łatwo je testować pytestem.", f: [["auth_service.py", "rejestracja i logowanie"], ["import_service.py", "import CSV, czyszczenie, deduplikacja"], ["categorization_service.py", "słowa kluczowe + reguły użytkownika"], ["analytics_service.py", "obliczenia Pandas"], ["advice_service.py", "orkiestracja modułu AI"]] },
+      { n: "parsers/", l: "svc", w: "Tydz. 4", node: "imp", parser: true, d: "Import wyciągów. Profil ING działa bez pytań. Dla każdego innego banku importer uniwersalny zgaduje format, a użytkownik potwierdza mapowanie kolumn. Wynik zawsze ma tę samą postać, więc dalsza część systemu nie wie, z jakiego banku jest plik.", f: [["profiles/ing.json", "wbudowany profil ING"], ["profile.py", "model profilu (kodowanie, separator, kolumny…)"], ["detector.py", "auto-wykrywanie formatu"], ["generic.py", "parsowanie wg profilu do DataFrame"]] },
+      { n: "repositories/", l: "data", w: "Tydz. 3", node: "repo", d: "Jedyne miejsce, które rozmawia z bazą. Każda metoda wymaga user_id, więc nie da się przypadkiem pobrać cudzych transakcji.", f: [["transaction_repo.py", "zapytania o transakcje"], ["category_repo.py", "kategorie i reguły"], ["advice_repo.py", "historia porad"]] },
+      { n: "models/", l: "data", w: "Tydz. 2", node: "db", d: "Modele SQLAlchemy, czyli tabele bazy opisane klasami Pythona. Alembic porównuje je z bazą i generuje migracje.", f: [["user.py", "users"], ["transaction.py", "transactions, import_batches"], ["category.py", "categories, category_rules"], ["bank_profile.py", "bank_profiles"], ["advice.py", "ai_advice"]] },
+      { n: "ai/", l: "ai", w: "Tydz. 7", node: "adv", d: "Moduł doradczy. Dostaje wyłącznie zagregowane liczby, czyści je z danych osobowych, buduje prompt i wysyła do wybranego dostawcy.", f: [["anonymizer.py", "regex: IBAN, karty, PESEL, telefony, e-maile, imiona i nazwiska"], ["prompt_builder.py", "agregaty → JSON + instrukcja dla modelu"], ["providers/openai.py", "klient OpenAI"], ["providers/anthropic.py", "klient Anthropic"], ["providers/mock.py", "darmowy zamiennik do testów"]] },
+    ] },
+    { n: "alembic/", l: "data", w: "Tydz. 1–2", node: "db", d: "Migracje schematu bazy. Każda zmiana tabel to plik w versions/ z funkcjami upgrade() i downgrade(). Kontener backendu wykonuje alembic upgrade head przy starcie.", f: [["env.py", "łączy Alembic z modelami i DATABASE_URL"], ["versions/", "kolejne migracje"]] },
+    { n: "tests/", l: "test", w: "Tydz. 1–10", d: "Testy automatyczne. Uruchamiane lokalnie i w GitHub Actions.", f: [["conftest.py", "TestClient, baza testowa"], ["unit/", "pytest: parsery, kategoryzacja, analityka, anonimizacja"], ["integration/", "HTTPX: endpointy i izolacja użytkowników"], ["fixtures/", "sztuczne pliki CSV"]] },
+  ] },
+  { n: "frontend/", l: "fe", w: "Tydz. 1", open: true, node: "fe", d: "Aplikacja React + TypeScript budowana przez Vite i stylowana Tailwindem.", f: [["Dockerfile", "obraz frontendu"], ["package.json", "zależności npm"], ["vite.config.ts", "Vite + wtyczka Tailwind"]], k: [
+    { n: "src/", l: "fe", w: "Tydz. 1", open: true, node: "fe", d: "Kod źródłowy interfejsu.", k: [
+      { n: "main.tsx, App.tsx", l: "fe", w: "Tydz. 1", node: "fe", d: "Start aplikacji i routing między stronami." },
+      { n: "api/", l: "fe", w: "Tydz. 1", node: "fe", d: "Klient HTTP: adres backendu z VITE_API_URL, doklejanie nagłówka Authorization, obsługa błędów 401.", f: [["client.ts", "wspólny fetch/axios"], ["transactions.ts", "funkcje wywołujące endpointy"]] },
+      { n: "pages/", l: "fe", w: "Tydz. 3–8", node: "fe", d: "Pełne ekrany aplikacji.", f: [["LoginPage, RegisterPage", "tydz. 3"], ["TransactionsPage", "tydz. 3"], ["ImportPage", "tydz. 4"], ["DashboardPage", "tydz. 6"], ["AdvicePage", "tydz. 8"]] },
+      { n: "components/", l: "fe", w: "Tydz. 1–8", node: "fe", d: "Klocki interfejsu wielokrotnego użytku.", f: [["ui/", "przyciski, karty, pola formularzy"], ["charts/", "wykresy Recharts"], ["layout/", "pasek boczny, nagłówek"], ["transactions/", "tabela, formularz, wybór kategorii"]] },
+      { n: "context/, hooks/", l: "fe", w: "Tydz. 3", node: "fe", d: "AuthContext przechowuje token i dane zalogowanego użytkownika. Hooki (np. useAuth) udostępniają je komponentom." },
+      { n: "types/, utils/", l: "fe", w: "Tydz. 3", node: "fe", d: "Typy TypeScript zgodne ze schematami API oraz formatowanie kwot i dat (np. 1 234,56 zł)." },
+    ] },
+  ] },
+  { n: "docs/", l: "test", w: "Tydz. 0–10", d: "Dokumentacja i materiały do pracy pisemnej.", f: [["PLAN_IMPLEMENTACJI.md", "harmonogram i postęp"], ["TYDZIEN_1.md", "opis pierwszego tygodnia"], ["diagramy/", "ta mapa i diagramy do pracy"], ["zrzuty/", "zrzuty ekranu"]] },
+  { n: "data/", l: "test", w: "Tydz. 4", d: "Dane do demonstracji.", k: [
+    { n: "samples/", l: "test", w: "Tydz. 4", d: "Sztuczne pliki CSV do pokazu i testów. Można je bezpiecznie commitować." },
+    { n: "private/", l: "test", w: "—", ign: true, d: "Twoje prawdziwe wyciągi z ING. Folder jest w .gitignore, więc nigdy nie trafi na GitHub." },
+  ] },
+] };
+
+const treeEl = document.getElementById("tree");
+const detailEl = document.getElementById("detail");
+let selected = null;
+const flat = [];
+function buildTree(node, parentPath, depth) {
+  const path = parentPath + node.n;
+  node.path = path; flat.push(node);
+  const li = document.createElement("li");
+  li.setAttribute("role", "none");
+  const row = document.createElement("button");
+  row.className = "tree-row"; row.setAttribute("role", "treeitem"); row.id = "t-" + flat.length;
+  const isDir = !!node.k;
+  if (isDir) row.setAttribute("aria-expanded", node.open ? "true" : "false");
+  row.innerHTML = `<span class="tw">${isDir ? "▸" : ""}</span><span class="dot" style="background:${col(node.l)}"></span><span class="nm ${isDir || node.n.endsWith("/") ? "dir" : ""} ${node.ign ? "ign" : ""}">${node.n}</span><span class="wk">${node.w}</span>`;
+  row.addEventListener("click", () => {
+    if (isDir && selected === node) { node.open = !node.open; row.setAttribute("aria-expanded", node.open); ul.hidden = !node.open; }
+    else if (isDir && !node.open) { node.open = true; row.setAttribute("aria-expanded", "true"); ul.hidden = false; }
+    select(node, row);
+  });
+  node.row = row;
+  li.appendChild(row);
+  let ul;
+  if (isDir) {
+    ul = document.createElement("ul"); ul.setAttribute("role", "group"); ul.hidden = !node.open;
+    node.k.forEach(ch => ul.appendChild(buildTree(ch, path, depth + 1)));
+    li.appendChild(ul);
+  }
+  return li;
+}
+function select(node, row) {
+  if (selected && selected.row) selected.row.setAttribute("aria-selected", "false");
+  selected = node; row.setAttribute("aria-selected", "true");
+  const files = node.f ? `<div class="subhead">Zawartość</div><ul class="files">${node.f.map(([a, b]) => `<li><code>${a}</code><span>${b}</span></li>`).join("")}</ul>` : "";
+  const parser = node.parser ? `<div class="subhead">Ścieżka importu</div>
+    <div class="pipe"><b>plik CSV</b><i>→</i><b>pasuje do profilu?</b></div>
+    <div class="pipe"><i>tak →</i><b>profil ING / zapisany profil</b><i>→</i><b>wspólny DataFrame</b></div>
+    <div class="pipe"><i>nie →</i><b>detector: kodowanie, separator, nagłówek, kolumny</b><i>→</i><b>kreator mapowania w UI</b><i>→</i><b>zapis profilu</b><i>→</i><b>wspólny DataFrame</b></div>` : "";
+  const nodeBtn = node.node ? `<div><button class="btn" id="toFlow">Pokaż ten element w przepływie danych →</button></div>` : "";
+  detailEl.innerHTML = `<div class="path">${node.path}</div>
+    <h2>${node.n}</h2>
+    <div class="meta"><span class="chip" style="color:${col(node.l)}"><span class="dot" style="background:${col(node.l)}"></span>${LAYERS[node.l].name}</span><span class="chip" style="color:var(--muted)">${node.w}</span></div>
+    <p>${node.d}</p>${parser}${files}${nodeBtn}`;
+  const b = document.getElementById("toFlow");
+  if (b) b.addEventListener("click", () => { location.hash = "przeplyw"; showNode(node.node, true); });
+}
+const rootUl = document.createElement("ul"); rootUl.setAttribute("role", "none");
+rootUl.appendChild(buildTree(TREE, "", 0));
+treeEl.appendChild(rootUl);
+document.getElementById("legend").innerHTML = Object.entries(LAYERS).filter(([k]) => k !== "user").map(([k, v]) => `<span><span class="dot" style="background:${col(k)}"></span>${v.name}</span>`).join("");
+const startNode = flat.find(n => n.n === "parsers/");
+select(startNode, startNode.row);
+
+/* ---------- Diagram przepływu ---------- */
+const NODES = {
+  user:   { x: 80,  y: 300, t: "Użytkownik", s: "przeglądarka", l: "user", d: "Ty w przeglądarce. Klikasz, wpisujesz dane, wgrywasz plik CSV.", p: "—" },
+  fe:     { x: 240, y: 300, t: "Frontend", s: "React + TS", l: "fe", d: "Wyświetla ekrany, zbiera dane z formularzy i wysyła zapytania HTTP z tokenem JWT. Niczego nie liczy, tylko pokazuje wyniki z API.", p: "frontend/src/" },
+  api:    { x: 410, y: 240, t: "API", s: "FastAPI routes", l: "api", d: "Przyjmuje zapytania HTTP, sprawdza token, przekazuje pracę do serwisu i zwraca JSON. Dokumentacja pod /docs generuje się sama.", p: "backend/app/api/" },
+  pyd:    { x: 410, y: 360, t: "Walidacja", s: "Pydantic", l: "api", d: "Sprawdza typy i format danych wejściowych oraz kształt odpowiedzi. Błąd = HTTP 422 z opisem, zanim cokolwiek trafi do bazy.", p: "backend/app/schemas/" },
+  auth:   { x: 590, y: 80,  t: "Uwierzytelnianie", s: "Argon2 + JWT", l: "svc", d: "Haszuje hasła Argon2, weryfikuje je przy logowaniu, wystawia i sprawdza tokeny JWT. Z tokenu odczytuje user_id.", p: "backend/app/core/security.py, services/auth_service.py" },
+  imp:    { x: 590, y: 200, t: "Import CSV", s: "profile + Pandas", l: "svc", d: "Rozpoznaje format pliku (profil ING albo importer uniwersalny), czyta go Pandasem, czyści opisy, zamienia kwoty na Decimal i liczy dedup_hash.", p: "backend/app/services/import_service.py, parsers/" },
+  cat:    { x: 590, y: 300, t: "Kategoryzacja", s: "słowa kluczowe", l: "svc", d: "Przypisuje kategorię: najpierw reguły użytkownika (z jego poprawek), potem słownik systemowy, na końcu „Do przypisania”.", p: "backend/app/services/categorization_service.py" },
+  ana:    { x: 590, y: 400, t: "Analityka", s: "Pandas", l: "svc", d: "Liczy sumy w kategoriach, udziały procentowe, trend miesięczny, zmiany miesiąc do miesiąca i stopę oszczędności. Tu powstają wszystkie liczby.", p: "backend/app/services/analytics_service.py" },
+  adv:    { x: 590, y: 510, t: "Porady", s: "AdviceService", l: "ai", d: "Steruje modułem AI: pobiera agregaty z analityki, przepuszcza je przez anonimizator, buduje prompt, wysyła i zapisuje odpowiedź.", p: "backend/app/services/advice_service.py" },
+  repo:   { x: 780, y: 190, t: "Repozytoria", s: "SQLAlchemy · user_id", l: "data", d: "Jedyne miejsce rozmawiające z bazą. Każde zapytanie jest filtrowane po user_id zalogowanej osoby.", p: "backend/app/repositories/, models/" },
+  db:     { x: 950, y: 190, t: "PostgreSQL", s: "kontener db", l: "data", d: "Baza danych w kontenerze Docker. Dane leżą w wolumenie na Twoim komputerze. Schemat wersjonuje Alembic.", p: "docker-compose.yml, backend/alembic/" },
+  anon:   { x: 780, y: 400, t: "Anonimizator", s: "regex", l: "ai", d: "Usuwa dane osobowe: IBAN i numery kont, numery kart, PESEL, telefony, e-maile, imiona i nazwiska w nazwach kontrahentów.", p: "backend/app/ai/anonymizer.py" },
+  prompt: { x: 780, y: 510, t: "Prompt", s: "agregaty → JSON", l: "ai", d: "Składa instrukcję dla modelu (rola doradcy, zakaz wymyślania liczb, format odpowiedzi) i JSON z samymi agregatami.", p: "backend/app/ai/prompt_builder.py" },
+  prov:   { x: 950, y: 510, t: "Dostawca AI", s: "openai · anthropic", l: "ai", d: "Wspólny interfejs dla trzech dostawców. Zmienna AI_PROVIDER wybiera, którego użyć. Mock działa bez internetu i bez kosztów.", p: "backend/app/ai/providers/" },
+  llm:    { x: 1125, y: 510, t: "Model językowy", s: "API w chmurze", l: "ext", d: "Zewnętrzne API OpenAI lub Anthropic. Jedyny element poza Twoim komputerem. Dostaje tylko zanonimizowane agregaty, nigdy pojedyncze transakcje.", p: "zewnętrzne (klucz w .env)" },
+};
+const W = 138, H = 52;
+const SCEN = [
+  { id: "health", name: "Tydzień 1: /api/health", steps: [
+    ["user", "fe", "Otwierasz http://localhost:5173. Vite serwuje aplikację React."],
+    ["fe", "api", "Komponent HealthStatus wysyła GET /api/health."],
+    ["api", "repo", "FastAPI przez Depends(get_db) otwiera sesję SQLAlchemy."],
+    ["repo", "db", "Sesja wykonuje SELECT 1 na bazie w kontenerze db."],
+    ["db", "repo", "Baza odpowiada. Połączenie działa."],
+    ["repo", "api", "Sesja zostaje zamknięta i oddana do puli połączeń."],
+    ["api", "fe", "API zwraca JSON {\"status\": \"ok\", \"database\": \"ok\"}."],
+    ["fe", "fe", "Na ekranie pojawia się zielony status. Wszystkie warstwy są połączone."],
+  ] },
+  { id: "login", name: "Logowanie", steps: [
+    ["user", "fe", "Wpisujesz e-mail i hasło w formularzu logowania."],
+    ["fe", "api", "Frontend wysyła POST /api/auth/login."],
+    ["api", "pyd", "Pydantic sprawdza format e-maila i obecność hasła. Błąd = 422."],
+    ["api", "auth", "Endpoint przekazuje dane do AuthService."],
+    ["auth", "repo", "AuthService prosi repozytorium o użytkownika o tym e-mailu."],
+    ["repo", "db", "SELECT z tabeli users."],
+    ["auth", "auth", "Argon2 porównuje hasło z zapisanym hashem. Gdy się zgadza, powstaje JWT z user_id i datą wygaśnięcia."],
+    ["auth", "api", "Token wraca do endpointu."],
+    ["api", "fe", "Frontend zapisuje token w AuthContext i od teraz dołącza nagłówek Authorization: Bearer do każdego zapytania."],
+  ] },
+  { id: "import", name: "Import CSV z banku", steps: [
+    ["user", "fe", "Wgrywasz plik CSV z ING na stronie Import."],
+    ["fe", "api", "Plik idzie jako POST /api/imports/preview (multipart)."],
+    ["api", "imp", "Endpoint przekazuje plik do ImportService."],
+    ["imp", "imp", "Rozpoznanie formatu: pasuje profil ING? Jeśli nie, detector zgaduje kodowanie, separator, wiersz nagłówka i role kolumn."],
+    ["imp", "imp", "Pandas wczytuje plik, czyści opisy, zamienia kwoty na Decimal i liczy dedup_hash dla każdej transakcji."],
+    ["imp", "cat", "Każda transakcja dostaje propozycję kategorii."],
+    ["cat", "repo", "Kategoryzacja pobiera reguły użytkownika i reguły systemowe."],
+    ["repo", "db", "SELECT z tabeli category_rules dla Twojego user_id."],
+    ["cat", "imp", "Propozycje kategorii wracają do importu."],
+    ["imp", "api", "Podgląd jest gotowy. Nic jeszcze nie zapisano."],
+    ["api", "fe", "Widzisz tabelę podglądu. Dla nieznanego banku najpierw pojawia się kreator mapowania kolumn."],
+    ["user", "fe", "Sprawdzasz podgląd i klikasz Zapisz."],
+    ["fe", "api", "POST /api/imports/confirm."],
+    ["api", "imp", "ImportService przygotowuje zapis."],
+    ["imp", "repo", "Transakcje trafiają do repozytorium z Twoim user_id."],
+    ["repo", "db", "INSERT z pominięciem duplikatów (UNIQUE user_id + dedup_hash). Ponowny import tego samego pliku niczego nie dubluje."],
+  ] },
+  { id: "learn", name: "Poprawka kategorii", steps: [
+    ["user", "fe", "Zmieniasz kategorię transakcji „ZABKA Z1234” na Zakupy spożywcze."],
+    ["fe", "api", "PATCH /api/transactions/{id} z nową kategorią."],
+    ["api", "cat", "Endpoint przekazuje zmianę do kategoryzacji."],
+    ["cat", "repo", "Zapis nowej kategorii i nowej reguły: kontrahent ZABKA → Zakupy spożywcze."],
+    ["repo", "db", "UPDATE transactions oraz INSERT do category_rules."],
+    ["cat", "cat", "Opcjonalnie: ta sama reguła przekategoryzowuje podobne transakcje z przeszłości."],
+    ["cat", "api", "Zwrot zaktualizowanej transakcji."],
+    ["api", "fe", "Tabela się odświeża. Przy następnym imporcie Żabka trafi do właściwej kategorii automatycznie."],
+  ] },
+  { id: "dash", name: "Dashboard", steps: [
+    ["user", "fe", "Otwierasz Dashboard i wybierasz okres, np. październik."],
+    ["fe", "api", "GET /api/analytics/by-category?from=…&to=… z tokenem."],
+    ["api", "auth", "get_current_user sprawdza JWT i ustala Twój user_id."],
+    ["api", "ana", "Endpoint woła AnalyticsService."],
+    ["ana", "repo", "Analityka pobiera Twoje transakcje z wybranego okresu."],
+    ["repo", "db", "SELECT … WHERE user_id = :id AND date BETWEEN …"],
+    ["ana", "ana", "Pandas: groupby po kategorii, sumy, udziały %, zmiana względem poprzedniego miesiąca."],
+    ["ana", "api", "Wyniki wracają jako lista obiektów."],
+    ["api", "fe", "Pydantic serializuje odpowiedź do JSON."],
+    ["fe", "fe", "Recharts rysuje wykres kołowy kategorii i słupki trendu."],
+  ] },
+  { id: "ai", name: "Porada AI", steps: [
+    ["user", "fe", "Klikasz „Wygeneruj porady” dla wybranego miesiąca."],
+    ["fe", "api", "POST /api/advice z okresem."],
+    ["api", "adv", "Endpoint uruchamia AdviceService."],
+    ["adv", "ana", "AdviceService prosi analitykę o agregaty."],
+    ["ana", "repo", "Analityka pobiera transakcje użytkownika."],
+    ["repo", "db", "SELECT z filtrem user_id."],
+    ["ana", "adv", "Wracają tylko agregaty: sumy w kategoriach, zmiany %, stopa oszczędności, top kategorie. Żadnych pojedynczych transakcji."],
+    ["adv", "anon", "Anonimizator usuwa dane osobowe, które mogłyby się znaleźć w nazwach kontrahentów."],
+    ["anon", "prompt", "Czyste dane trafiają do budowania promptu."],
+    ["prompt", "prov", "Prompt systemowy + JSON z agregatami idą do wybranego dostawcy."],
+    ["prov", "llm", "Jedyny moment, gdy dane opuszczają Twój komputer: zapytanie HTTPS do API OpenAI lub Anthropic."],
+    ["llm", "prov", "Model zwraca rekomendacje oparte na przesłanych liczbach."],
+    ["prov", "adv", "Odpowiedź i liczba zużytych tokenów (koszt) wracają do serwisu."],
+    ["adv", "repo", "Zapis porady w historii: wysłane dane, odpowiedź, model, tokeny."],
+    ["repo", "db", "INSERT do ai_advice."],
+    ["adv", "api", "Porada wraca do endpointu."],
+    ["api", "fe", "Widzisz karty z rekomendacjami i szacowaną kwotą możliwej oszczędności."],
+  ] },
+];
+
+const svg = document.getElementById("svg");
+const NS = "http://www.w3.org/2000/svg";
+const mk = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+function edgePath(a, b) {
+  const A = NODES[a], B = NODES[b];
+  const pair = [a, b].sort().join("|");
+  if (pair === "adv|prov") {
+    const sx = A.x, sy = A.y + H / 2, ex = B.x, ey = B.y + H / 2;
+    return `M${sx},${sy} C${sx},${sy + 70} ${ex},${ey + 70} ${ex},${ey}`;
+  }
+  const dx = B.x - A.x, dy = B.y - A.y;
+  if (Math.abs(dx) < 40) {
+    const s = Math.sign(dy) || 1;
+    const sy = A.y + s * H / 2, ey = B.y - s * H / 2;
+    return `M${A.x},${sy} L${B.x},${ey}`;
+  }
+  const s = Math.sign(dx);
+  const sx = A.x + s * W / 2, ex = B.x - s * W / 2;
+  const mx = (sx + ex) / 2;
+  return `M${sx},${A.y} C${mx},${A.y} ${mx},${B.y} ${ex},${B.y}`;
+}
+
+const defs = mk("defs", {}, svg);
+const marker = mk("marker", { id: "arr", viewBox: "0 0 10 10", refX: "8", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" }, defs);
+mk("path", { d: "M0,0 L10,5 L0,10 z", style: "fill: var(--accent)" }, marker);
+
+mk("rect", { class: "boundary", x: 10, y: 34, width: 1022, height: 576, rx: 14 }, svg);
+const bl = mk("text", { class: "blabel", x: 24, y: 24 }, svg); bl.textContent = "DOCKER COMPOSE · TWÓJ KOMPUTER";
+const bl2 = mk("text", { class: "blabel", x: 1060, y: 470 }, svg); bl2.textContent = "INTERNET";
+
+const pairs = new Set();
+SCEN.forEach(s => s.steps.forEach(([a, b]) => { if (a !== b) pairs.add([a, b].sort().join("|")); }));
+const edgeLayer = mk("g", {}, svg);
+const edgeEls = {};
+pairs.forEach(p => { const [a, b] = p.split("|"); edgeEls[p] = mk("path", { class: "edge", d: edgePath(a, b) }, edgeLayer); });
+const activeLayer = mk("g", {}, svg);
+
+const nodeEls = {};
+const nodeLayer = mk("g", {}, svg);
+Object.entries(NODES).forEach(([id, n]) => {
+  const g = mk("g", { class: "node", tabindex: "0", role: "button", "aria-label": `${n.t}: ${n.s}` }, nodeLayer);
+  mk("rect", { class: "box", x: n.x - W / 2, y: n.y - H / 2, width: W, height: H, rx: 10, style: `stroke: ${col(n.l)}` }, g);
+  mk("circle", { cx: n.x - W / 2 + 14, cy: n.y - 7, r: 4.5, style: `fill: ${col(n.l)}` }, g);
+  const t = mk("text", { x: n.x - W / 2 + 26, y: n.y - 3, "font-size": "14", "font-weight": "600" }, g); t.textContent = n.t;
+  const s = mk("text", { class: "sub", x: n.x - W / 2 + 14, y: n.y + 15 }, g); s.textContent = n.s;
+  g.addEventListener("click", () => showNode(id));
+  g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showNode(id); } });
+  nodeEls[id] = g;
+});
+
+let scen = SCEN[0], step = 0, timer = null, selNode = null;
+const scenEl = document.getElementById("scen");
+SCEN.forEach(s => {
+  const b = document.createElement("button"); b.textContent = s.name; b.dataset.id = s.id;
+  b.addEventListener("click", () => setScen(s.id));
+  scenEl.appendChild(b);
+});
+function setScen(id) {
+  stop(); scen = SCEN.find(s => s.id === id); step = 0;
+  [...scenEl.children].forEach(b => b.setAttribute("aria-pressed", b.dataset.id === id));
+  const list = document.getElementById("steps");
+  list.innerHTML = "";
+  scen.steps.forEach((st, i) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.innerHTML = `<span class="n">${String(i + 1).padStart(2, "0")}</span><span>${st[2]}</span>`;
+    b.addEventListener("click", () => { stop(); step = i; render(); });
+    li.appendChild(b); list.appendChild(li);
+  });
+  render();
+}
+function render() {
+  const used = new Set(scen.steps.flatMap(s => [s[0], s[1]]));
+  const [a, b, txt] = scen.steps[step];
+  Object.entries(nodeEls).forEach(([id, g]) => {
+    g.classList.toggle("dim", !used.has(id));
+    g.classList.toggle("on", id === a || id === b);
+    g.classList.toggle("sel", id === selNode);
+  });
+  Object.entries(edgeEls).forEach(([p, e]) => { const [x, y] = p.split("|"); e.style.opacity = used.has(x) && used.has(y) ? 1 : .25; });
+  activeLayer.innerHTML = "";
+  if (a !== b) {
+    const p = mk("path", { class: "active", d: edgePath(a, b), "marker-end": "url(#arr)" }, activeLayer);
+    const len = p.getTotalLength(); const m = p.getPointAtLength(len / 2);
+    mk("circle", { cx: m.x, cy: m.y, r: 12, style: "fill: var(--accent)" }, activeLayer);
+    const t = mk("text", { x: m.x, y: m.y + 4, "text-anchor": "middle", "font-size": "11", "font-weight": "600", style: "fill: var(--surface); font-family: var(--f-mono)" }, activeLayer);
+    t.textContent = step + 1;
+  }
+  document.getElementById("stepnow").textContent = txt;
+  document.getElementById("counter").textContent = `krok ${step + 1} / ${scen.steps.length}`;
+  [...document.getElementById("steps").querySelectorAll("button")].forEach((bt, i) => {
+    if (i === step) { bt.setAttribute("aria-current", "step"); const L = bt.parentElement.parentElement; const top = bt.parentElement.offsetTop; if (top < L.scrollTop || top > L.scrollTop + L.clientHeight - 40) L.scrollTop = top - L.clientHeight / 2; } else bt.removeAttribute("aria-current");
+  });
+  if (!selNode) showNode(b, false, true);
+}
+function showNode(id, fromTree, passive) {
+  const n = NODES[id];
+  if (!passive) { selNode = id; Object.entries(nodeEls).forEach(([k, g]) => g.classList.toggle("sel", k === id)); }
+  const privacy = ["adv", "anon", "prompt", "prov", "llm"].includes(id) ? `<p class="privacy">Do modelu językowego trafiają wyłącznie zanonimizowane agregaty. Liczy kod (Pandas), model tylko interpretuje wyniki.</p>` : "";
+  document.getElementById("nodeinfo").innerHTML = `<div class="meta"><span class="chip" style="color:${col(n.l)}"><span class="dot" style="background:${col(n.l)}"></span>${LAYERS[n.l].name}</span></div>
+    <h3>${n.t} <span class="mono" style="color:var(--muted);font-weight:400">· ${n.s}</span></h3>
+    <p>${n.d}</p><div class="subhead">Kod</div><p class="mono">${n.p}</p>${privacy}
+    ${passive ? "" : `<div><button class="btn" id="clearSel">Wróć do śledzenia kroków</button></div>`}`;
+  const c = document.getElementById("clearSel");
+  if (c) c.addEventListener("click", () => { selNode = null; render(); });
+  if (fromTree) {
+    const s = SCEN.find(sc => sc.steps.some(st => st[0] === id || st[1] === id));
+    if (s && s !== scen) { setScen(s.id); selNode = id; }
+    const i = scen.steps.findIndex(st => st[1] === id);
+    if (i >= 0) { step = i; }
+    selNode = id; render(); showNode(id);
+  }
+}
+const playBtn = document.getElementById("play");
+function stop() { if (timer) { clearInterval(timer); timer = null; } playBtn.textContent = "▶ Odtwórz"; }
+playBtn.addEventListener("click", () => {
+  if (timer) return stop();
+  selNode = null;
+  if (step >= scen.steps.length - 1) step = 0;
+  playBtn.textContent = "❚❚ Pauza"; render();
+  timer = setInterval(() => { if (step >= scen.steps.length - 1) return stop(); step++; render(); }, 2200);
+});
+document.getElementById("prev").addEventListener("click", () => { stop(); step = Math.max(0, step - 1); render(); });
+document.getElementById("next").addEventListener("click", () => { stop(); step = Math.min(scen.steps.length - 1, step + 1); render(); });
+setScen("import");
+
+/* ---------- Tydzień 1 ---------- */
+const TECH = [
+  ["Docker + Compose", "ext", "Uruchamia programy w kontenerach: odizolowanych „pudełkach” z własnymi zależnościami. Compose opisuje w jednym pliku, które kontenery mają działać razem.", "Compose tworzy wspólną sieć, w której kontenery widzą się po nazwach: backend łączy się z bazą pod adresem db:5432. Dane bazy leżą w wolumenie, więc przetrwają restart.", "Jedno polecenie stawia cały system u Ciebie, u promotora i na obronie. Nie trzeba ręcznie instalować PostgreSQL, a dane zostają na Twoim komputerze."],
+  ["PostgreSQL", "data", "Relacyjna baza danych SQL, open source.", "Tabele z typami i relacjami, transakcje ACID, ograniczenia UNIQUE i klucze obce pilnują spójności danych.", "Typ NUMERIC przechowuje kwoty dokładnie (bez błędów float). UNIQUE(user_id, dedup_hash) blokuje duplikaty przy imporcie, a JSONB przechowa dane wysłane do AI."],
+  ["FastAPI + Uvicorn", "api", "FastAPI to framework do budowy REST API w Pythonie. Uvicorn to serwer, który go uruchamia.", "Funkcja z dekoratorem @router.get(\"/api/health\") staje się endpointem. Z adnotacji typów FastAPI robi walidację, konwersję do JSON i dokumentację /docs. Depends() wstrzykuje sesję bazy, a później zalogowanego użytkownika.", "Mało kodu, automatyczna dokumentacja do testowania i do pracy, łatwa współpraca z Pandas i bibliotekami OpenAI/Anthropic."],
+  ["Pydantic + Settings", "api", "Biblioteka do walidacji danych na podstawie typów Pythona.", "Klasa z polami i typami sprawdza dane i zamienia je na właściwe typy albo zgłasza czytelny błąd. pydantic-settings robi to samo ze zmiennymi z pliku .env.", "W tygodniu 1 klasa Settings: brak DATABASE_URL zatrzyma start aplikacji z jasnym komunikatem. Od tygodnia 2 schematy wejścia i wyjścia API."],
+  ["SQLAlchemy 2.0", "data", "ORM: tabele bazy opisane jako klasy Pythona.", "engine trzyma pulę połączeń, Session to jednostka pracy zatwierdzana commit(). Zapytania budujesz w Pythonie, a biblioteka parametryzuje je przed wysłaniem.", "Ochrona przed SQL injection i wygodne filtrowanie po user_id. W tygodniu 1 tylko połączenie i klasa bazowa modeli."],
+  ["Alembic", "data", "Wersjonowanie schematu bazy: to samo, czym Git jest dla kodu.", "Każda zmiana tabel to plik z upgrade() i downgrade(). --autogenerate porównuje modele z bazą, upgrade head wykonuje zaległe migracje, a tabela alembic_version pamięta stan.", "Każdy może odtworzyć bazę od zera jednym poleceniem. Kontener backendu robi to sam przy starcie."],
+  ["React + TypeScript", "fe", "React buduje interfejs z komponentów. TypeScript dodaje typy do JavaScriptu.", "Komponent to funkcja zwracająca kawałek UI. Gdy zmienia się jego stan, React przerysowuje tylko tę część ekranu.", "Niezależne części: karty, wykresy, tabela. TypeScript wyłapie literówkę w nazwie pola z API przed uruchomieniem."],
+  ["Vite", "fe", "Serwer deweloperski i narzędzie do budowania frontendu.", "W trakcie pracy podmienia zmieniony moduł w przeglądarce od razu po zapisie (HMR). npm run build tworzy zoptymalizowane pliki statyczne.", "Szybka praca nad interfejsem i gotowy szablon react-ts."],
+  ["Tailwind CSS", "fe", "CSS w postaci małych klas narzędziowych, np. p-4, rounded-lg, text-emerald-600.", "Klasy piszesz od razu w JSX. Przy budowaniu Tailwind zostawia w pliku CSS tylko style, których naprawdę użyłeś.", "Szybkie i spójne stylowanie bez osobnego pliku CSS dla każdego komponentu."],
+  ["pytest + HTTPX", "test", "pytest uruchamia testy. HTTPX to klient HTTP używany przez TestClient FastAPI.", "Funkcja test_* z instrukcją assert to test. TestClient wysyła zapytania do aplikacji bez stawiania serwera.", "Od pierwszego dnia test GET /api/health → 200. Wyniki i pokrycie testami to materiał do rozdziału o weryfikacji."],
+  ["Ruff + GitHub Actions", "ext", "Ruff sprawdza i formatuje kod Pythona. GitHub Actions uruchamia zadania na serwerach GitHuba.", "Plik .github/workflows/ci.yml mówi: przy każdym pushu postaw Pythona i PostgreSQL, uruchom ruff check i pytest.", "Zielony znaczek przy commicie potwierdza, że kod działa nie tylko na Twoim komputerze."],
+];
+document.getElementById("cards").innerHTML = TECH.map(([n, l, a, b, c]) => `<article class="panel card">
+  <div class="hd"><h3>${n}</h3><span class="chip" style="color:${col(l)}">${LAYERS[l].name.split(" ")[0]}</span></div>
+  <dl><div><dt>Co to jest</dt><dd>${a}</dd></div><div><dt>Jak działa</dt><dd>${b}</dd></div><div><dt>Po co nam</dt><dd>${c}</dd></div></dl></article>`).join("");
+
+const DAYS = [
+  ["Pon", "2.11", "Środowisko", ["Instalacja: Git, Docker Desktop (Windows: z WSL2), Python 3.12+, Node.js LTS, VS Code z rozszerzeniami", "Klon repozytorium, plik .env skopiowany z .env.example"]],
+  ["Wt", "3.11", "Baza w Dockerze", ["docker-compose.yml z usługą db: postgres:16, wolumen pgdata, healthcheck pg_isready", "Podgląd bazy w DBeaver lub pgAdmin"]],
+  ["Śr", "4.11", "Backend FastAPI", ["requirements.txt, core/config.py, core/database.py", "main.py z CORS i GET /api/health wykonującym SELECT 1", "Dockerfile backendu i usługa backend w Compose"]],
+  ["Czw", "5.11", "Alembic", ["alembic init, podpięcie modeli i DATABASE_URL w env.py", "Start kontenera: alembic upgrade head, potem uvicorn"]],
+  ["Pt", "6.11", "Frontend", ["Vite z szablonem react-ts, Tailwind, ESLint i Prettier", "api/client.ts i komponent HealthStatus", "Dockerfile frontendu i usługa frontend w Compose"]],
+  ["Sob", "7.11", "Testy i CI", ["conftest.py i test_health.py", "ruff check i ruff format", "Workflow GitHub Actions z usługą postgres"]],
+  ["Nd", "8.11", "Domknięcie", ["Pełny test: docker compose down -v, potem up --build", "Sekcja „Uruchomienie” w README", "Pobranie własnego wyciągu z ING do data/private/ i notatki o formacie pliku"]],
+];
+document.getElementById("days").innerHTML = DAYS.map(([d, dt, t, items]) => `<div class="day"><div class="d"><strong>${d} ${dt}</strong></div><div><h3>${t}</h3><ul>${items.map(i => `<li>${i}</li>`).join("")}</ul></div></div>`).join("");
+
+document.getElementById("result").innerHTML = [
+  ["localhost:5173", "aplikacja React ze statusem połączenia"],
+  ["localhost:8000/docs", "automatyczna dokumentacja API (Swagger)"],
+  ["/api/health", "{\"status\": \"ok\", \"database\": \"ok\"}"],
+  ["pytest + CI", "testy zielone lokalnie i na GitHubie"],
+].map(([a, b]) => `<div class="panel"><code>${a}</code><span>${b}</span></div>`).join("");
+document.getElementById("goHealth").addEventListener("click", () => { location.hash = "przeplyw"; setScen("health"); selNode = null; render(); });
+
+/* ---------- Zakładki ---------- */
+const TABS = ["struktura", "przeplyw", "tydzien-1"];
+function route() {
+  const h = location.hash.replace("#", "");
+  const cur = TABS.includes(h) ? h : "struktura";
+  TABS.forEach(t => { document.getElementById("v-" + t).hidden = t !== cur; });
+  document.querySelectorAll("nav.tabs a").forEach(a => a.dataset.tab === cur ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+  if (cur !== "przeplyw") stop();
+}
+window.addEventListener("hashchange", route);
+route();
+</script>

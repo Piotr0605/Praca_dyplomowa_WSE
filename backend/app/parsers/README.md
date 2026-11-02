@@ -1,7 +1,14 @@
-# Parsery wyciągów bankowych
+# Import wyciągów bankowych
 
-Każdy bank = jedna klasa dziedzicząca po `BaseBankParser` (`base.py`).
-Parser zamienia surowy plik CSV na ujednolicony `DataFrame` o kolumnach:
+Dwa poziomy:
+
+1. **Profile banków** (`profiles/*.json`): pełny opis formatu pliku, np. `ing.json`.
+   Plik pasujący do profilu importuje się bez żadnych pytań.
+2. **Importer uniwersalny** (`detector.py` + `generic.py`): dla nieznanego pliku zgaduje kodowanie,
+   separator, wiersz nagłówka i role kolumn, a użytkownik potwierdza mapowanie w UI.
+   Potwierdzone mapowanie zapisuje się jako profil użytkownika (tabela `bank_profiles`).
+
+Każda ścieżka kończy się tym samym ujednoliconym `DataFrame`:
 
 | kolumna        | typ        | opis                                  |
 |----------------|------------|---------------------------------------|
@@ -11,4 +18,4 @@ Parser zamienia surowy plik CSV na ujednolicony `DataFrame` o kolumnach:
 | `description`  | str        | opis/tytuł operacji                   |
 | `counterparty` | str / None | odbiorca lub nadawca                  |
 
-Dodanie nowego banku = nowy plik + wpis w rejestrze (`registry.py`). Reszta systemu się nie zmienia.
+Dalsze kroki (czyszczenie, deduplikacja, kategoryzacja) nie wiedzą, z jakiego banku pochodzi plik.
