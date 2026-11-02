@@ -292,3 +292,56 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | 8. Frontend porad + bufor | ⏳ | | |
 | 9. Jakość + Docker | ⏳ | | |
 | 10. Stabilizacja → v1.0 | ⏳ | | |
+
+---
+
+## 9. Prezentacja i obrona
+
+### Gdzie działa aplikacja i jakie dane opuszczają komputer
+„Aplikacja webowa” oznacza tu **technologię** (interfejs w przeglądarce, komunikacja HTTP między frontendem
+a backendem), a nie hosting w internecie. Cały system (przeglądarka, frontend, backend, baza) działa na jednym
+komputerze, a ruch między warstwami idzie przez `localhost` (interfejs pętli zwrotnej) i nie wychodzi do sieci.
+Porty kontenerów są wystawione tylko na `127.0.0.1`, więc aplikacji nie widać nawet z sieci lokalnej.
+
+| Dane | Gdzie trafiają |
+|---|---|
+| Wyciągi CSV, transakcje, konto użytkownika | tylko lokalna baza PostgreSQL (wolumen Dockera) |
+| Porady AI z providerem `mock` | nic nie opuszcza komputera |
+| Porady AI z OpenAI / Anthropic | **wyłącznie** zanonimizowane agregaty (sumy kategorii, zmiany %), tylko po kliknięciu „Wygeneruj porady”; użytkownik widzi wcześniej podgląd wysyłanego JSON-a |
+
+Warunki, których pilnujemy w kodzie, żeby to twierdzenie było prawdziwe:
+- frontend nie ładuje niczego z zewnętrznych serwerów (czcionki, ikony, biblioteki z CDN, analityka): wszystko jest w paczce budowanej przez Vite,
+- jedynym miejscem w backendzie, które łączy się z internetem, jest `ai/providers/` (łatwe do wskazania i przetestowania),
+- logi nie zawierają treści transakcji.
+
+Na obronie warto to sformułować precyzyjnie: *„dane finansowe są przechowywane i przetwarzane lokalnie;
+poza urządzenie, i to tylko na żądanie użytkownika, trafiają wyłącznie zanonimizowane agregaty”*.
+Architektura pozwala też wdrożyć system na własnym serwerze (np. domowym lub firmowym), ale wtedy dane są
+na tym serwerze. To kierunek rozwoju, a nie zakres pracy.
+
+### Uruchomienie na pokazie
+1. **Dzień przed:** `git pull`, `docker compose up --build` przy dostępie do internetu (pobranie obrazów),
+   wczytanie danych demo, przejście całego scenariusza raz na próbę.
+2. **Przed wejściem na salę:** wyłączyć inne projekty Dockera zajmujące porty (np. finshield-api),
+   uruchomić `docker compose up`, otworzyć w przeglądarce kartę aplikacji i kartę `localhost:8000/docs`.
+3. **AI:** jeśli jest internet i ważny klucz API, `AI_PROVIDER=openai` lub `anthropic`; jeśli nie, `mock`
+   albo zapisane wcześniej porady z historii.
+4. **Plan B:** nagranie ekranu całego scenariusza i zrzuty ekranu (`docs/zrzuty/`) na pendrive i w chmurze.
+
+### Scenariusz pokazu (ok. 10 minut)
+| # | Krok | Co pokazuje (argument dla komisji) | Czas |
+|---|---|---|---|
+| 1 | Logowanie użytkownika demo | uwierzytelnianie JWT, hasła hashowane Argon2 | 0:30 |
+| 2 | Import wyciągu CSV z ING (spreparowanego, bez prawdziwych danych) | parser Pandas, rozpoznanie formatu, podsumowanie importu | 1:30 |
+| 3 | Ponowny import tego samego pliku | deduplikacja (`dedup_hash` + ograniczenie `UNIQUE`): 0 nowych transakcji | 0:30 |
+| 4 | Import pliku z innego banku przez importer uniwersalny | mapowanie kolumn, zapis profilu, uniwersalność rozwiązania | 1:30 |
+| 5 | Lista transakcji z automatycznymi kategoriami, ręczna poprawka jednej | kategoryzacja słownikowa i reguła zapamiętana z poprawki | 1:30 |
+| 6 | Dashboard: wydatki wg kategorii, trend miesięczny | analityka w Pandas, wizualizacja | 1:30 |
+| 7 | Porady AI: najpierw podgląd wysyłanych danych, potem generowanie | anonimizacja, brak danych osobowych w zapytaniu, wymienny provider | 2:00 |
+| 8 | (opcjonalnie) `localhost:8000/docs` i zielony przebieg GitHub Actions | dokumentacja API, testy automatyczne, pokrycie | 0:30 |
+
+### Pytania, których można się spodziewać
+- *Skąd pewność, że do AI nie trafiają dane osobowe?* → podgląd payloadu w UI, testy anonimizacji, tabela `ai_advice` z zapisem wysłanego JSON-a.
+- *Co, jeśli bank zmieni format pliku?* → importer uniwersalny z profilami mapowania.
+- *Czy użytkownik A zobaczy dane użytkownika B?* → `user_id` w każdym zapytaniu repozytorium + test izolacji.
+- *Dlaczego lokalnie, a nie w chmurze?* → prywatność danych finansowych, zerowy koszt, działanie bez internetu (z `mock`).
