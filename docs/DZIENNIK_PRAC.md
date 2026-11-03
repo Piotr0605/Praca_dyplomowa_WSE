@@ -89,4 +89,9 @@ regułę, kod przeszedł na zapis `Annotated[Session, Depends(get_db)]`, który 
 | zmiana pliku `config.py` | nowy tytuł API widoczny po ~3 s (hot reload) |
 | `ruff check`, `ruff format --check` | bez uwag |
 
+**Organizacja repozytorium (3.11.2026)**
+Utworzono gałąź `main` (stabilna wersja) i `develop` (bieżąca praca). Dotychczasowy stan (dni 1–3) trafił
+na `main` i został oznaczony tagiem `tydzien-1-dzien-3`. Od teraz zmiany powstają na `develop` i przechodzą
+na `main` przez Pull Request po weryfikacji (zasady: `PLAN_IMPLEMENTACJI.md`, sekcja 7).
+
 **Dalej:** dzień 4, Alembic (migracje schematu bazy).
