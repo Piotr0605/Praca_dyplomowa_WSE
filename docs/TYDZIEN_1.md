@@ -153,9 +153,9 @@ def health(db: Session = Depends(get_db)) -> dict[str, str]:
 ```
 
 ### Czwartek 5.11: Alembic
-- [ ] `alembic init alembic`, w `env.py` podpięcie `Base.metadata` i `settings.DATABASE_URL`
-- [ ] start kontenera backendu wykonuje `alembic upgrade head`, potem `uvicorn`
-- [ ] sprawdź, że w bazie pojawiła się tabela `alembic_version`
+- [x] `alembic init alembic`, w `env.py` podpięcie `Base.metadata` i `settings.DATABASE_URL`
+- [x] start kontenera backendu wykonuje `alembic upgrade head`, potem `uvicorn`
+- [x] sprawdź, że w bazie pojawiła się tabela `alembic_version`
 
 ### Piątek 6.11: frontend
 - [ ] `npm create vite@latest frontend -- --template react-ts` (w istniejącym katalogu)

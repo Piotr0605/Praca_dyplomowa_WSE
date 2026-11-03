@@ -100,3 +100,62 @@ którą serwer odrzucił (`GH006: Protected branch update failed`). Usunięto st
 `claude/lucid-planck-yt04l8` (jej historia w całości zawiera się w `main`).
 
 **Dalej:** dzień 4, Alembic (migracje schematu bazy).
+
+---
+
+## Tydzień 1, dzień 4: migracje bazy danych, Alembic (wykonano 3.11.2026)
+
+**Po co migracje.** Schemat bazy (tabele, kolumny, ograniczenia) będzie się zmieniał co tydzień: dojdą
+użytkownicy, transakcje, kategorie, reguły. Migracja to plik Pythona opisujący jedną zmianę schematu
+(`upgrade()`) i sposób jej wycofania (`downgrade()`). Pliki są wersjonowane w Gicie razem z kodem, więc
+stan bazy da się odtworzyć na każdym komputerze jednym poleceniem, a każda zmiana ma swoją historię.
+Alternatywa, czyli `Base.metadata.create_all()`, tworzy tylko brakujące tabele i nie potrafi zmienić istniejących.
+
+**Zrobione**
+
+| Plik | Rola |
+|---|---|
+| `backend/alembic.ini` | konfiguracja Alembic; nazwy plików migracji z datą i godziną |
+| `backend/alembic/env.py` | połączenie Alembic z aplikacją: adres bazy z `DATABASE_URL`, metadane modeli z `Base.metadata` |
+| `backend/alembic/script.py.mako` | szablon nowej migracji (typy Pythona 3.13, opisy po polsku) |
+| `backend/alembic/README.md` | ściąga poleceń i zasady pracy z migracjami |
+| `backend/app/core/database.py` | konwencja nazw ograniczeń w `Base.metadata` |
+| `backend/app/models/__init__.py` | miejsce rejestracji modeli (import w `env.py`) |
+| `backend/start.sh`, `Dockerfile`, `docker-compose.yml` | start kontenera: `alembic upgrade head`, potem `uvicorn` |
+
+**Decyzje i uzasadnienie**
+- **Adres bazy tylko z `.env`, nie z `alembic.ini`.** Hasło nie trafia do repozytorium, a aplikacja i migracje
+  zawsze łączą się z tą samą bazą (jedno źródło konfiguracji: klasa `Settings`).
+- **Autogenerate.** `env.py` importuje pakiet `app.models` i przekazuje `Base.metadata`, więc
+  `alembic revision --autogenerate` porównuje modele z bazą i sam pisze migrację. Włączone `compare_type=True`
+  wykrywa też zmiany typów kolumn. Wygenerowaną migrację zawsze się czyta przed commitem: Alembic nie odróżnia
+  np. zmiany nazwy kolumny od usunięcia jednej i dodania drugiej (co skasowałoby dane).
+- **Konwencja nazw ograniczeń** (`pk_<tabela>`, `uq_<tabela>_<kolumna>`, `fk_<tabela>_<kolumna>_<tabela_docelowa>`,
+  `ix_<tabela>_<kolumna>`). Bez niej PostgreSQL nadaje nazwy automatycznie, a migracja, która później zmienia lub
+  usuwa ograniczenie, musi znać jego dokładną nazwę. Stałe nazwy czynią migracje przewidywalnymi i czytelnymi
+  w komunikatach błędów (np. naruszenie `uq_transactions_user_id_dedup_hash` od razu mówi, co się stało).
+- **Migracje przy każdym starcie backendu** (`start.sh`). Baza zawsze ma schemat zgodny z kodem; po `git pull`
+  wystarczy restart kontenera. `set -e` zatrzymuje start, gdy migracja się nie powiedzie: lepiej, żeby aplikacja
+  nie ruszyła wcale, niż działała na niezgodnym schemacie. `exec` przekazuje procesowi serwera sygnały zatrzymania,
+  więc `docker compose stop` wyłącza go od razu i czysto.
+- **PostgreSQL wykonuje migracje w transakcji** (transactional DDL). Nieudana migracja jest wycofywana w całości,
+  a baza nie zostaje w stanie „w połowie zmienionym”. To jedna z przewag PostgreSQL nad np. MySQL w tym zastosowaniu.
+
+**Weryfikacja**
+
+Pełny cykl sprawdzono na tymczasowym modelu testowym (dwie tabele z kluczem obcym, unikalnością i indeksem),
+usuniętym po teście:
+
+| Test | Wynik |
+|---|---|
+| start backendu bez migracji | `alembic upgrade head` w logach, w bazie tabela `alembic_version`, health HTTP 200 |
+| `alembic revision --autogenerate` | wykryte 2 nowe tabele i indeks; plik `20261103_1050_<rev>_test_cyklu_migracji.py` |
+| `alembic upgrade head` | tabele utworzone |
+| nazwy ograniczeń w bazie | `pk_test_a`, `pk_test_b`, `uq_test_a_email`, `fk_test_b_a_id_test_a`, `ix_test_b_a_id` |
+| `alembic check` po upgrade | „No new upgrade operations detected” (modele i baza zgodne) |
+| `alembic downgrade -1` | tabele usunięte, została tylko `alembic_version` |
+| celowo błędna migracja | start przerwany (`UndefinedTable`), API nie odpowiada, w `alembic_version` brak wpisu (transakcja wycofana) |
+| po usunięciu błędnej migracji | backend startuje, health HTTP 200 |
+| `ruff check`, `ruff format --check` | bez uwag |
+
+**Dalej:** dzień 5, frontend (React + Vite + TypeScript, Tailwind CSS, strona statusu).
