@@ -138,11 +138,11 @@ volumes:
 ```
 
 ### Środa 4.11: backend FastAPI
-- [ ] `backend/requirements.txt` (fastapi, uvicorn[standard], sqlalchemy, psycopg[binary], alembic, pydantic-settings, pandas)
+- [x] `backend/requirements.txt` (fastapi, uvicorn[standard], sqlalchemy, psycopg[binary], alembic, pydantic-settings, pandas)
   i `requirements-dev.txt` (pytest, httpx, ruff)
-- [ ] `app/core/config.py` (klasa `Settings`), `app/core/database.py` (`engine`, `SessionLocal`, `get_db`, `Base`)
-- [ ] `app/main.py`: aplikacja, CORS dla `http://localhost:5173`, router z `GET /api/health` wykonującym `SELECT 1`
-- [ ] `backend/Dockerfile` i usługa `backend` w Compose (`depends_on: db: condition: service_healthy`)
+- [x] `app/core/config.py` (klasa `Settings`), `app/core/database.py` (`engine`, `SessionLocal`, `get_db`, `Base`)
+- [x] `app/main.py`: aplikacja, CORS dla `http://localhost:5173`, router z `GET /api/health` wykonującym `SELECT 1`
+- [x] `backend/Dockerfile` i usługa `backend` w Compose (`depends_on: db: condition: service_healthy`)
 
 ```python
 # app/api/routes/health.py (szkic)

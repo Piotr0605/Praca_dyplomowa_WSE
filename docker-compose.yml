@@ -20,5 +20,22 @@ services:
       timeout: 3s
       retries: 10
 
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    # Wszystkie ustawienia aplikacji (DATABASE_URL, JWT, AI) pochodzą z .env.
+    # Wewnątrz sieci Dockera baza jest pod adresem db:5432 (nazwa usługi, nie localhost).
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${BACKEND_HOST_PORT:-8000}:8000"
+    # Tryb deweloperski: kod z dysku jest podmontowany do kontenera, a --reload
+    # restartuje serwer po każdym zapisie pliku (bez przebudowy obrazu).
+    volumes:
+      - ./backend:/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app"]
+
 volumes:
   pgdata:

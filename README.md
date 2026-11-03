@@ -63,6 +63,7 @@ przy pomocy modelu językowego (OpenAI / Anthropic).
 ## Plan prac
 
 Szczegółowy plan krok po kroku: [`docs/PLAN_IMPLEMENTACJI.md`](docs/PLAN_IMPLEMENTACJI.md).
+Co zostało zrobione każdego dnia i dlaczego: [`docs/DZIENNIK_PRAC.md`](docs/DZIENNIK_PRAC.md).
 
 ## Uruchomienie
 
