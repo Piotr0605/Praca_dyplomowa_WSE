@@ -94,4 +94,9 @@ Utworzono gałąź `main` (stabilna wersja) i `develop` (bieżąca praca). Dotyc
 na `main` i został oznaczony tagiem `tydzien-1-dzien-3`. Od teraz zmiany powstają na `develop` i przechodzą
 na `main` przez Pull Request po weryfikacji (zasady: `PLAN_IMPLEMENTACJI.md`, sekcja 7).
 
+Gałąź `main` objęto ochroną na GitHubie: wymagany Pull Request (również dla administratora), zakaz force push
+i usuwania gałęzi, wymóg rozwiązania komentarzy w PR. Zweryfikowano próbą bezpośredniego `git push` na `main`,
+którą serwer odrzucił (`GH006: Protected branch update failed`). Usunięto starą gałąź roboczą
+`claude/lucid-planck-yt04l8` (jej historia w całości zawiera się w `main`).
+
 **Dalej:** dzień 4, Alembic (migracje schematu bazy).
