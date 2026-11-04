@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Pozwala importować pakiet `app` z katalogu backend/.
+pythonpath = ["."]
+addopts = "--strict-markers"

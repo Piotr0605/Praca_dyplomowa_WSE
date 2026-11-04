@@ -11,8 +11,10 @@ WORKDIR /app
 
 # Najpierw same zależności: ta warstwa obrazu jest cache'owana i nie przebudowuje się
 # przy każdej zmianie kodu, tylko przy zmianie requirements.txt.
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# Plik zależności wybiera docker-compose.yml: w trybie deweloperskim dochodzą pytest i ruff.
+ARG REQUIREMENTS=requirements.txt
+COPY requirements.txt requirements-dev.txt ./
+RUN pip install -r ${REQUIREMENTS}
 
 COPY . .
 
