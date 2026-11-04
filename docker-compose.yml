@@ -21,7 +21,11 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      # Tryb deweloperski: obraz zawiera też pytest i ruff (docker compose exec backend pytest).
+      args:
+        REQUIREMENTS: requirements-dev.txt
     restart: unless-stopped
     # Wszystkie ustawienia aplikacji (DATABASE_URL, JWT, AI) pochodzą z .env.
     # Wewnątrz sieci Dockera baza jest pod adresem db:5432 (nazwa usługi, nie localhost).

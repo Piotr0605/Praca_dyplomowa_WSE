@@ -1,0 +1,71 @@
+# Przy każdym wypchnięciu na main/develop i każdym Pull Requeście sprawdza kod na czystej maszynie.
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+# Workflow tylko czyta kod; nie potrzebuje innych uprawnień.
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      # Ta sama wersja PostgreSQL co w docker-compose.yml. Hasło istnieje tylko na czas przebiegu.
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: backend/.python-version
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check .
+      - name: Formatowanie
+        run: ruff format --check .
+      - name: Migracje
+        run: alembic upgrade head
+      - name: Testy
+        run: pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Formatowanie
+        run: npm run format:check
+      - name: Typy i build
+        run: npm run build

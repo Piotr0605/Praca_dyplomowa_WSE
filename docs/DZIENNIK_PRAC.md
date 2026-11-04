@@ -1,7 +1,7 @@
 # Dziennik prac
 
-Zapis kolejnych dni pracy nad aplikacją: co zostało zrobione, dlaczego właśnie tak, jakie były problemy
-i jak sprawdzono, że działa. Materiał źródłowy do rozdziałów pracy o realizacji i weryfikacji systemu.
+Zapis kolejnych dni pracy nad aplikacją: co zostało zrobione, dlaczego, w jaki sposób, jakie problemy się pojawiły
+i jak je rozwiązano oraz jak sprawdzono, że działa. Materiał źródłowy do rozdziałów pracy o realizacji i weryfikacji systemu.
 
 Numeracja dni odpowiada planowi w [`TYDZIEN_1.md`](TYDZIEN_1.md) (i kolejnych tygodni), a nie dacie
 kalendarzowej. Data w nawiasie to faktyczny dzień wykonania.
@@ -10,50 +10,96 @@ kalendarzowej. Data w nawiasie to faktyczny dzień wykonania.
 
 ## Tydzień 1, dzień 1: środowisko pracy (wykonano 2.11.2026)
 
-**Zrobione**
-- Sprawdzenie narzędzi na komputerze deweloperskim (macOS 26.6, Apple Silicon). Wyniki: [`RAPORT_SRODOWISKA.md`](RAPORT_SRODOWISKA.md).
-- Doinstalowanie brakujących elementów: Node.js v26.13.0 (LTS), rozszerzenia VS Code (Python, Pylance, Ruff, ESLint, Tailwind CSS, Docker), polecenie `code` w terminalu.
-- Środowisko wirtualne Pythona `backend/.venv` (Python 3.13) i plik `.env` z losowo wygenerowanymi sekretami.
+### Co zostało zrobione
+Komputer deweloperski (macOS 26.6, Apple Silicon) przygotowano do pracy nad wszystkimi warstwami aplikacji.
+Pełne wyniki kontroli: [`RAPORT_SRODOWISKA.md`](RAPORT_SRODOWISKA.md).
 
-**Decyzje i uzasadnienie**
-- **Python 3.13 zamiast 3.12.** Wersja już zainstalowana lokalnie (przez `uv`) i aktualnie wspierana. Ta sama wersja lokalnie i w obrazie Dockera eliminuje różnice w zachowaniu między środowiskami. Systemowy Python 3.9 nie jest używany.
-- **Node.js w katalogu użytkownika** (`~/.local/share/node`), z oficjalnej paczki nodejs.org po weryfikacji sumy SHA-256. Nie wymaga uprawnień administratora ani Homebrew.
-- **Sekrety generowane losowo** (`openssl rand -hex`) zamiast wartości przykładowych. Plik `.env` jest w `.gitignore` i ma uprawnienia 600 (odczyt tylko dla właściciela).
+| Element | Stan po konfiguracji |
+|---|---|
+| Git, Docker Desktop, Docker Compose | były już zainstalowane, działają |
+| Node.js | doinstalowano v26.13.0 (LTS), npm 11.20.0 |
+| Python | wybrano 3.13, utworzono środowisko `backend/.venv` |
+| VS Code | polecenie `code` w terminalu, rozszerzenia: Python, Pylance, Ruff, ESLint, Tailwind CSS, Docker |
+| `.env` | utworzony z `.env.example`, z losowymi sekretami |
 
-**Weryfikacja:** `docker run hello-world`, wersje wszystkich narzędzi, lista rozszerzeń VS Code.
+### Dlaczego
+- **Kontrola na początku.** Późniejsze etapy zakładają działający Docker, Pythona i Node.js, a brak narzędzia wykryty
+  w środku pracy nad kodem kosztuje więcej czasu.
+- **Python 3.13 zamiast 3.12.** Ta wersja była już zainstalowana lokalnie. Ta sama wersja lokalnie i w obrazie Dockera
+  ogranicza różnice w zachowaniu między środowiskami.
+- **Losowe sekrety zamiast wartości przykładowych.** Hasło bazy i klucz JWT nie mogą być przewidywalne, nawet lokalnie.
+
+### W jaki sposób
+- **Kontrola:** sprawdzenie wersji narzędzi, uruchomienie kontenera testowego i sprawdzenie, czy wymagane porty są wolne.
+- **Node.js:** oficjalna paczka z nodejs.org, zweryfikowana sumą SHA-256 i rozpakowana do `~/.local/share/node`,
+  z dowiązaniami w `~/.local/bin`.
+- **Python:** `uv venv --python 3.13 backend/.venv`, a wersja jest zapisana w `backend/.python-version`.
+- **Sekrety:** `openssl rand -hex`. Plik `.env` jest w `.gitignore` i ma uprawnienia 600 (odczyt tylko dla właściciela).
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Brak Node.js i Homebrew | instalacja z oficjalnej paczki w katalogu użytkownika, bez uprawnień administratora |
+| `python3` w systemie to wersja 3.9.6, za stara dla projektu | użycie Pythona 3.13 zarządzanego przez `uv`; wersji systemowej nie zmieniano |
+| Polecenie `code` niedostępne w terminalu | dowiązanie w `~/.local/bin` do programu z aplikacji VS Code |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `docker run hello-world` | kontener uruchomiony |
+| `node --version`, `npm --version` | v26.13.0, 11.20.0 |
+| `backend/.venv/bin/python --version` | Python 3.13.13 |
+| `code --list-extensions` | wymagane rozszerzenia na liście |
+| `git check-ignore .env` | plik ignorowany przez Git |
+
+### Dalej
+Dzień 2: baza danych w Dockerze.
 
 ---
 
 ## Tydzień 1, dzień 2: baza danych w Dockerze (wykonano 2.11.2026)
 
-**Zrobione**
-- [`docker-compose.yml`](../docker-compose.yml) z usługą `db`: PostgreSQL 16, dane w wolumenie `pgdata`, healthcheck `pg_isready`.
+### Co zostało zrobione
+Plik [`docker-compose.yml`](../docker-compose.yml) z usługą `db`: PostgreSQL 16, dane w wolumenie `pgdata`,
+sprawdzanie gotowości bazy i port dostępny tylko z tego komputera.
 
-**Decyzje i uzasadnienie**
-- **Port wystawiony tylko na `127.0.0.1`.** Baza jest dostępna z komputera dewelopera, ale nie z sieci lokalnej (np. innych urządzeń w tym samym Wi-Fi). Element modelu prywatności opisanego w planie (sekcja 9).
-- **Healthcheck.** Docker wie, kiedy baza jest faktycznie gotowa na połączenia, a nie tylko „uruchomiona”. Backend czeka na ten stan (`depends_on: condition: service_healthy`).
-- **Wolumen nazwany.** Dane przetrwają zatrzymanie i usunięcie kontenera; kasuje je dopiero `docker compose down -v`.
+### Dlaczego
+- **Port tylko na `127.0.0.1`.** Baza jest dostępna z komputera dewelopera, ale nie z sieci lokalnej (np. z innych
+  urządzeń w tym samym Wi-Fi). To element modelu prywatności opisanego w planie (sekcja 9).
+- **Healthcheck.** Docker wie, kiedy baza jest faktycznie gotowa na połączenia, a nie tylko uruchomiona. Backend czeka
+  na ten stan.
+- **Wolumen nazwany.** Dane przetrwają zatrzymanie i usunięcie kontenera. Kasuje je dopiero `docker compose down -v`.
 
-**Problem i rozwiązanie**
-Port 5432 był zajęty przez kontener innego projektu na tym samym komputerze. Zamiast wyłączać tamten projekt,
-port po stronie hosta stał się konfigurowalny (`DB_HOST_PORT` w `.env`, domyślnie 5432, lokalnie 5433).
-Wewnątrz sieci Dockera baza nadal działa na 5432, więc reszta systemu nie wymaga zmian. To samo zabezpiecza
-uruchomienie na innym komputerze (np. podczas obrony), na którym port może być zajęty.
+### W jaki sposób
+- Obraz `postgres:16`, a dane logowania pochodzą z `.env` przez zmienne `${POSTGRES_*}`.
+- Healthcheck: `pg_isready` co 5 sekund, maksymalnie 10 prób.
+- Port na komputerze jest ustawiany zmienną `DB_HOST_PORT` (domyślnie 5432).
 
-**Weryfikacja**
-- `psql` w kontenerze: PostgreSQL 16.15,
-- połączenie z hosta (psycopg) przez `127.0.0.1:5433`,
-- zapis rekordu, `docker compose down` i ponowne uruchomienie: rekord nadal w bazie (wolumen działa).
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Port 5432 zajęty przez kontener innego projektu na tym samym komputerze | zamiast wyłączać tamten projekt, port na komputerze stał się konfigurowalny (`DB_HOST_PORT`, lokalnie 5433). Wewnątrz sieci Dockera baza nadal działa na 5432, więc reszta systemu nie wymaga zmian. To zabezpiecza też uruchomienie na innym komputerze, np. podczas obrony |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `psql` w kontenerze | PostgreSQL 16.15 |
+| połączenie z komputera (psycopg) przez `127.0.0.1:5433` | działa, użytkownik `finanse` |
+| zapis rekordu, `docker compose down`, ponowne uruchomienie | rekord nadal w bazie (wolumen działa); tabelę testową usunięto |
+
+### Dalej
+Dzień 3: backend FastAPI.
 
 ---
 
 ## Tydzień 1, dzień 3: backend FastAPI (wykonano 3.11.2026)
 
-**Zrobione**
+### Co zostało zrobione
+Działające API z endpointem `GET /api/health`, który sprawdza połączenie z bazą, uruchamiane w kontenerze razem z bazą.
 
 | Plik | Rola |
 |---|---|
-| `backend/requirements.txt`, `requirements-dev.txt` | zależności z przypiętymi wersjami; narzędzia dev (pytest, httpx, ruff) osobno |
+| `backend/requirements.txt`, `requirements-dev.txt` | zależności z przypiętymi wersjami; narzędzia deweloperskie (pytest, httpx, ruff) osobno |
 | `backend/app/core/config.py` | klasa `Settings` (pydantic-settings) czytająca `.env` |
 | `backend/app/core/database.py` | `engine`, `SessionLocal`, `Base`, zależność `get_db` i alias `DbSession` |
 | `backend/app/api/routes/health.py` | `GET /api/health`: wykonuje `SELECT 1` na bazie |
@@ -61,23 +107,35 @@ uruchomienie na innym komputerze (np. podczas obrony), na którym port może by�
 | `backend/Dockerfile`, `.dockerignore` | obraz `python:3.13-slim` |
 | `docker-compose.yml` | usługa `backend` |
 
-**Decyzje i uzasadnienie**
-- **Przypięte wersje zależności** (`fastapi==0.162.0` itd.). Ten sam kod zbudowany za miesiąc lub na innym komputerze daje te same biblioteki. Bez tego nowa wersja biblioteki mogłaby zepsuć aplikację tuż przed obroną.
-- **Konfiguracja walidowana przy starcie.** Brak `DATABASE_URL` zatrzymuje aplikację z czytelnym komunikatem. `extra="ignore"` pozwala trzymać w jednym `.env` zmienne wszystkich usług (baza, frontend).
-- **Health zwraca 503, gdy baza nie odpowiada**, zamiast ogólnego błędu 500. Kod 503 (Service Unavailable) mówi precyzyjnie, że API działa, ale jego zależność nie. Frontend pokaże na tej podstawie „API: OK, Baza: błąd”.
-- **Jedna sesja bazy na jedno zapytanie HTTP** (Dependency Injection, `Depends(get_db)`), zawsze zamykana po odpowiedzi. Zapis z `Annotated` (`db: DbSession`) to styl zalecany przez dokumentację FastAPI; alias będzie używany we wszystkich kolejnych endpointach.
-- **`pool_pre_ping=True`.** Po restarcie kontenera bazy połączenia w puli są martwe; ta opcja sprawdza je przed użyciem, więc aplikacja sama wraca do działania bez restartu.
-- **Obraz Dockera:** najpierw kopiowany jest tylko `requirements.txt`, potem kod. Warstwa z zależnościami jest cache'owana, więc zmiana kodu nie wymusza ponownej instalacji bibliotek. Aplikacja działa jako zwykły użytkownik (`appuser`), nie root, co ogranicza skutki ewentualnej luki.
-- **Tryb deweloperski:** katalog `backend/` jest podmontowany do kontenera, a `uvicorn --reload --reload-dir app` restartuje serwer po zapisie pliku. Zmiany w kodzie są widoczne w sekundę, bez przebudowy obrazu. Obserwowany jest tylko katalog `app/` (bez tysięcy plików z `.venv`). Wersja produkcyjna bez przeładowania jest w planie na etap 9.
-- **CORS tylko dla `http://localhost:5173`** (adres frontendu), a nie `*`. Inne strony otwarte w przeglądarce nie mogą wywoływać API.
-- **Port API konfigurowalny** (`BACKEND_HOST_PORT`, domyślnie 8000, lokalnie 8001) z tego samego powodu co port bazy. `VITE_API_URL` musi wskazywać ten sam port.
+### Dlaczego
+- **Przypięte wersje zależności.** Ten sam kod zbudowany za miesiąc lub na innym komputerze dostaje te same biblioteki.
+  Bez tego nowa wersja biblioteki mogłaby zepsuć aplikację tuż przed obroną.
+- **Konfiguracja walidowana przy starcie.** Brak `DATABASE_URL` zatrzymuje aplikację z czytelnym komunikatem, a nie
+  powoduje błędu w przypadkowym miejscu później.
+- **Kod 503, gdy baza nie odpowiada, zamiast ogólnego 500.** Mówi precyzyjnie, że API działa, ale jego zależność nie.
+  Frontend może na tej podstawie osobno pokazać stan API i bazy.
+- **CORS tylko dla `http://localhost:5173`, a nie `*`.** Inne strony otwarte w przeglądarce nie mogą odczytywać
+  odpowiedzi API.
+- **Użytkownik inny niż root w kontenerze.** Ogranicza skutki ewentualnej luki w aplikacji.
 
-**Problem i rozwiązanie**
-Linter Ruff zgłosił regułę B008 (wywołanie funkcji `Depends()` w wartości domyślnej parametru). Zamiast wyłączać
-regułę, kod przeszedł na zapis `Annotated[Session, Depends(get_db)]`, który jest jednocześnie zalecany przez FastAPI.
+### W jaki sposób
+- **Ustawienia:** `extra="ignore"` pozwala trzymać w jednym `.env` zmienne wszystkich usług (baza, frontend).
+- **Sesja bazy:** jedna na jedno zapytanie HTTP, wstrzykiwana przez `Depends(get_db)` i zawsze zamykana po odpowiedzi.
+- **`pool_pre_ping=True`:** po restarcie bazy połączenia w puli są martwe; ta opcja sprawdza je przed użyciem, więc
+  aplikacja sama wraca do działania.
+- **Obraz Dockera:** najpierw kopiowany jest `requirements.txt`, potem kod. Warstwa z zależnościami jest cache'owana,
+  więc zmiana kodu nie wymusza ponownej instalacji bibliotek.
+- **Tryb deweloperski:** katalog `backend/` jest podmontowany do kontenera, a `uvicorn --reload` restartuje serwer po
+  zapisie pliku, bez przebudowy obrazu. Wersja produkcyjna jest w planie na etap 9.
 
-**Weryfikacja**
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Port 8000 zajęty przez kontener innego projektu | port API konfigurowalny (`BACKEND_HOST_PORT`, domyślnie 8000, lokalnie 8001); `VITE_API_URL` musi wskazywać ten sam port |
+| Ruff zgłosił regułę B008 (wywołanie `Depends()` w wartości domyślnej parametru) | zamiast wyłączać regułę, kod przeszedł na zapis `Annotated[Session, Depends(get_db)]`, zalecany przez FastAPI; alias `DbSession` posłuży też w kolejnych endpointach |
+| `--reload` obserwowałby tysiące plików w podmontowanym `.venv` | ograniczenie obserwacji do katalogu aplikacji: `--reload-dir app` |
 
+### Weryfikacja
 | Test | Wynik |
 |---|---|
 | `GET /api/health` | `{"status":"ok","database":"ok"}`, HTTP 200 |
@@ -86,79 +144,109 @@ regułę, kod przeszedł na zapis `Annotated[Session, Depends(get_db)]`, który 
 | `GET /docs` (Swagger UI) | HTTP 200 |
 | nagłówek CORS dla `Origin: http://localhost:5173` | `access-control-allow-origin: http://localhost:5173` |
 | użytkownik procesu w kontenerze | `appuser` (nie root) |
-| zmiana pliku `config.py` | nowy tytuł API widoczny po ~3 s (hot reload) |
+| zmiana pliku `config.py` | nowy tytuł API widoczny po ok. 3 s (hot reload) |
 | `ruff check`, `ruff format --check` | bez uwag |
 
-**Organizacja repozytorium (3.11.2026)**
-Utworzono gałąź `main` (stabilna wersja) i `develop` (bieżąca praca). Dotychczasowy stan (dni 1–3) trafił
-na `main` i został oznaczony tagiem `tydzien-1-dzien-3`. Od teraz zmiany powstają na `develop` i przechodzą
-na `main` przez Pull Request po weryfikacji (zasady: `PLAN_IMPLEMENTACJI.md`, sekcja 7).
+### Dalej
+Organizacja repozytorium, a potem dzień 4: Alembic.
 
-Gałąź `main` objęto ochroną na GitHubie: wymagany Pull Request (również dla administratora), zakaz force push
-i usuwania gałęzi, wymóg rozwiązania komentarzy w PR. Zweryfikowano próbą bezpośredniego `git push` na `main`,
-którą serwer odrzucił (`GH006: Protected branch update failed`). Usunięto starą gałąź roboczą
-`claude/lucid-planck-yt04l8` (jej historia w całości zawiera się w `main`).
+---
 
-**Dalej:** dzień 4, Alembic (migracje schematu bazy).
+## Tydzień 1: organizacja repozytorium (wykonano 3.11.2026)
+
+### Co zostało zrobione
+- Utworzono gałąź `main` (stabilna wersja) i `develop` (bieżąca praca).
+- Stan z dni 1–3 trafił na `main` i został oznaczony tagiem `tydzien-1-dzien-3`.
+- Gałąź `main` objęto ochroną na GitHubie i ustawiono jako domyślną.
+- Usunięto starą gałąź roboczą `claude/lucid-planck-yt04l8`, której historia w całości zawierała się w `main`.
+
+### Dlaczego
+- **Dwie gałęzie.** `main` ma być zawsze działającą wersją, a niedokończona praca zostaje na `develop`.
+- **Tagi z adnotacją.** W pracy dyplomowej można odwołać się do konkretnego stanu kodu.
+- **Ochrona `main`.** Chroni przed przypadkowym wypchnięciem niesprawdzonego kodu albo nadpisaniem historii.
+
+### W jaki sposób
+- Zmiany powstają na `develop` i przechodzą na `main` przez Pull Request po weryfikacji (zasady: `PLAN_IMPLEMENTACJI.md`, sekcja 7).
+- Reguły ochrony ustawiono przez API GitHuba: wymagany Pull Request (również dla administratora), zakaz force push
+  i usuwania gałęzi, wymóg rozwiązania komentarzy w PR.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Na GitHubie nie było gałęzi `main`, a domyślna była gałąź robocza | utworzenie `main` i ustawienie jej jako domyślnej |
+| GitHub odrzucił wypychanie, bo token zapisany w Pęku kluczy był nieważny | instalacja GitHub CLI (`gh`) i ponowne logowanie przez przeglądarkę |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| szukanie `.env`, haseł i plików CSV w historii przed wypchnięciem | nie znaleziono |
+| próba bezpośredniego `git push` na `main` | odrzucona przez serwer (`GH006: Protected branch update failed`) |
+
+### Dalej
+Dzień 4: Alembic.
 
 ---
 
 ## Tydzień 1, dzień 4: migracje bazy danych, Alembic (wykonano 3.11.2026)
 
-**Po co migracje.** Schemat bazy (tabele, kolumny, ograniczenia) będzie się zmieniał co tydzień: dojdą
-użytkownicy, transakcje, kategorie, reguły. Migracja to plik Pythona opisujący jedną zmianę schematu
-(`upgrade()`) i sposób jej wycofania (`downgrade()`). Pliki są wersjonowane w Gicie razem z kodem, więc
-stan bazy da się odtworzyć na każdym komputerze jednym poleceniem, a każda zmiana ma swoją historię.
-Alternatywa, czyli `Base.metadata.create_all()`, tworzy tylko brakujące tabele i nie potrafi zmienić istniejących.
-
-**Zrobione**
+### Co zostało zrobione
+Skonfigurowano Alembic. Zmiany schematu bazy są teraz plikami w repozytorium, a backend stosuje je przy każdym starcie.
 
 | Plik | Rola |
 |---|---|
 | `backend/alembic.ini` | konfiguracja Alembic; nazwy plików migracji z datą i godziną |
 | `backend/alembic/env.py` | połączenie Alembic z aplikacją: adres bazy z `DATABASE_URL`, metadane modeli z `Base.metadata` |
-| `backend/alembic/script.py.mako` | szablon nowej migracji (typy Pythona 3.13, opisy po polsku) |
+| `backend/alembic/script.py.mako` | szablon nowej migracji |
 | `backend/alembic/README.md` | ściąga poleceń i zasady pracy z migracjami |
 | `backend/app/core/database.py` | konwencja nazw ograniczeń w `Base.metadata` |
 | `backend/app/models/__init__.py` | miejsce rejestracji modeli (import w `env.py`) |
 | `backend/start.sh`, `Dockerfile`, `docker-compose.yml` | start kontenera: `alembic upgrade head`, potem `uvicorn` |
 
-**Decyzje i uzasadnienie**
-- **Adres bazy tylko z `.env`, nie z `alembic.ini`.** Hasło nie trafia do repozytorium, a aplikacja i migracje
-  zawsze łączą się z tą samą bazą (jedno źródło konfiguracji: klasa `Settings`).
-- **Autogenerate.** `env.py` importuje pakiet `app.models` i przekazuje `Base.metadata`, więc
-  `alembic revision --autogenerate` porównuje modele z bazą i sam pisze migrację. Włączone `compare_type=True`
-  wykrywa też zmiany typów kolumn. Wygenerowaną migrację zawsze się czyta przed commitem: Alembic nie odróżnia
-  np. zmiany nazwy kolumny od usunięcia jednej i dodania drugiej (co skasowałoby dane).
-- **Konwencja nazw ograniczeń** (`pk_<tabela>`, `uq_<tabela>_<kolumna>`, `fk_<tabela>_<kolumna>_<tabela_docelowa>`,
-  `ix_<tabela>_<kolumna>`). Bez niej PostgreSQL nadaje nazwy automatycznie, a migracja, która później zmienia lub
-  usuwa ograniczenie, musi znać jego dokładną nazwę. Stałe nazwy czynią migracje przewidywalnymi i czytelnymi
-  w komunikatach błędów (np. naruszenie `uq_transactions_user_id_dedup_hash` od razu mówi, co się stało).
-- **Migracje przy każdym starcie backendu** (`start.sh`). Baza zawsze ma schemat zgodny z kodem; po `git pull`
-  wystarczy restart kontenera. `set -e` zatrzymuje start, gdy migracja się nie powiedzie: lepiej, żeby aplikacja
-  nie ruszyła wcale, niż działała na niezgodnym schemacie. `exec` przekazuje procesowi serwera sygnały zatrzymania,
-  więc `docker compose stop` wyłącza go od razu i czysto.
-- **PostgreSQL wykonuje migracje w transakcji** (transactional DDL). Nieudana migracja jest wycofywana w całości,
-  a baza nie zostaje w stanie „w połowie zmienionym”. To jedna z przewag PostgreSQL nad np. MySQL w tym zastosowaniu.
+### Dlaczego
+- **Migracje zamiast `Base.metadata.create_all()`.** Schemat będzie się zmieniał co tydzień: dojdą użytkownicy,
+  transakcje, kategorie i reguły. `create_all()` tworzy tylko brakujące tabele i nie potrafi zmienić istniejących.
+  Migracja opisuje jedną zmianę (`upgrade()`) i sposób jej wycofania (`downgrade()`), a pliki są wersjonowane razem
+  z kodem, więc stan bazy da się odtworzyć na każdym komputerze.
+- **Adres bazy tylko z `.env`.** Hasło nie trafia do repozytorium, a aplikacja i migracje zawsze łączą się z tą samą bazą.
+- **Konwencja nazw ograniczeń.** Bez niej PostgreSQL nadaje nazwy automatycznie, a migracja, która później zmienia lub
+  usuwa ograniczenie, musi znać jego dokładną nazwę. Stałe nazwy są też czytelne w komunikatach błędów.
+- **Migracje przy każdym starcie.** Baza zawsze ma schemat zgodny z kodem. Po pobraniu nowego kodu wystarczy restart
+  kontenera. Lepiej, żeby aplikacja nie ruszyła wcale, niż działała na niezgodnym schemacie.
 
-**Weryfikacja**
+### W jaki sposób
+- **Autogenerate:** `env.py` importuje pakiet `app.models` i przekazuje `Base.metadata`, więc
+  `alembic revision --autogenerate` porównuje modele z bazą i sam pisze migrację. `compare_type=True` wykrywa też
+  zmiany typów kolumn. Wygenerowaną migrację zawsze się czyta przed commitem, bo Alembic nie odróżnia np. zmiany nazwy
+  kolumny od usunięcia jednej i dodania drugiej, co skasowałoby dane.
+- **Nazwy:** `pk_<tabela>`, `uq_<tabela>_<kolumna>`, `fk_<tabela>_<kolumna>_<tabela_docelowa>`, `ix_<tabela>_<kolumna>`.
+- **`start.sh`:** `set -e` przerywa start, gdy migracja się nie powiedzie, a `exec` przekazuje serwerowi sygnały
+  zatrzymania, więc `docker compose stop` wyłącza go od razu.
+- **Transakcje:** PostgreSQL wykonuje migracje w transakcji, więc nieudana zmiana jest wycofywana w całości.
 
-Pełny cykl sprawdzono na tymczasowym modelu testowym (dwie tabele z kluczem obcym, unikalnością i indeksem),
-usuniętym po teście:
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Katalog `backend/alembic/` już istniał, a domyślny `env.py` ma adres bazy w `alembic.ini` i nie zna modeli | szablon wygenerowano w katalogu tymczasowym, a pliki projektu napisano na jego podstawie |
+| Z komputera nie da się uruchomić Alembica z `DATABASE_URL`, bo adres `db:5432` działa tylko w sieci Dockera | polecenia Alembica są uruchamiane w kontenerze (`docker compose exec backend ...`), opisane w `backend/alembic/README.md` |
+| Zapytanie testowe o nazwy ograniczeń nie wykonało się przez błąd w cudzysłowach powłoki | SQL przekazano przez standardowe wejście i powtórzono cały test |
+
+### Weryfikacja
+Pełny cykl sprawdzono na tymczasowym modelu testowym (dwie tabele z kluczem obcym, unikalnością i indeksem), usuniętym po teście.
 
 | Test | Wynik |
 |---|---|
 | start backendu bez migracji | `alembic upgrade head` w logach, w bazie tabela `alembic_version`, health HTTP 200 |
-| `alembic revision --autogenerate` | wykryte 2 nowe tabele i indeks; plik `20261103_1050_<rev>_test_cyklu_migracji.py` |
+| `alembic revision --autogenerate` | wykryte 2 nowe tabele i indeks |
 | `alembic upgrade head` | tabele utworzone |
 | nazwy ograniczeń w bazie | `pk_test_a`, `pk_test_b`, `uq_test_a_email`, `fk_test_b_a_id_test_a`, `ix_test_b_a_id` |
 | `alembic check` po upgrade | „No new upgrade operations detected” (modele i baza zgodne) |
 | `alembic downgrade -1` | tabele usunięte, została tylko `alembic_version` |
-| celowo błędna migracja | start przerwany (`UndefinedTable`), API nie odpowiada, w `alembic_version` brak wpisu (transakcja wycofana) |
+| celowo błędna migracja | start przerwany (`UndefinedTable`), API nie odpowiada, w `alembic_version` brak wpisu |
 | po usunięciu błędnej migracji | backend startuje, health HTTP 200 |
 | `ruff check`, `ruff format --check` | bez uwag |
 
-**Dalej:** dzień 5, frontend (React + Vite + TypeScript, Tailwind CSS, strona statusu).
+### Dalej
+Dzień 5: frontend.
 
 ---
 
@@ -232,3 +320,62 @@ Zrzut ekranu: `docs/zrzuty/tydzien1_stan_systemu.png`.
 
 ### Dalej
 Dzień 6: testy (`pytest`), Ruff i GitHub Actions.
+
+---
+
+## Tydzień 1, dzień 6: testy i CI (wykonano 4.11.2026)
+
+### Co zostało zrobione
+Powstały pierwsze testy automatyczne i CI w GitHub Actions. Scalenie zmian do `main` wymaga teraz zielonych testów.
+
+| Plik | Rola |
+|---|---|
+| `backend/tests/conftest.py` | fixture `client` (`TestClient` FastAPI) |
+| `backend/tests/integration/test_health.py` | 4 testy: health z bazą, health bez bazy (503), CORS dla frontendu i dla obcej strony |
+| `backend/tests/unit/test_config.py` | 2 testy: brak `DATABASE_URL` zatrzymuje start, dodatkowe zmienne są pomijane |
+| `backend/pyproject.toml` | konfiguracja pytest |
+| `backend/Dockerfile`, `docker-compose.yml` | obraz deweloperski zawiera pytest i ruff |
+| `.github/workflows/ci.yml` | joby `backend` i `frontend` |
+
+### Dlaczego
+- **Testy od początku.** Każdy kolejny tydzień dokłada kod, a testy pokazują, czy zmiana nie zepsuła tego, co już działało.
+  Ich wyniki są też materiałem do rozdziału o weryfikacji systemu.
+- **CI na czystej maszynie.** Wykrywa problemy niewidoczne lokalnie, np. brak zależności w `requirements.txt` albo plik
+  niedodany do commita.
+- **Wymóg zielonych testów w ochronie `main`.** `main` ma być zawsze działającą wersją, a sama konwencja nie jest
+  zabezpieczeniem, bo o testach można zapomnieć.
+- **Prawdziwa baza PostgreSQL w teście integracyjnym i w CI.** Ten sam silnik co w aplikacji, więc test sprawdza faktyczne
+  połączenie, a nie jego imitację. W CI krok `alembic upgrade head` sprawdza też, czy migracje działają od zera.
+- **Job `frontend` ponad plan.** Plan obejmował tylko Pythona, ale frontend też może przestać się budować, a koszt
+  dodania tego joba jest niewielki.
+
+### W jaki sposób
+- **Testy lokalnie:** `docker compose exec backend pytest`, w tej samej sieci co baza. Obraz wybiera plik zależności
+  argumentem `REQUIREMENTS`: Compose przekazuje `requirements-dev.txt`, a domyślny jest `requirements.txt`.
+- **Test braku bazy:** `app.dependency_overrides` podmienia `get_db` na sesję zgłaszającą `OperationalError`, więc awarię
+  można odtworzyć bez wyłączania kontenera. Fixture czyści podmiany po każdym teście.
+- **Workflow:** uruchamia się przy wypchnięciu na `main` i `develop` oraz przy każdym Pull Requeście. Job `backend` to
+  PostgreSQL 16 jako `service`, `ruff check`, `ruff format --check`, `alembic upgrade head`, `pytest`. Job `frontend` to
+  `npm ci`, lint, sprawdzenie formatowania i build z kontrolą typów. Uprawnienia ograniczono do `contents: read`.
+- **Ochrona `main`:** joby `backend` i `frontend` ustawiono jako wymagane statusy przez API GitHuba.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Pytest ostrzegał, że `httpx` jest przestarzały przy `TestClient` | zamiana na zalecany `httpx2` w `requirements-dev.txt`; ostrzeżenie zniknęło |
+| Obraz backendu nie zawierał narzędzi testowych, a z komputera adres `db:5432` jest nieosiągalny | osobny argument budowania `REQUIREMENTS`, dzięki czemu testy działają w kontenerze |
+| Zielone testy same niczego nie dowodzą, bo mogłyby przechodzić zawsze | celowe psucie kodu (patrz weryfikacja) i tymczasowy, zamknięty później PR z czerwonym testem |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` w kontenerze | 6 testów zaliczonych, bez ostrzeżeń |
+| błąd: health nie ustawia kodu 503 | wykryty (1 test czerwony) |
+| błąd: health zwraca zły stan bazy | wykryty (1 test czerwony) |
+| błąd: CORS dopuszcza wszystkie strony | wykryty (1 test czerwony) |
+| błąd: `DATABASE_URL` przestaje być wymagany | wykryty (1 test czerwony) |
+| pierwszy przebieg GitHub Actions na `develop` | `backend` i `frontend`: sukces |
+| tymczasowy PR #3 z celowo czerwonym testem | `backend`: FAILURE, stan scalania: `BLOCKED`; zamknięty bez scalania, gałąź usunięta |
+
+### Dalej
+Dzień 7: pełny test od zera, sekcja „Uruchomienie” w README, wyciąg CSV z ING.

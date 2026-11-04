@@ -164,9 +164,9 @@ def health(db: Session = Depends(get_db)) -> dict[str, str]:
 - [x] `frontend/Dockerfile` (tryb dev) i usługa `frontend` w Compose
 
 ### Sobota 7.11: testy i CI
-- [ ] `tests/conftest.py` z `TestClient`, `tests/integration/test_health.py`
-- [ ] `ruff check` i `ruff format`
-- [ ] `.github/workflows/ci.yml`: Python + usługa `postgres`, `ruff check`, `pytest`
+- [x] `tests/conftest.py` z `TestClient`, `tests/integration/test_health.py`, `tests/unit/test_config.py`
+- [x] `ruff check` i `ruff format`
+- [x] `.github/workflows/ci.yml`: Python + usługa `postgres`, `ruff check`, `pytest`; dodatkowo job `frontend` (lint, formatowanie, build)
 
 ### Niedziela 8.11: domknięcie i przygotowanie do kolejnych etapów
 - [ ] Pełny test: `docker compose down -v && docker compose up --build`

@@ -278,8 +278,8 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
   a stan oznaczany tagiem z adnotacją (np. `tydzien-1-dzien-3`). Tagi pozwalają w pracy dyplomowej
   odwołać się do konkretnego stanu kodu.
 - `main` jest chroniona na GitHubie: zmiana tylko przez Pull Request, także dla właściciela repozytorium;
-  zablokowane wymuszone nadpisanie historii (force push) i usunięcie gałęzi. Po dodaniu CI (tydzień 1, sobota)
-  dojdzie wymóg zielonych testów przed scaleniem.
+  zablokowane wymuszone nadpisanie historii (force push) i usunięcie gałęzi. Scalenie wymaga zielonych testów
+  w GitHub Actions (joby `backend` i `frontend`).
 - Konwencja commitów: `feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:` (np. `feat(import): parser CSV dla mBanku`).
 - Każdy etap kończy się wpisem w sekcji „Postęp” poniżej (przydatne przy pisaniu pracy).
 - Sekrety tylko w `.env`; prawdziwe wyciągi tylko w `data/private/` (ignorowane przez Git).
