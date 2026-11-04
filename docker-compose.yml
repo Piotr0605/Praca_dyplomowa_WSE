@@ -38,5 +38,23 @@ services:
       - ./backend:/app
     command: ["sh", "start.sh", "--reload", "--reload-dir", "app"]
 
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      # Adres API używany przez przeglądarkę, czyli port z komputera, a nie nazwa usługi w Dockerze.
+      VITE_API_URL: ${VITE_API_URL}
+    depends_on:
+      - backend
+    # Port stały: tylko ten adres (http://localhost:5173) jest dopuszczony przez CORS w backendzie.
+    ports:
+      - "127.0.0.1:5173:5173"
+    # Tryb deweloperski: kod z dysku jest podmontowany, a Vite odświeża stronę po zapisie pliku.
+    # Osobny wolumen na node_modules: w kontenerze są pakiety dla Linuksa, a na Macu dla macOS,
+    # więc katalog z dysku nie może ich przykryć. Po zmianie zależności: docker compose up --build -V
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
 volumes:
   pgdata:

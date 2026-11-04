@@ -34,7 +34,7 @@ Mamy ok. 11 tygodni, w tym okres świąteczny. Dlatego:
 | Frontend build | **Vite** + React + TS | Szybki, standard |
 | Zarządzanie stanem / zapytania | `@tanstack/react-query` + `axios`/`fetch` | Cache, odświeżanie, mniej kodu |
 | Routing | `react-router` | Standard |
-| Lint/format | `ruff` (Python), `eslint` + `prettier` (TS) | Jedno narzędzie zamiast kilku w Pythonie |
+| Lint/format | `ruff` (Python), `oxlint` + `prettier` (TS) | Jedno narzędzie zamiast kilku w Pythonie |
 
 ---
 

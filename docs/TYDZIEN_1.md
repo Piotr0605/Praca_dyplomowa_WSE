@@ -113,7 +113,7 @@ od pierwszego tygodnia, każdą kolejną funkcję dokładamy w znane miejsce i o
 
 ### Poniedziałek 2.11: środowisko
 - [x] Zainstaluj: **Git**, **Docker Desktop** (Windows: z WSL2), **Python 3.13**, **Node.js LTS**, **VS Code**
-  (rozszerzenia: Python, Pylance, Ruff, ESLint, Tailwind CSS IntelliSense, Docker)
+  (rozszerzenia: Python, Pylance, Ruff, oxc (oxlint), Tailwind CSS IntelliSense, Docker)
 - [x] Sklonuj repozytorium, utwórz `.env` z `.env.example`
 - [x] Sprawdź: `docker --version`, `docker compose version`, `python --version`, `node --version`
 
@@ -158,10 +158,10 @@ def health(db: Session = Depends(get_db)) -> dict[str, str]:
 - [x] sprawdź, że w bazie pojawiła się tabela `alembic_version`
 
 ### Piątek 6.11: frontend
-- [ ] `npm create vite@latest frontend -- --template react-ts` (w istniejącym katalogu)
-- [ ] Tailwind CSS (wtyczka `@tailwindcss/vite`), ESLint + Prettier
-- [ ] `src/api/client.ts` (adres z `VITE_API_URL`), komponent `HealthStatus` z zielonym/czerwonym statusem
-- [ ] `frontend/Dockerfile` (tryb dev) i usługa `frontend` w Compose
+- [x] `npm create vite@latest frontend -- --template react-ts` (w istniejącym katalogu)
+- [x] Tailwind CSS (wtyczka `@tailwindcss/vite`), oxlint (linter z szablonu Vite, zamiast ESLint) + Prettier
+- [x] `src/api/client.ts` (adres z `VITE_API_URL`), komponent `HealthStatus` z zielonym/czerwonym statusem
+- [x] `frontend/Dockerfile` (tryb dev) i usługa `frontend` w Compose
 
 ### Sobota 7.11: testy i CI
 - [ ] `tests/conftest.py` z `TestClient`, `tests/integration/test_health.py`
