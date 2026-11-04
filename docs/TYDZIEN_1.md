@@ -171,8 +171,8 @@ def health(db: Session = Depends(get_db)) -> dict[str, str]:
 ### Niedziela 8.11: domknięcie i przygotowanie do kolejnych etapów
 - [x] Pełny test: `docker compose down -v && docker compose up --build`, dodatkowo świeży klon repozytorium
 - [x] Sekcja „Uruchomienie” w README
-- [ ] **Pobierz z ING własny wyciąg CSV** (np. 3–6 miesięcy) do `data/private/` i zanotuj: kodowanie, separator,
-  liczbę wierszy nagłówka, nazwy kolumn, format daty i kwot. To wejście do etapu 4.
+- [x] Pobrane z ING wyciągi z 6 miesięcy (PDF); format opisany w `backend/app/parsers/README.md`. To wejście do etapu 4.
+- [ ] Zapisanie wyciągów w `data/private/` (autor pracy)
 - [x] Notatki do rozdziału pracy „Wykorzystane technologie”: [`NOTATKI_TECHNOLOGIE.md`](NOTATKI_TECHNOLOGIE.md)
 
 ---

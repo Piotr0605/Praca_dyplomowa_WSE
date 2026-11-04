@@ -15,8 +15,8 @@ Mamy ok. 11 tygodni, w tym okres świąteczny. Dlatego:
 
 | Priorytet | Zakres |
 |---|---|
-| **MUST** (bez tego nie ma pracy) | rejestracja/logowanie (JWT, Argon2), izolacja danych po `user_id`, import CSV z 1 banku, ręczne dodawanie wydatków, kategoryzacja słowami kluczowymi, zapamiętywanie poprawek użytkownika, agregacje Pandas (sumy w kategoriach, zmiany m/m), dashboard z wykresami, anonimizacja regex, porady AI z agregatów, testy pytest + httpx2, Docker Compose |
-| **SHOULD** | deduplikacja przy ponownym imporcie, podgląd importu przed zapisem, filtrowanie/wyszukiwanie transakcji, historia wygenerowanych porad, CI w GitHub Actions, przełączanie OpenAI ↔ Anthropic zmienną środowiskową |
+| **MUST** (bez tego nie ma pracy) | rejestracja/logowanie (JWT, Argon2), izolacja danych po `user_id`, import wyciągu z 1 banku (ING, PDF), ręczne dodawanie wydatków, kategoryzacja słowami kluczowymi, zapamiętywanie poprawek użytkownika, agregacje Pandas (sumy w kategoriach, zmiany m/m), dashboard z wykresami, anonimizacja regex, porady AI z agregatów, testy pytest + httpx2, Docker Compose |
+| **SHOULD** | importer uniwersalny CSV z kreatorem mapowania, deduplikacja przy ponownym imporcie, podgląd importu przed zapisem, filtrowanie/wyszukiwanie transakcji, historia wygenerowanych porad, CI w GitHub Actions, przełączanie OpenAI ↔ Anthropic zmienną środowiskową |
 | **COULD** | budżety miesięczne z alertem, eksport raportu (CSV/PDF), drugi parser banku, tryb ciemny, wykrywanie subskrypcji (powtarzalne płatności) |
 | **WON'T** (poza zakresem) | bezpośrednie połączenie z bankiem (open banking/PSD2), aplikacja mobilna, wielowalutowość z kursami, hosting publiczny |
 
@@ -50,7 +50,7 @@ categories
 transactions
   id (PK), user_id (FK), date, amount NUMERIC(12,2), currency,
   description, description_normalized, counterparty,
-  category_id (FK, NULL = nieprzypisana), source ('csv' | 'manual'),
+  category_id (FK, NULL = nieprzypisana), source ('pdf' | 'csv' | 'manual'),
   import_batch_id (FK, NULL), dedup_hash, created_at
   UNIQUE (user_id, dedup_hash)
 
@@ -143,9 +143,13 @@ Każdy etap = osobna gałąź / PR, zakończony checklistą „Definition of Don
 
 **DoD:** użytkownik loguje się w przeglądarce i ręcznie dodaje/edytuje wydatki.
 
-### Etap 4 · Tydzień 4 (23–29 XI) — Import CSV (Pandas): ING + importer uniwersalny
+### Etap 4 · Tydzień 4 (23–29 XI) — Import wyciągów: ING PDF + importer uniwersalny CSV
 
-Podejście dwupoziomowe. W pełni automatyczny parser „dla wszystkich banków” nie istnieje, bo banki różnią się
+**Najpierw parser PDF ING (MUST).** Wyciągi pobierane z ING są w PDF, a zapisane w nim salda i sumy pozwalają
+sprawdzić każdy import. Format opisuje `backend/app/parsers/README.md`. Importer CSV powstaje po nim (SHOULD); jeśli
+zabraknie czasu, przechodzi do bufora 21.12–3.01. Jeśli ING udostępnia też eksport CSV, dostanie zwykły profil `ing.json`.
+
+Dla plików CSV podejście dwupoziomowe. W pełni automatyczny parser „dla wszystkich banków” nie istnieje, bo banki różnią się
 kodowaniem, separatorem, liczbą wierszy metadanych nad tabelą, nazwami kolumn, formatem dat, znakiem kwoty
 (jedna kolumna ze znakiem albo osobne „Uznania”/„Obciążenia”) i blokadami kartowymi. Da się jednak zrobić importer
 uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użytkownika:
@@ -162,20 +166,30 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 3. Profile wbudowane (ING i ewentualne kolejne) to te same pliki konfiguracyjne co profile użytkownika, tylko dostarczone z aplikacją.
    Dodanie banku = nowy profil JSON, bez pisania kodu.
 
-- [ ] Analiza prawdziwego CSV z ING (kodowanie, separator, wiersze metadanych, kolumny, format daty i kwot, blokady)
+**Parser PDF ING**
+- [ ] Sprawdzenie `pdfplumber` na prawdziwych wyciągach, lokalnie, z raportem bez danych osobowych; wybór biblioteki
+- [ ] `parsers/ing_pdf.py`: odczyt wierszy według współrzędnych kolumn, łączenie transakcji dzielonych między strony, wynik w tym samym `DataFrame` co pozostałe parsery
+- [ ] Walidacja importu: liczba i suma uznań oraz obciążeń, saldo początkowe + uznania − obciążenia = saldo końcowe; niezgodność zatrzymuje zapis i pokazuje błąd
+- [ ] Rozpoznanie rodzajów operacji (karta, BLIK, przelew, Smart Saver, przelew własny, zwrot, wpłata i wypłata gotówki, prowizja)
+- [ ] Skrypt tworzący sztuczny PDF o tym samym układzie (`backend/tests/fixtures/`) + testy: podział między strony, kwoty z separatorem tysięcy, waluta obca, zwrot, duplikaty, celowo niezgodna suma
+- [ ] Porównanie z prawdziwymi wyciągami (lokalnie): liczby i sumy zgodne z nagłówkiem wszystkich 6 plików
+
+**Importer uniwersalny CSV**
+- [ ] Analiza eksportu CSV z ING, jeśli jest dostępny (kodowanie, separator, wiersze metadanych, kolumny, format daty i kwot, blokady)
 - [ ] `parsers/profile.py` (model profilu: kodowanie, separator, wiersz nagłówka, mapowanie kolumn, format daty, separator dziesiętny, sposób wyznaczania znaku kwoty)
 - [ ] `parsers/detector.py` (auto-wykrywanie: kodowanie, separator, nagłówek, role kolumn) + `parsers/generic.py` (parsowanie wg profilu do wspólnego `DataFrame`)
 - [ ] `parsers/profiles/ing.json` + testy na sztucznym pliku w formacie ING
 - [ ] tabela `bank_profiles` (migracja), endpoint `POST /imports/detect` (zwraca propozycję mapowania)
 - [ ] Frontend: krok „Mapowanie kolumn” pokazywany tylko wtedy, gdy plik nie pasuje do żadnego profilu
-- [ ] `services/import_service.py`: czyszczenie (białe znaki, wielkie litery, usunięcie prefiksów typu „PŁATNOŚĆ KARTĄ”), normalizacja opisu, `dedup_hash` = hash(data, kwota, opis znormalizowany)
+- [ ] `services/import_service.py`: czyszczenie (białe znaki, wielkie litery, usunięcie prefiksów typu „PŁATNOŚĆ KARTĄ”), normalizacja opisu, `dedup_hash` = hash numeru transakcji z banku, a gdy go brak: hash(data, kwota, opis znormalizowany)
 - [ ] `POST /imports/preview` i `/imports/confirm`, zapis `ImportBatch`
 - [ ] Sztuczny plik `backend/tests/fixtures/<bank>_sample.csv` + testy parsera (kwoty, daty, polskie znaki, duplikaty)
-- [ ] Frontend: strona „Import” — drag&drop pliku, wybór banku, tabela podglądu, przycisk „Zapisz”
+- [ ] Frontend: strona „Import” — drag&drop pliku (PDF lub CSV), wybór banku, tabela podglądu, przycisk „Zapisz”
 
 **DoD:** wgrywasz swój prawdziwy wyciąg, widzisz transakcje w aplikacji; ponowny import nie dubluje danych.
 
 ### Etap 5 · Tydzień 5 (30 XI–6 XII) — Kategoryzacja i „uczenie się” z poprawek
+- [ ] Przelewy własne (Smart Saver, „Przelew własny”, „Wpłata na cel”) trafiają do kategorii „Przelewy własne” i nie liczą się jako wydatki ani przychody
 - [ ] Słownik słów kluczowych (reguły systemowe w migracji/seedzie): `biedronka, lidl, żabka → Zakupy spożywcze`, `orlen, bp, shell → Paliwo`, `netflix, spotify → Subskrypcje`, `uber, bolt, jakdojade → Transport` itd.
 - [ ] `services/categorization_service.py` — kolejność dopasowania:
   1. reguły użytkownika (`exact_counterparty` > `contains`), wg priorytetu,
@@ -261,7 +275,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 
 | Ryzyko | Skutek | Zapobieganie |
 |---|---|---|
-| Nietypowy format CSV banku (kodowanie, metadane w nagłówku) | opóźnienie etapu 4 | Analiza pliku już w tygodniu 1; testy na sztucznym pliku |
+| Nietypowy format wyciągu lub zmiana układu PDF przez bank | opóźnienie etapu 4, błędne kwoty | Analiza formatu już w tygodniu 1; testy na sztucznym pliku; sumy kontrolne zatrzymują błędny import |
 | Koszty / dostępność API AI | brak porad podczas prezentacji | provider `mock`, cache porad, zapisane przykładowe odpowiedzi |
 | Wycieki danych osobowych do AI | zarzut na obronie | tylko agregaty + anonimizacja + testy + endpoint podglądu payloadu |
 | Pomieszanie danych użytkowników | poważny błąd bezpieczeństwa | `user_id` obowiązkowy w repozytoriach + testy izolacji |
@@ -289,7 +303,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | Etap | Status | Data zakończenia | Uwagi |
 |---|---|---|---|
 | 0. Struktura repo + plan | ✅ | 2026-11-02 | |
-| 1. Fundament | ✅ | 2026-11-04 | czeka tylko analiza wyciągu CSV z ING, wejście do etapu 4 |
+| 1. Fundament | ✅ | 2026-11-04 | format wyciągu opisany; pliki w `data/private/` zapisuje autor pracy |
 | 2. Model danych + auth | ⏳ | | |
 | 3. CRUD + frontend logowania | ⏳ | | |
 | 4. Import CSV | ⏳ | | |
@@ -339,8 +353,8 @@ na tym serwerze. To kierunek rozwoju, a nie zakres pracy.
 | # | Krok | Co pokazuje (argument dla komisji) | Czas |
 |---|---|---|---|
 | 1 | Logowanie użytkownika demo | uwierzytelnianie JWT, hasła hashowane Argon2 | 0:30 |
-| 2 | Import wyciągu CSV z ING (spreparowanego, bez prawdziwych danych) | parser Pandas, rozpoznanie formatu, podsumowanie importu | 1:30 |
-| 3 | Ponowny import tego samego pliku | deduplikacja (`dedup_hash` + ograniczenie `UNIQUE`): 0 nowych transakcji | 0:30 |
+| 2 | Import wyciągu PDF w formacie ING (sztucznego, bez prawdziwych danych) | odczyt PDF, zgodność z sumami kontrolnymi wyciągu, podsumowanie importu | 1:30 |
+| 3 | Ponowny import tego samego pliku | deduplikacja (numer transakcji, `dedup_hash` + ograniczenie `UNIQUE`): 0 nowych transakcji | 0:30 |
 | 4 | Import pliku z innego banku przez importer uniwersalny | mapowanie kolumn, zapis profilu, uniwersalność rozwiązania | 1:30 |
 | 5 | Lista transakcji z automatycznymi kategoriami, ręczna poprawka jednej | kategoryzacja słownikowa i reguła zapamiętana z poprawki | 1:30 |
 | 6 | Dashboard: wydatki wg kategorii, trend miesięczny | analityka w Pandas, wizualizacja | 1:30 |
