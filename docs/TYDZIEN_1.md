@@ -96,8 +96,8 @@ od pierwszego tygodnia, każdą kolejną funkcję dokładamy w znane miejsce i o
 - **Jak działa:** klasy piszesz od razu w JSX, a przy budowaniu Tailwind zostawia w pliku CSS tylko użyte style.
 - **Po co nam:** szybkie, spójne stylowanie bez osobnych plików CSS dla każdego komponentu.
 
-### pytest + HTTPX
-- **Co to:** pytest uruchamia testy (funkcje `test_*` z `assert`). HTTPX to klient HTTP, przez który `TestClient`
+### pytest + httpx2
+- **Co to:** pytest uruchamia testy (funkcje `test_*` z `assert`). httpx2 to klient HTTP, przez który `TestClient`
   FastAPI wysyła zapytania do aplikacji bez stawiania serwera.
 - **Po co nam:** od pierwszego dnia mamy test `GET /api/health → 200`. Każdy kolejny tydzień dokłada testy.
   Wyniki testów i pokrycie kodu to materiał do rozdziału o weryfikacji systemu.
@@ -139,7 +139,7 @@ volumes:
 
 ### Środa 4.11: backend FastAPI
 - [x] `backend/requirements.txt` (fastapi, uvicorn[standard], sqlalchemy, psycopg[binary], alembic, pydantic-settings, pandas)
-  i `requirements-dev.txt` (pytest, httpx, ruff)
+  i `requirements-dev.txt` (pytest, httpx2, ruff)
 - [x] `app/core/config.py` (klasa `Settings`), `app/core/database.py` (`engine`, `SessionLocal`, `get_db`, `Base`)
 - [x] `app/main.py`: aplikacja, CORS dla `http://localhost:5173`, router z `GET /api/health` wykonującym `SELECT 1`
 - [x] `backend/Dockerfile` i usługa `backend` w Compose (`depends_on: db: condition: service_healthy`)
@@ -169,20 +169,20 @@ def health(db: Session = Depends(get_db)) -> dict[str, str]:
 - [x] `.github/workflows/ci.yml`: Python + usługa `postgres`, `ruff check`, `pytest`; dodatkowo job `frontend` (lint, formatowanie, build)
 
 ### Niedziela 8.11: domknięcie i przygotowanie do kolejnych etapów
-- [ ] Pełny test: `docker compose down -v && docker compose up --build`
-- [ ] Sekcja „Uruchomienie” w README
+- [x] Pełny test: `docker compose down -v && docker compose up --build`, dodatkowo świeży klon repozytorium
+- [x] Sekcja „Uruchomienie” w README
 - [ ] **Pobierz z ING własny wyciąg CSV** (np. 3–6 miesięcy) do `data/private/` i zanotuj: kodowanie, separator,
   liczbę wierszy nagłówka, nazwy kolumn, format daty i kwot. To wejście do etapu 4.
-- [ ] Notatki do rozdziału pracy „Wykorzystane technologie” (ten plik jest dobrym punktem wyjścia)
+- [x] Notatki do rozdziału pracy „Wykorzystane technologie”: [`NOTATKI_TECHNOLOGIE.md`](NOTATKI_TECHNOLOGIE.md)
 
 ---
 
 ## 4. Definition of Done tygodnia 1
-- [ ] `docker compose up --build` uruchamia `db`, `backend`, `frontend` bez błędów
-- [ ] http://localhost:5173 pokazuje „API: OK, Baza: OK”
-- [ ] http://localhost:8000/docs działa
-- [ ] `pytest` przechodzi lokalnie i w GitHub Actions
-- [ ] Na GitHubie jest commit/PR „Etap 1”, a w `PLAN_IMPLEMENTACJI.md` odhaczony postęp
+- [x] `docker compose up --build` uruchamia `db`, `backend`, `frontend` bez błędów
+- [x] http://localhost:5173 pokazuje „API: OK, Baza: OK”
+- [x] http://localhost:8000/docs działa (lokalnie port 8001, patrz `BACKEND_HOST_PORT`)
+- [x] `pytest` przechodzi lokalnie i w GitHub Actions
+- [x] Na GitHubie są PR-y etapu 1 z tagami `tydzien-1-dzien-*`, a w `PLAN_IMPLEMENTACJI.md` odhaczony postęp
 
 ## 5. Struktura plików po tygodniu 1
 

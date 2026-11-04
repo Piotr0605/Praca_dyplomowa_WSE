@@ -379,3 +379,50 @@ Powstały pierwsze testy automatyczne i CI w GitHub Actions. Scalenie zmian do `
 
 ### Dalej
 Dzień 7: pełny test od zera, sekcja „Uruchomienie” w README, wyciąg CSV z ING.
+
+---
+
+## Tydzień 1, dzień 7: domknięcie etapu 1 (wykonano 4.11.2026)
+
+### Co zostało zrobione
+- Pełny test uruchomienia: `docker compose down -v && docker compose up --build`, a dodatkowo świeży klon repozytorium.
+- Sekcja „Uruchomienie” w `README.md`: instalacja, adresy, zajęte porty, przydatne polecenia.
+- Notatki do rozdziału pracy: `docs/NOTATKI_TECHNOLOGIE.md`.
+- Uzupełnione kryteria ukończenia tygodnia i postęp w planie. Nazwę biblioteki testowej zmieniono w dokumentacji na `httpx2`.
+- Katalog `data/private/` na wyciąg bankowy (ignorowany przez Git).
+
+Nie zostało jeszcze zrobione: pobranie wyciągu CSV z ING i zapisanie jego formatu. Tę część wykonuje autor pracy, a wynik jest wejściem do etapu 4.
+
+### Dlaczego
+- **Test od zera.** Praca na istniejącym środowisku może ukrywać zależność od czegoś, co jest tylko na tym komputerze.
+- **Świeży klon.** `down -v` czyści bazę, ale korzysta z plików w katalogu roboczym, w tym z plików ignorowanych przez Git. Dopiero
+  klon sprawdza to, co faktycznie jest w repozytorium, czyli sytuację promotora lub komisji.
+- **README.** Warunkiem przyjętym w planie jest uruchomienie systemu na innym komputerze bez dodatkowych wyjaśnień.
+
+### W jaki sposób
+- **Test 1:** `docker compose down -v`, po którym wolumen bazy powstaje od nowa, potem `docker compose up -d --build`.
+- **Test 2:** `git clone` gałęzi `main` do pustego katalogu, `cp .env.example .env`, budowanie obrazów bez cache
+  (`build --no-cache`), start jako osobny projekt Compose, a po teście usunięcie jego kontenerów, wolumenu i obrazów.
+- W obu testach stan sprawdzono w prawdziwej przeglądarce (Chromium) oraz uruchomiono `pytest` w kontenerze.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Na komputerze deweloperskim domyślne porty 5432 i 8000 zajmuje inny projekt, więc klon nie mógł działać na wartościach z `.env.example` | w klonie zmieniono tylko porty (5433, 8001), zgodnie z instrukcją z README. Domyślne porty nie zostały sprawdzone w tym teście |
+| Polecenie `docker compose up --no-cache` nie istnieje | przebudowa osobnym poleceniem `docker compose build --no-cache`, a potem `up` |
+| Czyszczenie mogło objąć dane innego projektu | sprawdzono przed testem, że wolumen tego projektu zawiera tylko pustą tabelę `alembic_version`, a wolumen tamtego projektu jest osobny; po teście tamte kontenery działały bez przerwy |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `down -v` + `up --build` | 3 kontenery działają, gotowe po 10 s (obrazy z cache) |
+| świeży klon, build bez cache | 3 kontenery działają, gotowe po 36 s |
+| ekran stanu w przeglądarce (oba testy) | „API: OK, Baza: OK”, brak błędów konsoli, połączenia tylko z `localhost` |
+| `pytest` w kontenerze (oba testy) | 6 testów zaliczonych |
+| `GET /docs` | HTTP 200 |
+
+Czas 36 s dotyczy komputera, na którym obrazy bazowe (`postgres`, `python`, `node`) były już pobrane. Na nowym komputerze
+pierwsze uruchomienie potrwa dłużej.
+
+### Dalej
+Tydzień 2: model danych i uwierzytelnianie. Wcześniej autor pracy zapisuje wyciąg z ING w `data/private/`.

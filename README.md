@@ -17,7 +17,7 @@ przy pomocy modelu językowego (OpenAI / Anthropic).
 | Baza danych     | PostgreSQL 16 (Docker)                                          |
 | Uwierzytelnianie| JWT, hasła haszowane Argon2                                     |
 | Frontend        | React + TypeScript (Vite), Tailwind CSS, Recharts               |
-| Testy           | pytest, HTTPX                                                   |
+| Testy           | pytest, httpx2                                                  |
 | Infrastruktura  | Docker Compose, Git/GitHub, GitHub Actions (CI)                 |
 
 ## Struktura repozytorium
@@ -43,7 +43,7 @@ przy pomocy modelu językowego (OpenAI / Anthropic).
 │   ├── alembic/                 # migracje schematu bazy
 │   └── tests/
 │       ├── unit/                # pytest: parsery, kategoryzacja, analityka, anonimizacja
-│       ├── integration/         # HTTPX: endpointy API + izolacja użytkowników
+│       ├── integration/         # TestClient: endpointy API + izolacja użytkowników
 │       └── fixtures/            # sztuczne pliki CSV do testów
 ├── frontend/
 │   └── src/
@@ -67,4 +67,45 @@ Co zostało zrobione każdego dnia i dlaczego: [`docs/DZIENNIK_PRAC.md`](docs/DZ
 
 ## Uruchomienie
 
-Instrukcja pojawi się po zakończeniu etapu 1 (docelowo: `docker compose up --build`).
+Wymagania: Git i Docker Desktop z Docker Compose. Bazy, Pythona ani Node.js nie trzeba instalować osobno.
+
+```bash
+git clone https://github.com/Piotr0605/Praca_dyplomowa_WSE.git
+cd Praca_dyplomowa_WSE
+cp .env.example .env
+docker compose up --build
+```
+
+Pierwsze uruchomienie pobiera obrazy i zależności, więc trwa dłużej i wymaga internetu. Później wystarczy
+`docker compose up`. Przy starcie backend sam wykonuje migracje bazy.
+
+Przed dłuższym użyciem zmień w `.env` wartości `POSTGRES_PASSWORD` (także w `DATABASE_URL`) i `JWT_SECRET_KEY`,
+np. na wynik `openssl rand -hex 32`.
+
+| Adres | Co tam jest |
+|---|---|
+| http://localhost:5173 | aplikacja |
+| http://localhost:8000/docs | dokumentacja API (Swagger UI) |
+| http://localhost:8000/api/health | stan API i bazy |
+
+### Zajęte porty
+
+Komunikat `port is already allocated` oznacza, że port zajmuje inny program. Zmień port w `.env` i uruchom ponownie:
+
+| Zmienna | Domyślnie | Uwagi |
+|---|---|---|
+| `DB_HOST_PORT` | 5432 | |
+| `BACKEND_HOST_PORT` | 8000 | ten sam port wpisz w `VITE_API_URL`; zmienią się też adresy API z tabeli powyżej |
+
+Port frontendu (5173) jest stały, bo tylko ten adres jest dopuszczony przez CORS w backendzie.
+
+### Przydatne polecenia
+
+| Cel | Polecenie |
+|---|---|
+| Zatrzymanie (dane zostają) | `docker compose down` |
+| Zatrzymanie i **usunięcie danych** | `docker compose down -v` |
+| Testy backendu | `docker compose exec backend pytest` |
+| Lint backendu | `docker compose exec backend ruff check .` |
+| Po zmianie zależności frontendu | `docker compose up --build -V` |
+| Migracje bazy | zobacz [`backend/alembic/README.md`](backend/alembic/README.md) |
