@@ -159,3 +159,76 @@ usuniętym po teście:
 | `ruff check`, `ruff format --check` | bez uwag |
 
 **Dalej:** dzień 5, frontend (React + Vite + TypeScript, Tailwind CSS, strona statusu).
+
+---
+
+## Tydzień 1, dzień 5: frontend (wykonano 4.11.2026)
+
+### Co zostało zrobione
+Powstała aplikacja React, która w przeglądarce pokazuje stan systemu: „API: OK, Baza: OK”. Po raz pierwszy
+działa cała ścieżka: przeglądarka → frontend → API → baza danych. To główny cel tygodnia 1.
+
+| Plik | Rola |
+|---|---|
+| `frontend/package.json`, `package-lock.json` | zależności: React 19, Vite 8, TypeScript 7, Tailwind CSS 4, oxlint, Prettier |
+| `frontend/vite.config.ts` | wtyczki React i Tailwind, stały port 5173 |
+| `frontend/src/types/api.ts` | typ odpowiedzi `/api/health` |
+| `frontend/src/api/client.ts` | funkcja `getHealth()` wywołująca API |
+| `frontend/src/components/HealthStatus.tsx` | komponent ze statusem API i bazy |
+| `frontend/src/App.tsx`, `index.html`, `public/favicon.svg` | strona główna, polski język i tytuł, własna ikona |
+| `frontend/Dockerfile`, `.dockerignore` | obraz `node:26-slim` w trybie deweloperskim |
+| `docker-compose.yml` | usługa `frontend` |
+
+### Dlaczego
+- **Ekran statusu przed funkcjami biznesowymi.** Każda kolejna funkcja przejdzie przez te same warstwy. Sprawdzenie
+  ich teraz, na najprostszym przypadku, oddziela późniejsze błędy logiki od błędów konfiguracji (CORS, porty, Docker).
+- **Vite + TypeScript.** Vite odświeża stronę natychmiast po zapisie pliku, a TypeScript wykrywa błędy, np. literówkę
+  w nazwie pola z API, jeszcze przed uruchomieniem.
+- **Tailwind CSS.** Style powstają bezpośrednio w komponentach, a do paczki trafiają tylko użyte klasy (CSS: 9 kB).
+- **oxlint zamiast planowanego ESLint.** Aktualny szablon Vite instaluje go domyślnie, a konfiguracja mieści się
+  w kilku wierszach. To decyzja analogiczna do Ruffa w backendzie: jedno szybkie narzędzie. Plan zaktualizowano.
+- **Bez zewnętrznych czcionek, ikon i bibliotek z CDN.** Wynika to z modelu prywatności (plan, sekcja 9): każde takie
+  pobranie byłoby zapytaniem do obcego serwera.
+
+### W jaki sposób
+- **Generowanie projektu:** `npm create vite@latest` z szablonem `react-ts`, następnie instalacja `tailwindcss`,
+  `@tailwindcss/vite` i `prettier`. Usunięto przykładową zawartość szablonu.
+- **Klient API (`client.ts`):** adres pochodzi z `VITE_API_URL`. Kod 503 jest traktowany jako prawidłowa odpowiedź, bo
+  oznacza „API działa, baza nie”. Inny kod błędu albo brak odpowiedzi kończy się wyjątkiem.
+- **Komponent `HealthStatus`:** rozróżnia trzy stany: sprawdzanie, OK, błąd. Sprawdza API przy wyświetleniu i co
+  10 sekund, więc pokazuje awarię i powrót usługi bez przeładowania strony. `AbortController` przerywa zapytanie, gdy
+  komponent znika ze strony. Obszar ma `aria-live`, więc czytniki ekranu ogłaszają zmianę stanu.
+- **Docker:** katalog `frontend/` jest podmontowany do kontenera, co daje natychmiastowe odświeżanie. Proces działa
+  jako zwykły użytkownik `node`, a `npm ci` instaluje dokładnie wersje z `package-lock.json`. Port jest wystawiony
+  tylko na `127.0.0.1`, a `strictPort` nie pozwala Vite przejść na inny port (CORS dopuszcza wyłącznie 5173).
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Katalog `frontend/` miał już szkielet folderów, a generator oczekuje pustego katalogu | projekt wygenerowano w katalogu tymczasowym i skopiowano potrzebne pliki, zachowując szkielet |
+| Szablon Vite dostarcza oxlint i TypeScript 7, a plan zakładał ESLint | przyjęto oxlint, zaktualizowano plan i rozszerzenie VS Code |
+| Pakiety w `node_modules` zależą od systemu (macOS na komputerze, Linux w kontenerze), więc podmontowany katalog zastąpiłby te właściwe | osobny wolumen `/app/node_modules`; po zmianie zależności: `docker compose up --build -V` |
+| Przeglądarka musi łączyć się z API przez port komputera (8001), a nie przez nazwę usługi `backend`, którą zna tylko sieć Dockera | `VITE_API_URL` wskazuje `http://localhost:<port>`; docelowo etap 9 zastąpi to wspólnym adresem przez nginx |
+| Przy zatrzymanej bazie konsola przeglądarki pokazuje błąd `503` | to oczekiwane: przeglądarka zawsze zapisuje takie odpowiedzi w konsoli, a aplikacja obsługuje je i pokazuje „Baza: Błąd” |
+
+### Weryfikacja
+Stronę sprawdzono w prawdziwej przeglądarce (Chromium sterowany przez Playwright, narzędzie użyte jednorazowo, poza
+repozytorium), bo samo zapytanie `curl` nie sprawdza CORS ani tego, co wyświetla React.
+
+| Test | Wynik |
+|---|---|
+| wszystkie usługi działają | „API: OK, Baza: OK”, brak błędów konsoli (brak błędu CORS) |
+| baza zatrzymana | „API: OK, Baza: Błąd” |
+| backend zatrzymany | „API: Błąd, Baza: Błąd” |
+| po przywróceniu usług | „API: OK, Baza: OK” |
+| zatrzymanie i start bazy przy otwartej stronie | status zmienia się sam, bez przeładowania |
+| zmiana tekstu w `App.tsx` | nowy tekst widoczny bez przeładowania (hot reload) |
+| adresy, z którymi łączy się strona | wyłącznie `localhost:5173` i `localhost:8001` |
+| adres nasłuchu frontendu | `127.0.0.1:5173` |
+| użytkownik procesu w kontenerze | `node` (nie root) |
+| `npm run lint`, `format:check`, `build` | bez uwag |
+
+Zrzut ekranu: `docs/zrzuty/tydzien1_stan_systemu.png`.
+
+### Dalej
+Dzień 6: testy (`pytest`), Ruff i GitHub Actions.
