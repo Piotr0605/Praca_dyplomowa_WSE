@@ -15,7 +15,7 @@ Mamy ok. 11 tygodni, w tym okres świąteczny. Dlatego:
 
 | Priorytet | Zakres |
 |---|---|
-| **MUST** (bez tego nie ma pracy) | rejestracja/logowanie (JWT, Argon2), izolacja danych po `user_id`, import CSV z 1 banku, ręczne dodawanie wydatków, kategoryzacja słowami kluczowymi, zapamiętywanie poprawek użytkownika, agregacje Pandas (sumy w kategoriach, zmiany m/m), dashboard z wykresami, anonimizacja regex, porady AI z agregatów, testy pytest + HTTPX, Docker Compose |
+| **MUST** (bez tego nie ma pracy) | rejestracja/logowanie (JWT, Argon2), izolacja danych po `user_id`, import CSV z 1 banku, ręczne dodawanie wydatków, kategoryzacja słowami kluczowymi, zapamiętywanie poprawek użytkownika, agregacje Pandas (sumy w kategoriach, zmiany m/m), dashboard z wykresami, anonimizacja regex, porady AI z agregatów, testy pytest + httpx2, Docker Compose |
 | **SHOULD** | deduplikacja przy ponownym imporcie, podgląd importu przed zapisem, filtrowanie/wyszukiwanie transakcji, historia wygenerowanych porad, CI w GitHub Actions, przełączanie OpenAI ↔ Anthropic zmienną środowiskową |
 | **COULD** | budżety miesięczne z alertem, eksport raportu (CSV/PDF), drugi parser banku, tryb ciemny, wykrywanie subskrypcji (powtarzalne płatności) |
 | **WON'T** (poza zakresem) | bezpośrednie połączenie z bankiem (open banking/PSD2), aplikacja mobilna, wielowalutowość z kursami, hosting publiczny |
@@ -111,14 +111,14 @@ na zasobie użytkownika A.
 Każdy etap = osobna gałąź / PR, zakończony checklistą „Definition of Done”.
 
 ### Etap 1 · Tydzień 1 (2–8 XI) — Fundament i szkielet end-to-end
-- [ ] `docker-compose.yml`: `db` (postgres:16, wolumen, healthcheck), `backend`, `frontend`
-- [ ] Backend: `pyproject.toml`/`requirements.txt`, `app/main.py`, `core/config.py` (pydantic-settings, `.env`), `core/database.py` (engine, `SessionLocal`, `get_db`)
-- [ ] Endpoint `GET /api/health` sprawdzający połączenie z bazą
-- [ ] `alembic init`, konfiguracja `env.py` pod modele i `DATABASE_URL`
-- [ ] Frontend: `npm create vite@latest` (react-ts), Tailwind, strona startowa wołająca `/api/health`
-- [ ] CORS w FastAPI dla `localhost:5173`
-- [ ] pytest + pierwszy test `/api/health` (HTTPX `AsyncClient` / `TestClient`)
-- [ ] GitHub Actions: `ruff` + `pytest` przy każdym pushu
+- [x] `docker-compose.yml`: `db` (postgres:16, wolumen, healthcheck), `backend`, `frontend`
+- [x] Backend: `pyproject.toml`/`requirements.txt`, `app/main.py`, `core/config.py` (pydantic-settings, `.env`), `core/database.py` (engine, `SessionLocal`, `get_db`)
+- [x] Endpoint `GET /api/health` sprawdzający połączenie z bazą
+- [x] `alembic init`, konfiguracja `env.py` pod modele i `DATABASE_URL`
+- [x] Frontend: `npm create vite@latest` (react-ts), Tailwind, strona startowa wołająca `/api/health`
+- [x] CORS w FastAPI dla `localhost:5173`
+- [x] pytest + pierwszy test `/api/health` (`TestClient`)
+- [x] GitHub Actions: `ruff` + `pytest` przy każdym pushu
 
 **DoD:** `docker compose up --build` → frontend pokazuje „API OK, baza OK”; `/docs` (Swagger) działa.
 
@@ -289,7 +289,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | Etap | Status | Data zakończenia | Uwagi |
 |---|---|---|---|
 | 0. Struktura repo + plan | ✅ | 2026-11-02 | |
-| 1. Fundament | ⏳ | | |
+| 1. Fundament | ✅ | 2026-11-04 | czeka tylko analiza wyciągu CSV z ING, wejście do etapu 4 |
 | 2. Model danych + auth | ⏳ | | |
 | 3. CRUD + frontend logowania | ⏳ | | |
 | 4. Import CSV | ⏳ | | |
