@@ -31,11 +31,12 @@ services:
         condition: service_healthy
     ports:
       - "127.0.0.1:${BACKEND_HOST_PORT:-8000}:8000"
+    # Start: start.sh wykonuje migracje (alembic upgrade head), potem uruchamia serwer.
     # Tryb deweloperski: kod z dysku jest podmontowany do kontenera, a --reload
     # restartuje serwer po każdym zapisie pliku (bez przebudowy obrazu).
     volumes:
       - ./backend:/app
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app"]
+    command: ["sh", "start.sh", "--reload", "--reload-dir", "app"]
 
 volumes:
   pgdata:

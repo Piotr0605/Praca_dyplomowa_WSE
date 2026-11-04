@@ -28,3 +28,6 @@ data/private/
 .idea/
 .vscode/
 .DS_Store
+
+# Lokalne ustawienia Claude Code
+.claude/settings.local.json
