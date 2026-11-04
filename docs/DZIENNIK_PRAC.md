@@ -395,7 +395,7 @@ Nie zostało jeszcze zrobione: pobranie wyciągu CSV z ING i zapisanie jego form
 
 ### Dlaczego
 - **Test od zera.** Praca na istniejącym środowisku może ukrywać zależność od czegoś, co jest tylko na tym komputerze.
-- **Świeży klon.** `down -v` czyści bazę, ale korzysta z plików w katalogu roboczego, w tym z plików ignorowanych przez Git. Dopiero
+- **Świeży klon.** `down -v` czyści bazę, ale korzysta z plików w katalogu roboczym, w tym z plików ignorowanych przez Git. Dopiero
   klon sprawdza to, co faktycznie jest w repozytorium, czyli sytuację promotora lub komisji.
 - **README.** Warunkiem przyjętym w planie jest uruchomienie systemu na innym komputerze bez dodatkowych wyjaśnień.
 
