@@ -320,3 +320,62 @@ Zrzut ekranu: `docs/zrzuty/tydzien1_stan_systemu.png`.
 
 ### Dalej
 Dzień 6: testy (`pytest`), Ruff i GitHub Actions.
+
+---
+
+## Tydzień 1, dzień 6: testy i CI (wykonano 4.11.2026)
+
+### Co zostało zrobione
+Powstały pierwsze testy automatyczne i CI w GitHub Actions. Scalenie zmian do `main` wymaga teraz zielonych testów.
+
+| Plik | Rola |
+|---|---|
+| `backend/tests/conftest.py` | fixture `client` (`TestClient` FastAPI) |
+| `backend/tests/integration/test_health.py` | 4 testy: health z bazą, health bez bazy (503), CORS dla frontendu i dla obcej strony |
+| `backend/tests/unit/test_config.py` | 2 testy: brak `DATABASE_URL` zatrzymuje start, dodatkowe zmienne są pomijane |
+| `backend/pyproject.toml` | konfiguracja pytest |
+| `backend/Dockerfile`, `docker-compose.yml` | obraz deweloperski zawiera pytest i ruff |
+| `.github/workflows/ci.yml` | joby `backend` i `frontend` |
+
+### Dlaczego
+- **Testy od początku.** Każdy kolejny tydzień dokłada kod, a testy pokazują, czy zmiana nie zepsuła tego, co już działało.
+  Ich wyniki są też materiałem do rozdziału o weryfikacji systemu.
+- **CI na czystej maszynie.** Wykrywa problemy niewidoczne lokalnie, np. brak zależności w `requirements.txt` albo plik
+  niedodany do commita.
+- **Wymóg zielonych testów w ochronie `main`.** `main` ma być zawsze działającą wersją, a sama konwencja nie jest
+  zabezpieczeniem, bo o testach można zapomnieć.
+- **Prawdziwa baza PostgreSQL w teście integracyjnym i w CI.** Ten sam silnik co w aplikacji, więc test sprawdza faktyczne
+  połączenie, a nie jego imitację. W CI krok `alembic upgrade head` sprawdza też, czy migracje działają od zera.
+- **Job `frontend` ponad plan.** Plan obejmował tylko Pythona, ale frontend też może przestać się budować, a koszt
+  dodania tego joba jest niewielki.
+
+### W jaki sposób
+- **Testy lokalnie:** `docker compose exec backend pytest`, w tej samej sieci co baza. Obraz wybiera plik zależności
+  argumentem `REQUIREMENTS`: Compose przekazuje `requirements-dev.txt`, a domyślny jest `requirements.txt`.
+- **Test braku bazy:** `app.dependency_overrides` podmienia `get_db` na sesję zgłaszającą `OperationalError`, więc awarię
+  można odtworzyć bez wyłączania kontenera. Fixture czyści podmiany po każdym teście.
+- **Workflow:** uruchamia się przy wypchnięciu na `main` i `develop` oraz przy każdym Pull Requeście. Job `backend` to
+  PostgreSQL 16 jako `service`, `ruff check`, `ruff format --check`, `alembic upgrade head`, `pytest`. Job `frontend` to
+  `npm ci`, lint, sprawdzenie formatowania i build z kontrolą typów. Uprawnienia ograniczono do `contents: read`.
+- **Ochrona `main`:** joby `backend` i `frontend` ustawiono jako wymagane statusy przez API GitHuba.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Pytest ostrzegał, że `httpx` jest przestarzały przy `TestClient` | zamiana na zalecany `httpx2` w `requirements-dev.txt`; ostrzeżenie zniknęło |
+| Obraz backendu nie zawierał narzędzi testowych, a z komputera adres `db:5432` jest nieosiągalny | osobny argument budowania `REQUIREMENTS`, dzięki czemu testy działają w kontenerze |
+| Zielone testy same niczego nie dowodzą, bo mogłyby przechodzić zawsze | celowe psucie kodu (patrz weryfikacja) i tymczasowy, zamknięty później PR z czerwonym testem |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` w kontenerze | 6 testów zaliczonych, bez ostrzeżeń |
+| błąd: health nie ustawia kodu 503 | wykryty (1 test czerwony) |
+| błąd: health zwraca zły stan bazy | wykryty (1 test czerwony) |
+| błąd: CORS dopuszcza wszystkie strony | wykryty (1 test czerwony) |
+| błąd: `DATABASE_URL` przestaje być wymagany | wykryty (1 test czerwony) |
+| pierwszy przebieg GitHub Actions na `develop` | `backend` i `frontend`: sukces |
+| tymczasowy PR #3 z celowo czerwonym testem | `backend`: FAILURE, stan scalania: `BLOCKED`; zamknięty bez scalania, gałąź usunięta |
+
+### Dalej
+Dzień 7: pełny test od zera, sekcja „Uruchomienie” w README, wyciąg CSV z ING.
