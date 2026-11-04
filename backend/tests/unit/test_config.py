@@ -20,3 +20,7 @@ def test_dodatkowe_zmienne_w_env_sa_pomijane(monkeypatch: pytest.MonkeyPatch) ->
     settings = Settings(_env_file=None)
 
     assert settings.DATABASE_URL == "postgresql+psycopg://u:p@localhost/db"
+
+
+def test_celowo_zepsuty() -> None:
+    assert 1 == 2
