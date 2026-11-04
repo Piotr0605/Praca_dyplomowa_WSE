@@ -391,7 +391,7 @@ Dzień 7: pełny test od zera, sekcja „Uruchomienie” w README, wyciąg CSV z
 - Uzupełnione kryteria ukończenia tygodnia i postęp w planie. Nazwę biblioteki testowej zmieniono w dokumentacji na `httpx2`.
 - Katalog `data/private/` na wyciąg bankowy (ignorowany przez Git).
 
-Wyciągi z ING zapisuje w `data/private/` autor pracy. Analizę ich formatu opisuje kolejny wpis.
+Wyciągi z ING są w `data/private/`, poza repozytorium. Analizę ich formatu opisuje kolejny wpis.
 
 ### Dlaczego
 - **Test od zera.** Praca na istniejącym środowisku może ukrywać zależność od czegoś, co jest tylko na tym komputerze.

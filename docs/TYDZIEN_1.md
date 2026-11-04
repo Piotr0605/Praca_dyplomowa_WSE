@@ -172,7 +172,7 @@ def health(db: Session = Depends(get_db)) -> dict[str, str]:
 - [x] Pełny test: `docker compose down -v && docker compose up --build`, dodatkowo świeży klon repozytorium
 - [x] Sekcja „Uruchomienie” w README
 - [x] Pobrane z ING wyciągi z 6 miesięcy (PDF); format opisany w `backend/app/parsers/README.md`. To wejście do etapu 4.
-- [ ] Zapisanie wyciągów w `data/private/` (autor pracy)
+- [x] Zapisanie wyciągów w `data/private/`
 - [x] Notatki do rozdziału pracy „Wykorzystane technologie”: [`NOTATKI_TECHNOLOGIE.md`](NOTATKI_TECHNOLOGIE.md)
 
 ---

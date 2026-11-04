@@ -303,7 +303,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | Etap | Status | Data zakończenia | Uwagi |
 |---|---|---|---|
 | 0. Struktura repo + plan | ✅ | 2026-11-02 | |
-| 1. Fundament | ✅ | 2026-11-04 | format wyciągu opisany; pliki w `data/private/` zapisuje autor pracy |
+| 1. Fundament | ✅ | 2026-11-04 | format wyciągu opisany, pliki w `data/private/` |
 | 2. Model danych + auth | ⏳ | | |
 | 3. CRUD + frontend logowania | ⏳ | | |
 | 4. Import CSV | ⏳ | | |
