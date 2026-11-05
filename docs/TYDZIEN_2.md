@@ -103,6 +103,7 @@ ustalimy w dniu 3: backend przy tym kluczu co najmniej wypisze ostrzeżenie; roz
 - [ ] CI: testy na tej samej konfiguracji
 - [ ] Testy: rejestracja, duplikat e-maila, wielkość liter w e-mailu, za krótkie hasło, złe hasło, nieistniejący e-mail, `/me` z tokenem i bez, token wygasły
 - [ ] Test: odpowiedzi API i logi nie zawierają hasła ani hasha
+- [ ] Test zgodności schematu: te same modele tworzą bazę przez `create_all` i przez migracje, a test porównuje obie na podstawie katalogu PostgreSQL (ograniczenia `CHECK`, wartości domyślne, indeksy). Zamyka lukę `alembic check`
 - [ ] Celowe wprowadzenie błędów, żeby sprawdzić, czy testy je wykrywają
 
 ### Dzień 6: sprawdzenie w całości

@@ -260,6 +260,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 ### Etap 10 · Tydzień 11 (11–17 I) — Stabilizacja i materiały do pracy → **v1.0**
 - [ ] Testy manualne całych scenariuszy, poprawki błędów
 - [ ] Diagramy do pracy (`docs/diagramy/`): architektura warstwowa, ERD bazy (aktualizacja), diagram sekwencji „import wyciągu”, diagram sekwencji „generowanie porady AI” (z krokiem anonimizacji)
+- [ ] Eksport diagramów do PNG lub SVG do pracy (`mermaid-cli` w przypiętej wersji, wymaga zgody na pobranie pakietu)
 - [ ] Zrzuty ekranu (`docs/zrzuty/`)
 - [ ] Pomiary do rozdziału badawczego: skuteczność kategoryzacji przed/po poprawkach, skuteczność anonimizacji, koszt i czas zapytania AI, porównanie OpenAI vs Anthropic na tych samych agregatach
 - [ ] Zapytać promotora, czy repozytorium może być publiczne przed obroną i kontrolą JSA; sprawdzić, czy uczelnia wymaga opisania użycia AI w pracy
