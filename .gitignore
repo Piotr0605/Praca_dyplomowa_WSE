@@ -23,6 +23,8 @@ data/private/
 *.csv
 !data/samples/*.csv
 !backend/tests/fixtures/*.csv
+*.pdf
+!backend/tests/fixtures/*.pdf
 
 # IDE / system
 .idea/

@@ -391,7 +391,7 @@ Dzień 7: pełny test od zera, sekcja „Uruchomienie” w README, wyciąg CSV z
 - Uzupełnione kryteria ukończenia tygodnia i postęp w planie. Nazwę biblioteki testowej zmieniono w dokumentacji na `httpx2`.
 - Katalog `data/private/` na wyciąg bankowy (ignorowany przez Git).
 
-Nie zostało jeszcze zrobione: pobranie wyciągu CSV z ING i zapisanie jego formatu. Tę część wykonuje autor pracy, a wynik jest wejściem do etapu 4.
+Wyciągi z ING są w `data/private/`, poza repozytorium. Analizę ich formatu opisuje kolejny wpis.
 
 ### Dlaczego
 - **Test od zera.** Praca na istniejącym środowisku może ukrywać zależność od czegoś, co jest tylko na tym komputerze.
@@ -425,4 +425,41 @@ Czas 36 s dotyczy komputera, na którym obrazy bazowe (`postgres`, `python`, `no
 pierwsze uruchomienie potrwa dłużej.
 
 ### Dalej
-Tydzień 2: model danych i uwierzytelnianie. Wcześniej autor pracy zapisuje wyciąg z ING w `data/private/`.
+Analiza formatu wyciągów z ING.
+
+---
+
+## Tydzień 1: analiza wyciągów z ING i zmiana planu importu (wykonano 4.11.2026)
+
+### Co zostało zrobione
+Przeanalizowano 6 miesięcznych wyciągów z ING w formacie PDF. Do planu dodano parser PDF jako główną ścieżkę importu,
+a format opisano w `backend/app/parsers/README.md`. Parser nie został jeszcze napisany (etap 4).
+
+### Dlaczego
+- **Plan zakładał import CSV, a pobrane wyciągi są w PDF.** Aplikacja ma działać na danych, które użytkownik faktycznie otrzymuje z banku.
+- **PDF zawiera dane kontrolne.** Salda oraz liczby i sumy operacji pozwalają automatycznie wykryć błąd odczytu, zanim trafi do bazy.
+- **Numer transakcji** daje pewniejszą deduplikację niż hash daty, kwoty i opisu: dwa identyczne zakupy tego samego dnia nie zostaną uznane za duplikat.
+
+### W jaki sposób
+- Porównano układ tabel i przypadki szczególne w 6 wyciągach oraz sprawdzono zgodność sald w nagłówkach.
+- **Zakres:** parser PDF stał się wymaganiem MUST, a importer uniwersalny CSV SHOULD, z możliwością przeniesienia do bufora świątecznego.
+- **Dane:** prawdziwe pliki pozostają poza repozytorium, a testy i pokaz opierają się na sztucznym PDF o tym samym układzie.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Tekst PDF nie ma struktury tabeli, a transakcje przechodzą między stronami | odczyt według współrzędnych; wybór biblioteki po próbie na prawdziwych plikach w etapie 4 |
+| Automatyczne przelewy oszczędnościowe zawyżyłyby wydatki | osobne oznaczanie przelewów własnych (etapy 4 i 5) |
+| Pliki PDF nie były ignorowane przez Git poza `data/private/` | reguła `*.pdf` w `.gitignore`, z wyjątkiem sztucznych danych testowych |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| saldo początkowe + uznania − obciążenia = saldo końcowe (6 wyciągów) | zgodne we wszystkich |
+| saldo końcowe = saldo początkowe następnego wyciągu (5 przejść) | zgodne we wszystkich |
+| `git check-ignore` dla pliku PDF poza `data/private/` | plik ignorowany |
+
+Działanie parsera zostanie sprawdzone po jego napisaniu.
+
+### Dalej
+Tydzień 2: model danych i uwierzytelnianie.
