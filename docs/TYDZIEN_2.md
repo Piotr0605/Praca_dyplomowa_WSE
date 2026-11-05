@@ -1,7 +1,6 @@
 # Tydzień 2: model danych i uwierzytelnianie
 
-Plan przewiduje ten etap na 9–15 listopada 2026. Po tygodniu 1 jesteśmy przed harmonogramem, więc numery dni
-oznaczają kolejność pracy, a nie daty.
+Plan przewiduje zakończenie tego etapu do 8 listopada 2026. Numery dni oznaczają kolejność pracy, a nie daty.
 
 **Cel tygodnia:** w bazie są wszystkie główne tabele, a przez Swagger można się zarejestrować, zalogować
 i wywołać `/api/auth/me`. Testy działają na osobnej bazie i nie dotykają danych deweloperskich.

@@ -1,12 +1,13 @@
 # Plan implementacji — krok po kroku
 
-**Start:** 2 listopada 2026 **Wersja 1.0 (feature freeze):** 17 stycznia 2027 **Bufor:** 18–31 stycznia 2027
+**Start:** 2 listopada 2026 **Program gotowy:** 20 grudnia 2026 **Wersja 1.0:** 10 stycznia 2027 **Oddanie pracy:** do 15 stycznia 2027
 
-Mamy ok. 11 tygodni, w tym okres świąteczny. Dlatego:
+Terminy są robocze: formalny termin WSE, czas procedury JSA i czas potrzebny promotorowi są jeszcze do potwierdzenia.
+Mamy ok. 10 tygodni, w tym okres świąteczny, a równolegle powstaje część pisemna (sekcja 10). Dlatego:
 
 1. **Najpierw działający szkielet od końca do końca** (baza → API → frontend), potem funkcje.
 2. **Każdy tydzień kończy się działającą wersją** wypchniętą na GitHub (nawet jeśli skromną).
-3. Święta (21.12–3.01) to celowo **lżejszy tydzień i bufor** — nie planujemy tam kluczowych funkcji.
+3. Święta (21.12–3.01) to **pomiary, poprawki i bufor** — nie planujemy tam nowych funkcji.
 4. Moduł AI zaczynamy od **providera `mock`**, więc rozwój i testy nie kosztują nic i nie zależą od internetu.
 
 ---
@@ -113,7 +114,7 @@ na zasobie użytkownika A.
 
 ## 4. Harmonogram tygodniowy
 
-Każdy etap = osobna gałąź / PR, zakończony checklistą „Definition of Done”.
+Każdy etap kończy się checklistą „Definition of Done”. Zasady gałęzi opisuje sekcja 7.
 
 ### Etap 1 · Tydzień 1 (2–8 XI) — Fundament i szkielet end-to-end
 - [x] `docker-compose.yml`: `db` (postgres:16, wolumen, healthcheck), `backend`, `frontend`
@@ -127,7 +128,7 @@ Każdy etap = osobna gałąź / PR, zakończony checklistą „Definition of Don
 
 **DoD:** `docker compose up --build` → frontend pokazuje „API OK, baza OK”; `/docs` (Swagger) działa.
 
-### Etap 2 · Tydzień 2 (9–15 XI) — Model danych i uwierzytelnianie
+### Etap 2 · do 8 XI — Model danych i uwierzytelnianie
 - [ ] Modele SQLAlchemy: `User`, `Category`, `Transaction`, `ImportBatch`, `CategoryRule`, `AIAdvice`
 - [ ] Pierwsza migracja Alembic + migracja z **seedem kategorii systemowych** (Jedzenie, Zakupy spożywcze, Restauracje, Transport, Paliwo, Mieszkanie, Rachunki, Subskrypcje, Rozrywka, Zdrowie, Odzież, Edukacja, Prezenty, Przelewy własne, Wynagrodzenie, Inne)
 - [ ] `core/security.py`: hash/verify Argon2, tworzenie i dekodowanie JWT
@@ -138,7 +139,7 @@ Każdy etap = osobna gałąź / PR, zakończony checklistą „Definition of Don
 
 **DoD:** przez Swagger można się zarejestrować, zalogować i wywołać `/me`; testy zielone.
 
-### Etap 3 · Tydzień 3 (16–22 XI) — Transakcje i kategorie (CRUD) + frontend logowania
+### Etap 3 · 9–15 XI — Transakcje i kategorie (CRUD) + frontend logowania
 - [ ] Repozytoria `TransactionRepository`, `CategoryRepository` (zawsze z `user_id`)
 - [ ] CRUD transakcji (dodanie ręczne, lista z filtrami i paginacją, edycja, usunięcie)
 - [ ] CRUD kategorii użytkownika
@@ -150,11 +151,11 @@ Każdy etap = osobna gałąź / PR, zakończony checklistą „Definition of Don
 
 **DoD:** użytkownik loguje się w przeglądarce i ręcznie dodaje/edytuje wydatki.
 
-### Etap 4 · Tydzień 4 (23–29 XI) — Import wyciągów: ING PDF + importer uniwersalny CSV
+### Etap 4 · 16–22 XI — Import wyciągów: ING PDF + importer uniwersalny CSV
 
 **Najpierw parser PDF ING (MUST).** Wyciągi pobierane z ING są w PDF, a zapisane w nim salda i sumy pozwalają
 sprawdzić każdy import. Format opisuje `backend/app/parsers/README.md`. Importer CSV powstaje po nim (SHOULD); jeśli
-zabraknie czasu, przechodzi do bufora 21.12–3.01. Jeśli ING udostępnia też eksport CSV, dostanie zwykły profil `ing.json`.
+zabraknie czasu, wypada z zakresu albo przechodzi na święta, po pomiarach. Jeśli ING udostępnia też eksport CSV, dostanie zwykły profil `ing.json`.
 
 Dla plików CSV podejście dwupoziomowe. W pełni automatyczny parser „dla wszystkich banków” nie istnieje, bo banki różnią się
 kodowaniem, separatorem, liczbą wierszy metadanych nad tabelą, nazwami kolumn, formatem dat, znakiem kwoty
@@ -195,7 +196,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 
 **DoD:** wgrywasz swój prawdziwy wyciąg, widzisz transakcje w aplikacji; ponowny import nie dubluje danych.
 
-### Etap 5 · Tydzień 5 (30 XI–6 XII) — Kategoryzacja i „uczenie się” z poprawek
+### Etap 5 · 23–29 XI — Kategoryzacja i „uczenie się” z poprawek
 - [ ] Przelewy własne (Smart Saver, „Przelew własny”, „Wpłata na cel”) trafiają do kategorii „Przelewy własne” i nie liczą się jako wydatki ani przychody
 - [ ] Słownik słów kluczowych (reguły systemowe w migracji/seedzie): `biedronka, lidl, żabka → Zakupy spożywcze`, `orlen, bp, shell → Paliwo`, `netflix, spotify → Subskrypcje`, `uber, bolt, jakdojade → Transport` itd.
 - [ ] `services/categorization_service.py` — kolejność dopasowania:
@@ -209,7 +210,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 
 **DoD:** po poprawieniu kategorii jednej transakcji kolejne podobne transakcje (także z następnego importu) trafiają do właściwej kategorii.
 
-### Etap 6 · Tydzień 6 (7–13 XII) — Analityka (Pandas) i dashboard
+### Etap 6 · 30 XI–6 XII — Analityka (Pandas) i dashboard
 - [ ] `services/analytics_service.py` (czyste funkcje na `DataFrame` → łatwe testy):
   - podsumowanie okresu (przychody, wydatki, saldo, stopa oszczędności),
   - sumy i udziały w kategoriach,
@@ -225,7 +226,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 
 **DoD:** dashboard pokazuje realny obraz Twoich wydatków; liczby zgadzają się z testami.
 
-### Etap 7 · Tydzień 7 (14–20 XII) — Moduł doradczy AI
+### Etap 7 · 7–13 XII — Moduł doradczy AI
 - [ ] `ai/anonymizer.py` (regex): numery kont/IBAN (`PL\d{26}`, 26 cyfr), numery kart, PESEL, telefony, e-maile, kody pocztowe/adresy, imiona i nazwiska (słownik polskich imion + heurystyka „Imię Nazwisko” wielkimi literami w przelewach)
 - [ ] Testy anonimizacji — **dużo przypadków**, to mocny punkt pracy; także dane z tytułów przelewów: imiona i nazwiska, nazwy kontaktów, telefony częściowo zamaskowane, dowolny tekst. Tylko sztuczne przypadki w repozytorium
 - [ ] `ai/prompt_builder.py`: tylko agregaty (sumy w kategoriach, zmiany %, top kategorie, stopa oszczędności) → JSON; **bez pojedynczych transakcji**; prompt systemowy z rolą doradcy, zakazem wymyślania liczb i wymaganym formatem odpowiedzi (np. 3–5 rekomendacji z uzasadnieniem i szacowaną kwotą oszczędności)
@@ -237,14 +238,13 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 
 **DoD:** przycisk „Wygeneruj porady” zwraca sensowne rekomendacje na Twoich danych; w logach/bazie nie ma żadnych danych osobowych.
 
-### Etap 8 · Tydzień 8–9 (21 XII–3 I) — Święta: frontend porad + bufor
+### Etap 8 · 14–20 XII — Frontend porad
 - [ ] Strona „Porady AI”: wybór okresu, podgląd wysyłanych danych, wynik (karty rekomendacji), historia porad
-- [ ] Nadrabianie zaległości z etapów 1–7
 - [ ] (COULD) budżety miesięczne
 
 **DoD:** wszystkie funkcje MUST działają w przeglądarce.
 
-### Etap 9 · Tydzień 10 (4–10 I) — Jakość, testy, uruchamianie jednym poleceniem
+### Etap 9 · 14–20 XII — Jakość, testy, uruchamianie jednym poleceniem
 - [ ] Pokrycie testami (`pytest-cov`) — cel ≥ 70% dla `services/`, `parsers/`, `ai/`
 - [ ] Obsługa błędów i stanów pustych w UI (brak danych, błędny plik, błąd AI), walidacja formularzy
 - [ ] Responsywność, spójny wygląd
@@ -257,7 +257,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 
 **DoD:** na czystym komputerze `git clone` + `cp .env.example .env` + `docker compose up --build` = działająca aplikacja z danymi demo.
 
-### Etap 10 · Tydzień 11 (11–17 I) — Stabilizacja i materiały do pracy → **v1.0**
+### Etap 10 · 21 XII–10 I — Stabilizacja, pomiary i materiały do pracy → **v1.0**
 - [ ] Testy manualne całych scenariuszy, poprawki błędów
 - [ ] Diagramy do pracy (`docs/diagramy/`): architektura warstwowa, ERD bazy (aktualizacja), diagram sekwencji „import wyciągu”, diagram sekwencji „generowanie porady AI” (z krokiem anonimizacji)
 - [ ] Eksport diagramów do PNG lub SVG do pracy (`mermaid-cli` w przypiętej wersji, wymaga zgody na pobranie pakietu)
@@ -266,8 +266,8 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 - [ ] Zapytać promotora, czy repozytorium może być publiczne przed obroną i kontrolą JSA; sprawdzić, czy uczelnia wymaga opisania użycia AI w pracy
 - [ ] Tag `v1.0.0` na GitHubie
 
-### Bufor · 18–31 I
-Rezerwa na nieprzewidziane problemy i uwagi promotora. **Nie planujemy tu nowych funkcji.**
+### Oddanie · 11–15 I
+Kontrola JSA, wydruk i złożenie pracy. **Żadnych nowych funkcji:** od 4 stycznia program dostaje tylko poprawki krytycznych błędów.
 
 ---
 
@@ -293,8 +293,8 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | Koszty / dostępność API AI | brak porad podczas prezentacji | provider `mock`, cache porad, zapisane przykładowe odpowiedzi |
 | Wycieki danych osobowych do AI | zarzut na obronie | tylko agregaty + anonimizacja + testy + endpoint podglądu payloadu |
 | Pomieszanie danych użytkowników | poważny błąd bezpieczeństwa | `user_id` obowiązkowy w repozytoriach + testy izolacji |
-| Święta / sesja / praca | poślizg | bufor 21.12–3.01 oraz 18–31.01, priorytety MoSCoW |
-| Za duży zakres | niedokończona aplikacja | najpierw MUST, funkcje COULD tylko gdy MUST są gotowe |
+| Święta / sesja / praca | poślizg | bufor świąteczny 21.12–3.01 i zapas przed 15.01, priorytety MoSCoW |
+| Za duży zakres | niedokończona aplikacja lub praca | najpierw MUST; wycinanie w kolejności: funkcje COULD, importer uniwersalny CSV, drugi dostawca AI (wtedy też zmiana celu we wstępie) |
 
 ---
 
@@ -324,7 +324,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | 5. Kategoryzacja | ⏳ | | |
 | 6. Analityka + dashboard | ⏳ | | |
 | 7. Moduł AI | ⏳ | | |
-| 8. Frontend porad + bufor | ⏳ | | |
+| 8. Frontend porad | ⏳ | | |
 | 9. Jakość + Docker | ⏳ | | |
 | 10. Stabilizacja → v1.0 | ⏳ | | |
 
@@ -380,3 +380,32 @@ na tym serwerze. To kierunek rozwoju, a nie zakres pracy.
 - *Co, jeśli bank zmieni format pliku?* → importer uniwersalny z profilami mapowania.
 - *Czy użytkownik A zobaczy dane użytkownika B?* → `user_id` w każdym zapytaniu repozytorium + test izolacji.
 - *Dlaczego lokalnie, a nie w chmurze?* → prywatność danych finansowych, zerowy koszt, działanie bez internetu (z `mock`).
+
+---
+
+## 10. Część pisemna
+
+Część pisemna powstaje równolegle z programem. Układ rozdziałów to propozycja do konsultacji z promotorem, a dokładne
+wymagania formalne trzeba sprawdzić w wytycznych WSE.
+
+| Część | Szkic gotowy do | Materiał źródłowy |
+|---|---|---|
+| Konspekt i układ rozdziałów, rozmowa z promotorem | 8 XI | ten plan |
+| 1. Podstawy teoretyczne: finanse osobiste, modele językowe | 29 XI | literatura |
+| 2. Przegląd rozwiązań i analiza wymagań | 6 XII | istniejące aplikacje, sekcja 0 |
+| 3. Wykorzystane technologie | 13 XII | `NOTATKI_TECHNOLOGIE.md` |
+| 4. Architektura i model danych | 13 XII | `diagramy/`, sekcje 2, 3 i 5 |
+| 5. Implementacja: import, kategoryzacja, analityka, anonimizacja, moduł AI | 20 XII | `DZIENNIK_PRAC.md` |
+| 6. Weryfikacja i wyniki pomiarów | 3 I | testy, pomiary z etapu 10 |
+| Zakończenie, wstęp, streszczenie, bibliografia | 3 I | gotowy tekst |
+
+- [ ] Stała pozycja w tygodniu: 1–2 godziny na literaturę; pozycje zapisywane od razu z pełnym opisem bibliograficznym
+- [ ] Po ukończeniu każdego modułu krótki szkic jego opisu, póki decyzje są świeże
+- [ ] Ustalić terminy: formalny termin WSE, procedura JSA, czas czytania przez promotora; po ich poznaniu poprawić harmonogram
+- [ ] Sprawdzić zasady WSE dotyczące użycia i deklarowania AI
+- [ ] Całość u promotora najpóźniej około 3 I; wcześniejsze rozdziały wysyłane na bieżąco
+- [ ] 4–10 I: poprawki promotora, formatowanie, spis treści i rysunków
+- [ ] 11–15 I: kontrola JSA, wydruk, złożenie
+
+Dziennik prac to materiał źródłowy, a nie gotowy tekst: wymaga przepisania językiem akademickim i odwołań do literatury.
+Wstęp i zakończenie muszą na końcu zgadzać się z tym, co faktycznie powstało.
