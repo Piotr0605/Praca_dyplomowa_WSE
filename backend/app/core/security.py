@@ -1,6 +1,7 @@
 """Hashowanie haseł (Argon2) i tokeny logowania (JWT)."""
 
 import datetime as dt
+import secrets
 
 import jwt
 from argon2 import PasswordHasher
@@ -11,6 +12,8 @@ from app.core.jwt_key import get_jwt_secret
 
 # Domyślne parametry biblioteki to zalecany profil RFC 9106 (Argon2id).
 _password_hasher = PasswordHasher()
+# Hash losowego hasła do porównań, gdy konto nie istnieje (zob. verify_password_against_dummy).
+_DUMMY_PASSWORD_HASH = _password_hasher.hash(secrets.token_hex(32))
 
 
 class InvalidTokenError(Exception):
@@ -28,6 +31,11 @@ def verify_password(password: str, password_hash: str) -> bool:
         return _password_hasher.verify(password_hash, password)
     except (VerificationError, InvalidHashError):
         return False
+
+
+def verify_password_against_dummy() -> None:
+    """Zużywa tyle samo czasu co sprawdzenie prawdziwego hasła, a wynik nie ma znaczenia."""
+    verify_password("", _DUMMY_PASSWORD_HASH)
 
 
 def create_access_token(user_id: int) -> str:

@@ -92,12 +92,12 @@ uruchomieniu i zapisuje go w wolumenie Dockera, a dawny przykładowy klucz zatrz
 - [x] Testy jednostkowe: poprawne i złe hasło, różne hashe tego samego hasła, token wygasły, podrobiony, z innym kluczem
 
 ### Dzień 4: endpointy
-- [ ] `schemas/user.py`: `UserCreate` (`EmailStr`, minimalna długość hasła), `UserRead` (bez hasła), `Token`
-- [ ] `repositories/user_repository.py`, `api/routes/auth.py`: `register`, `login`, `me`
-- [ ] `api/deps.py`: `get_current_user` i alias `CurrentUser`
-- [ ] E-mail normalizowany (małe litery), a duplikat obsłużony także przy jednoczesnej rejestracji (`IntegrityError` → 409)
-- [ ] Czas logowania nie zdradza, czy konto istnieje: przy nieznanym e-mailu też liczony jest hash Argon2
-- [ ] Limit długości hasła (minimum i maksimum), żeby bardzo długie hasła nie obciążały serwera
+- [x] `schemas/user.py`: `UserCreate` (`EmailStr`, minimalna długość hasła), `UserRead` (bez hasła), `Token`
+- [x] `repositories/user_repository.py`, `api/routes/auth.py`: `register`, `login`, `me`
+- [x] `api/deps.py`: `get_current_user` i alias `CurrentUser`
+- [x] E-mail normalizowany (małe litery), a duplikat obsłużony także przy jednoczesnej rejestracji (`IntegrityError` → 409)
+- [x] Czas logowania nie zdradza, czy konto istnieje: przy nieznanym e-mailu też liczony jest hash Argon2
+- [x] Limit długości hasła (minimum i maksimum), żeby bardzo długie hasła nie obciążały serwera
 
 ### Dzień 5: baza testowa i testy API
 - [ ] `conftest.py`: tworzenie bazy `finanse_test`, migracje, transakcja wycofywana po każdym teście

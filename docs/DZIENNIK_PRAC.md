@@ -615,3 +615,56 @@ Endpointów logowania jeszcze nie ma: powstaną w dniu 4.
 
 ### Dalej
 Dzień 4: endpointy `register`, `login` i `me`.
+
+---
+
+## Tydzień 2, dzień 4: rejestracja i logowanie (wykonano 5.11.2026)
+
+### Co zostało zrobione
+Działają endpointy `POST /api/auth/register`, `POST /api/auth/login` i `GET /api/auth/me`.
+
+| Plik | Rola |
+|---|---|
+| `backend/app/schemas/user.py` | `UserCreate`, `UserRead` (bez hasła), `Token` |
+| `backend/app/repositories/user_repository.py` | zapytania do tabeli `users` |
+| `backend/app/services/auth_service.py` | logika rejestracji i logowania |
+| `backend/app/api/deps.py` | `get_current_user`, alias `CurrentUser` |
+| `backend/app/api/routes/auth.py` | endpointy |
+| `backend/app/main.py` | obsługa błędów walidacji bez odrzuconej wartości |
+
+### Dlaczego
+- **Warstwy: endpoint, serwis, repozytorium.** Endpoint obsługuje HTTP, serwis reguły, a repozytorium bazę. To samo rozdzielenie posłuży w kolejnych etapach, a izolacja danych po `user_id` będzie mieć jedno miejsce.
+- **Ten sam komunikat i czas przy złym haśle i nieznanym e-mailu.** Inaczej logowanie pozwalałoby sprawdzać, czy dana osoba ma konto.
+- **Hasło od 12 do 128 znaków.** Bez drugiego składnika logowania długość jest główną ochroną hasła, a górna granica chroni serwer przed bardzo długimi danymi.
+- **`OAuth2PasswordRequestForm` przy logowaniu.** Formularz jest wymagany przez przycisk „Authorize” w Swaggerze. Pole nazywa się `username`, ale zawiera e-mail.
+
+### W jaki sposób
+- **E-mail** jest normalizowany w schemacie: bez białych znaków i małymi literami. Baza dodatkowo pilnuje tego ograniczeniem `CHECK`.
+- **Duplikat** wykrywa ograniczenie `UNIQUE` przy zapisie, bez wcześniejszego `SELECT`. Sprawdzenie „czy istnieje” przed zapisem przepuściłoby dwie jednoczesne rejestracje.
+- **Stały czas:** przy nieznanym e-mailu lub zbyt długim haśle liczone jest porównanie z hashem losowego hasła.
+- **Hasło w kodzie** jest typu `SecretStr`, więc nie wypisze się przypadkiem w logu ani w reprezentacji obiektu.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Domyślna odpowiedź 422 w FastAPI odsyła odrzuconą wartość, czyli za krótkie hasło jawnym tekstem | własna obsługa `RequestValidationError` usuwająca pola `input` i `ctx` |
+| Rejestracja i tak ujawnia, że e-mail jest zajęty (409) | świadomy kompromis: aplikacja jest lokalna i nie ma potwierdzania adresu e-mail |
+| Brak ograniczenia liczby prób logowania | świadomie poza zakresem: aplikacja działa lokalnie na `127.0.0.1` |
+
+### Weryfikacja
+Na działającym API, a dane testowe usunięto po sprawdzeniach. Testy automatyczne powstały w dniu 5.
+
+| Test | Wynik |
+|---|---|
+| rejestracja z e-mailem z wielkimi literami | 201, e-mail małymi literami, odpowiedź bez hasła i hasha |
+| ten sam e-mail innymi literami | 409 |
+| za krótkie hasło, błędny e-mail | 422, odpowiedź bez odrzuconej wartości |
+| złe hasło, nieznany e-mail | 401, identyczny komunikat |
+| poprawne logowanie, `/me` z tokenem | 200 |
+| `/me` bez tokenu, ze złym tokenem | 401 |
+| hasło w bazie | hash `$argon2id$v=19$m=65536,t=3,p=4` |
+| czas logowania, po 60 prób: złe hasło / nieznane konto | mediana 23,2 ms / 23,3 ms |
+| `ruff check`, `ruff format` | bez uwag |
+
+### Dalej
+Dzień 5: osobna baza testowa, testy API i test zgodności schematu.
