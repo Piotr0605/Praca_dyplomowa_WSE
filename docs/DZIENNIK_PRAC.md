@@ -463,3 +463,104 @@ Działanie parsera zostanie sprawdzone po jego napisaniu.
 
 ### Dalej
 Tydzień 2: model danych i uwierzytelnianie.
+
+---
+
+## Tydzień 2, dzień 1: modele danych (wykonano 5.11.2026)
+
+### Co zostało zrobione
+Powstało 6 modeli SQLAlchemy w `backend/app/models/`: `User`, `Category`, `Transaction`, `ImportBatch`, `CategoryRule`,
+`AIAdvice`. Tabel nie ma jeszcze w bazie deweloperskiej, bo pierwsza migracja powstanie w dniu 2.
+
+### Dlaczego
+- **Reguły w bazie, a nie tylko w kodzie.** Ograniczenia działają niezależnie od błędów aplikacji: duplikat transakcji albo niepoprawna wartość zostaną odrzucone także wtedy, gdy kod ich nie wykryje.
+- **`booking_date` i `kind` w transakcji.** Wynikają z analizy wyciągów ING. Analiza ma opierać się na dacie operacji, a przelewy własne, np. Smart Saver, nie mogą zawyżać wydatków. Dodanie tych pól teraz oszczędza późniejszej zmiany struktury.
+- **`NUMERIC(12,2)` dla kwot.** Typy zmiennoprzecinkowe dają błędy zaokrągleń, a tu suma 0,10 i 0,20 to dokładnie 0,30.
+- **Usuwanie danych.** Usunięcie użytkownika kasuje wszystkie jego dane, co wspiera model prywatności. Usunięcie kategorii lub importu nie kasuje historii finansowej.
+
+### W jaki sposób
+- **Wartości wyliczeniowe** (`source`, `kind`, `match_type`) to tekst z ograniczeniem `CHECK` zamiast natywnego `ENUM` PostgreSQL, który trudniej później zmieniać w migracjach.
+- **Unikalność kategorii:** `UNIQUE (user_id, name)` z opcją `NULLS NOT DISTINCT` z PostgreSQL 15+. Domyślnie wartości `NULL` uznawane są za różne, więc kategorie systemowe mogłyby się powtarzać.
+- **Transakcje ręczne** mają `dedup_hash = NULL`, dzięki czemu dwa identyczne zakupy tego samego dnia są dozwolone, a duplikaty z importu nadal są blokowane.
+- **E-mail:** `CHECK (email = lower(email))` gwarantuje, że wielkość liter nie utworzy drugiego konta.
+- **Reguły kategoryzacji:** `CHECK` pilnuje, że reguła systemowa nie ma właściciela, a reguła użytkownika musi go mieć.
+- **Indeks `(user_id, date)`** obsługuje główne zapytanie aplikacji: transakcje użytkownika z wybranego okresu.
+- **Bez relacji ORM (`relationship`).** Klucze obce wystarczają na tym etapie; relacje dojdą w repozytoriach, gdy będą potrzebne.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Testy trzech reguł unikalności przeszły z niewłaściwego powodu: skrypt wstawiał jawne numery `id`, więc odrzucenie wynikało z kolizji klucza głównego (`pk_users`, `pk_categories`) | ustawienie sekwencji `id` poza zakres i wymaganie konkretnej nazwy ograniczenia w każdym teście |
+| Skrypt kontrolny potraktował `:1` w tekście JSON jako parametr zapytania | przekazanie JSON jako parametru z rzutowaniem na `jsonb` |
+| Baza nie sprawdza, czy `category_id` należy do tego samego użytkownika: jedna kategoria może być systemowa, więc prosty klucz obcy tego nie wyrazi | sprawdzenie w warstwie aplikacji, zadanie do etapu 3 z testem izolacji |
+
+### Weryfikacja
+Na tymczasowej bazie PostgreSQL, usuniętej po teście, wykonano 24 sprawdzenia. Odrzucenia musiały pochodzić od oczekiwanego ograniczenia.
+
+| Test | Wynik |
+|---|---|
+| e-mail wielkimi literami | odrzucony: `ck_users_email_lowercase` |
+| zduplikowany e-mail | odrzucony: `uq_users_email` |
+| powtórzona kategoria systemowa i użytkownika | odrzucone: `uq_categories_user_id_name` |
+| ta sama nazwa kategorii u dwóch użytkowników | dozwolona |
+| duplikat `dedup_hash` u tego samego użytkownika | odrzucony: `uq_transactions_user_id_dedup_hash` |
+| ten sam hash u innego użytkownika, dwie identyczne transakcje ręczne | dozwolone |
+| błędne `source`, `kind`, waluta, kwota poza zakresem, odwrócony okres porady | odrzucone |
+| reguła systemowa z właścicielem, reguła użytkownika bez właściciela | odrzucone: `ck_category_rules_source_matches_owner` |
+| 0,10 + 0,20 | dokładnie 0,30 |
+| usunięcie kategorii | transakcja zostaje, reguła znika |
+| usunięcie importu | transakcja zostaje |
+| usunięcie użytkownika | wszystkie jego dane znikają; dane innego użytkownika i systemowe zostają |
+| `pytest` (w tym 3 nowe testy reguł modelu, m.in. każda tabela danych ma `user_id`) | 9 testów zaliczonych |
+| `ruff check`, `ruff format` | bez uwag |
+
+Skrypt kontrolny był jednorazowy i nie ma go w repozytorium. Trwałe testy na bazie powstaną w dniu 5.
+
+### Dalej
+Dzień 2: pierwsza migracja i kategorie systemowe.
+
+---
+
+## Tydzień 2, dzień 2: pierwsza migracja i kategorie systemowe (wykonano 5.11.2026)
+
+### Co zostało zrobione
+- Pierwsza migracja tworzy 6 tabel, a druga dodaje 16 kategorii systemowych. Obie działają już w bazie deweloperskiej.
+- Diagram ERD w `docs/diagramy/erd.md`.
+- CI sprawdza teraz zgodność modeli z migracjami oraz cofanie migracji.
+- Odłożone sprawy trafiły jako zadania do właściwych etapów planu.
+
+### Dlaczego
+- **Schemat i kategorie w osobnych migracjach.** Zmiana struktury i wstawienie danych to różne operacje, łatwiej je czytać i cofać osobno.
+- **Lista kategorii zapisana w migracji**, a nie importowana z kodu aplikacji. Migracja ma działać tak samo także po przyszłych zmianach modeli.
+- **`alembic check` i cofanie w CI.** Bez tego zmiana modelu bez migracji przeszłaby testy, a aplikacja nie działałaby na czystej bazie.
+- **ERD generowany ze schematu**, a nie rysowany ręcznie, więc odpowiada faktycznym kolumnom.
+
+### W jaki sposób
+- Migrację schematu wygenerował `alembic revision --autogenerate`; plik przeczytano przed commitem.
+- Kategorie dodaje `op.bulk_insert` na lekkim widoku tabeli `sa.table(...)`, niezależnym od modeli ORM.
+- `downgrade()` usuwa tylko kategorie systemowe z tej listy.
+- Kolory i ikony kategorii są na razie puste; zostaną dobrane pod wykresy w etapie 6.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Ruff uznawał katalog `backend/alembic/` za własny pakiet i odrzucał kolejność importów w migracjach, co zatrzymałoby CI | `known-third-party = ["alembic"]` w `pyproject.toml` zamiast ręcznej poprawy każdej migracji |
+| `alembic check` nie porównuje ograniczeń `CHECK`, więc ich późniejsza zmiana w modelu nie zostanie wykryta | sprawdzono je w bazie po migracji; przy zmianach trzeba pisać je w migracji ręcznie |
+| Renderowanie diagramu narzędziem `mermaid-cli` zablokował mechanizm uprawnień, bo wymagało pobrania pakietu | diagram w formacie Mermaid, wyświetlany przez GitHub; poprawność wyglądu trzeba sprawdzić po wypchnięciu |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| restart backendu | obie migracje wykonane automatycznie, health HTTP 200 |
+| `alembic check` po `upgrade` | „No new upgrade operations detected” |
+| ograniczenia `CHECK` w bazie po migracji | wszystkie 8 obecnych |
+| kategorie systemowe | 16, w tym 1 przychodowa (Wynagrodzenie) |
+| `alembic downgrade base` | została tylko tabela `alembic_version` |
+| ponowny `upgrade` | 7 tabel, 16 kategorii, `alembic check` bez różnic |
+| cofnięcie kategorii przy istniejącej kategorii użytkownika | systemowe usunięte, kategoria użytkownika zostaje |
+| dane testowe po sprawdzeniach | usunięte: 0 użytkowników, 16 kategorii |
+| `pytest` | 10 testów zaliczonych |
+| `ruff check`, `ruff format --check`, lokalnie i w kontenerze | bez uwag |
+
+### Dalej
+Dzień 3: hasła Argon2, tokeny JWT i rozwiązanie problemu przykładowego klucza z `.env.example`.

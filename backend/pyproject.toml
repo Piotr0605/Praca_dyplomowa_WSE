@@ -3,3 +3,7 @@ testpaths = ["tests"]
 # Pozwala importować pakiet `app` z katalogu backend/.
 pythonpath = ["."]
 addopts = "--strict-markers"
+
+[tool.ruff.lint.isort]
+# Katalog backend/alembic/ to migracje, a nie pakiet `alembic`, z którego importujemy.
+known-third-party = ["alembic"]

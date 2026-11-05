@@ -42,16 +42,18 @@ Mamy ok. 11 tygodni, w tym okres świąteczny. Dlatego:
 
 ```
 users
-  id (PK), email (unique), password_hash, created_at
+  id (PK), email (unique, małe litery), password_hash, created_at
 
 categories
   id (PK), user_id (FK, NULL = kategoria systemowa), name, color, icon, is_income
+  UNIQUE (user_id, name), także dla kategorii systemowych
 
 transactions
-  id (PK), user_id (FK), date, amount NUMERIC(12,2), currency,
+  id (PK), user_id (FK), date (operacji), booking_date (NULL), amount NUMERIC(12,2), currency,
   description, description_normalized, counterparty,
   category_id (FK, NULL = nieprzypisana), source ('pdf' | 'csv' | 'manual'),
-  import_batch_id (FK, NULL), dedup_hash, created_at
+  kind ('card' | 'blik' | 'transfer' | 'own_transfer' | 'refund' | 'cash' | 'fee' | 'other'),
+  import_batch_id (FK, NULL), dedup_hash (NULL = transakcja ręczna), created_at
   UNIQUE (user_id, dedup_hash)
 
 import_batches
@@ -59,7 +61,7 @@ import_batches
   rows_duplicated, created_at
 
 category_rules                      ← „pamięć” poprawek użytkownika
-  id (PK), user_id (FK, NULL = reguła systemowa), keyword/pattern,
+  id (PK), user_id (FK, NULL = reguła systemowa), pattern,
   match_type ('contains' | 'exact_counterparty' | 'regex'),
   category_id (FK), priority, source ('system' | 'user'), created_at
 
@@ -73,6 +75,9 @@ ai_advice
   provider, model, prompt_payload JSONB (zanonimizowane agregaty!),
   response_text, tokens_in, tokens_out, created_at
 ```
+
+**Usuwanie:** usunięcie użytkownika kasuje wszystkie jego dane. Usunięcie kategorii lub importu zostawia transakcje bez
+powiązania, a reguły znikają razem ze swoją kategorią.
 
 **Zasada izolacji:** każde repozytorium przyjmuje `user_id` jako obowiązkowy argument; nie istnieje
 metoda pobierająca transakcje „wszystkich”. Test integracyjny sprawdza, że użytkownik B dostaje 404
@@ -138,6 +143,8 @@ Każdy etap = osobna gałąź / PR, zakończony checklistą „Definition of Don
 - [ ] CRUD transakcji (dodanie ręczne, lista z filtrami i paginacją, edycja, usunięcie)
 - [ ] CRUD kategorii użytkownika
 - [ ] **Test izolacji**: użytkownik B nie widzi / nie edytuje danych A
+- [ ] Przypisanie kategorii do transakcji i reguły: kategoria musi być systemowa albo należeć do tego samego użytkownika, bo baza tego nie wymusza; test z cudzą kategorią (zob. dziennik, tydzień 2, dzień 1)
+- [ ] Użytkownik nie może edytować ani usuwać kategorii systemowych
 - [ ] Frontend: `AuthContext`, strony Logowanie / Rejestracja, chronione trasy, layout (sidebar, navbar)
 - [ ] Frontend: strona „Transakcje” — tabela + formularz ręcznego dodania wydatku
 
@@ -212,13 +219,15 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
   - (COULD) wykrywanie powtarzalnych płatności = subskrypcje
 - [ ] Endpointy `/analytics/*` + schematy odpowiedzi
 - [ ] Testy z ręcznie policzonymi oczekiwanymi wynikami
+- [ ] Przelewy własne (`kind = own_transfer`) poza wydatkami i przychodami; zwroty pomniejszają wydatki; test na danych ze Smart Saver
+- [ ] Kolory kategorii systemowych (`color`, `icon` są na razie puste) dobrane pod wykresy
 - [ ] Frontend „Dashboard”: karty (saldo, wydatki, przychody, stopa oszczędności), wykres kołowy/donut kategorii, słupkowy trend miesięczny, tabela zmian m/m, wybór okresu
 
 **DoD:** dashboard pokazuje realny obraz Twoich wydatków; liczby zgadzają się z testami.
 
 ### Etap 7 · Tydzień 7 (14–20 XII) — Moduł doradczy AI
 - [ ] `ai/anonymizer.py` (regex): numery kont/IBAN (`PL\d{26}`, 26 cyfr), numery kart, PESEL, telefony, e-maile, kody pocztowe/adresy, imiona i nazwiska (słownik polskich imion + heurystyka „Imię Nazwisko” wielkimi literami w przelewach)
-- [ ] Testy anonimizacji — **dużo przypadków**, to mocny punkt pracy
+- [ ] Testy anonimizacji — **dużo przypadków**, to mocny punkt pracy; także dane z tytułów przelewów: imiona i nazwiska, nazwy kontaktów, telefony częściowo zamaskowane, dowolny tekst. Tylko sztuczne przypadki w repozytorium
 - [ ] `ai/prompt_builder.py`: tylko agregaty (sumy w kategoriach, zmiany %, top kategorie, stopa oszczędności) → JSON; **bez pojedynczych transakcji**; prompt systemowy z rolą doradcy, zakazem wymyślania liczb i wymaganym formatem odpowiedzi (np. 3–5 rekomendacji z uzasadnieniem i szacowaną kwotą oszczędności)
 - [ ] `ai/providers/base.py` (interfejs `generate_advice(payload) -> AdviceResult`), `openai.py`, `anthropic.py`, `mock.py`; wybór przez `AI_PROVIDER`
 - [ ] Obsługa błędów (timeout, brak klucza, limit) + zapis do `ai_advice` (tokeny ⇒ koszt)
@@ -239,17 +248,22 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 - [ ] Pokrycie testami (`pytest-cov`) — cel ≥ 70% dla `services/`, `parsers/`, `ai/`
 - [ ] Obsługa błędów i stanów pustych w UI (brak danych, błędny plik, błąd AI), walidacja formularzy
 - [ ] Responsywność, spójny wygląd
-- [ ] Docker Compose: produkcyjny build frontendu (nginx), automatyczne `alembic upgrade head` przy starcie backendu
+- [ ] Docker Compose: produkcyjny build frontendu (nginx, wspólny adres dla API, bez `VITE_API_URL`), bez `--reload`, bez podmontowanego kodu i narzędzi deweloperskich w obrazie; `alembic upgrade head` przy starcie już działa
+- [ ] Sprawdzenie reguły prywatności: strona i backend nie łączą się z zewnętrznymi serwerami poza `ai/providers/`
 - [ ] Skrypt danych demo (użytkownik demo + sztuczne transakcje z 6 miesięcy)
 - [ ] README: instalacja, uruchomienie, zrzuty ekranu
+
+- [ ] Test na komputerze bez pobranych obrazów i z domyślnymi portami, z pomiarem czasu pierwszego uruchomienia (w tygodniu 1 nie zostało to sprawdzone)
 
 **DoD:** na czystym komputerze `git clone` + `cp .env.example .env` + `docker compose up --build` = działająca aplikacja z danymi demo.
 
 ### Etap 10 · Tydzień 11 (11–17 I) — Stabilizacja i materiały do pracy → **v1.0**
 - [ ] Testy manualne całych scenariuszy, poprawki błędów
-- [ ] Diagramy do pracy (`docs/diagramy/`): architektura warstwowa, ERD bazy, diagram sekwencji „import CSV”, diagram sekwencji „generowanie porady AI” (z krokiem anonimizacji)
+- [ ] Diagramy do pracy (`docs/diagramy/`): architektura warstwowa, ERD bazy (aktualizacja), diagram sekwencji „import wyciągu”, diagram sekwencji „generowanie porady AI” (z krokiem anonimizacji)
+- [ ] Eksport diagramów do PNG lub SVG do pracy (`mermaid-cli` w przypiętej wersji, wymaga zgody na pobranie pakietu)
 - [ ] Zrzuty ekranu (`docs/zrzuty/`)
 - [ ] Pomiary do rozdziału badawczego: skuteczność kategoryzacji przed/po poprawkach, skuteczność anonimizacji, koszt i czas zapytania AI, porównanie OpenAI vs Anthropic na tych samych agregatach
+- [ ] Zapytać promotora, czy repozytorium może być publiczne przed obroną i kontrolą JSA; sprawdzić, czy uczelnia wymaga opisania użycia AI w pracy
 - [ ] Tag `v1.0.0` na GitHubie
 
 ### Bufor · 18–31 I
