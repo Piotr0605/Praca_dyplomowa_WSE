@@ -100,12 +100,12 @@ uruchomieniu i zapisuje go w wolumenie Dockera, a dawny przykładowy klucz zatrz
 - [x] Limit długości hasła (minimum i maksimum), żeby bardzo długie hasła nie obciążały serwera
 
 ### Dzień 5: baza testowa i testy API
-- [ ] `conftest.py`: tworzenie bazy `finanse_test`, migracje, transakcja wycofywana po każdym teście
-- [ ] CI: testy na tej samej konfiguracji
-- [ ] Testy: rejestracja, duplikat e-maila, wielkość liter w e-mailu, za krótkie hasło, złe hasło, nieistniejący e-mail, `/me` z tokenem i bez, token wygasły
-- [ ] Test: odpowiedzi API i logi nie zawierają hasła ani hasha
-- [ ] Test zgodności schematu: te same modele tworzą bazę przez `create_all` i przez migracje, a test porównuje obie na podstawie katalogu PostgreSQL (ograniczenia `CHECK`, wartości domyślne, indeksy). Zamyka lukę `alembic check`
-- [ ] Celowe wprowadzenie błędów, żeby sprawdzić, czy testy je wykrywają
+- [x] `conftest.py`: tworzenie bazy `finanse_test`, migracje, transakcja wycofywana po każdym teście
+- [x] CI: testy na tej samej konfiguracji
+- [x] Testy: rejestracja, duplikat e-maila, wielkość liter w e-mailu, za krótkie hasło, złe hasło, nieistniejący e-mail, `/me` z tokenem i bez, token wygasły
+- [x] Test: odpowiedzi API i logi nie zawierają hasła ani hasha
+- [x] Test zgodności schematu: te same modele tworzą bazę przez `create_all` i przez migracje, a test porównuje obie na podstawie katalogu PostgreSQL (ograniczenia `CHECK`, wartości domyślne, indeksy). Zamyka lukę `alembic check`
+- [x] Celowe wprowadzenie błędów, żeby sprawdzić, czy testy je wykrywają
 
 ### Dzień 6: sprawdzenie w całości
 - [ ] Ręczny przebieg w Swaggerze: rejestracja, „Authorize”, `/me`

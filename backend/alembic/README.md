@@ -16,3 +16,4 @@ Zasady:
 - każda wygenerowana migracja jest **czytana przed commitem** (autogenerate nie wykrywa np. zmiany nazwy kolumny, widzi ją jako usunięcie i dodanie),
 - każda migracja ma działające `downgrade()`,
 - migracji już wypchniętych na `main` się nie edytuje; poprawka to nowa migracja.
+- `alembic check` nie porównuje ograniczeń `CHECK` ani wartości domyślnych, a Alembic nie generuje ich zmian. Trzeba je dopisać do migracji ręcznie. Pominięcie wykryje test `tests/integration/test_schema_parity.py`.

@@ -668,3 +668,60 @@ Na działającym API, a dane testowe usunięto po sprawdzeniach. Testy automatyc
 
 ### Dalej
 Dzień 5: osobna baza testowa, testy API i test zgodności schematu.
+
+---
+
+## Tydzień 2, dzień 5: baza testowa i testy API (wykonano 5.11.2026)
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/tests/conftest.py` | baza testowa i transakcja wycofywana po każdym teście |
+| `backend/tests/db_helpers.py` | tworzenie i usuwanie baz testowych z blokadą przed usunięciem innej bazy |
+| `backend/tests/integration/test_auth.py` | testy rejestracji, logowania, `/me` i wycieku haseł |
+| `backend/tests/integration/test_schema_parity.py` | porównanie schematu z modeli i z migracji |
+| `backend/alembic/env.py` | możliwość podania adresu bazy przez testy, logi aplikacji nie są wyłączane |
+
+Łącznie jest 69 testów.
+
+### Dlaczego
+- **Osobna baza.** Testy zakładają konta i usuwają dane, więc nie mogą działać na bazie deweloperskiej, a później na prawdziwych transakcjach.
+- **Wycofywana transakcja.** Testy nie wpływają na siebie nawzajem, a przebieg jest szybki: 69 testów trwa ok. 1,5 s.
+- **Schemat z migracji.** Testy sprawdzają bazę w takim stanie, w jakim będzie działać u użytkownika, więc przy okazji sprawdzają migracje.
+- **Test zgodności schematu.** Zamyka lukę `alembic check` opisaną w dniu 2: zmiana reguły `CHECK` w modelu bez migracji przechodziła niezauważona.
+
+### W jaki sposób
+- **Baza testowa:** na początku przebiegu powstaje od zera `<nazwa>_test` i dostaje schemat z migracji. W CI działa to tak samo, bez osobnej konfiguracji.
+- **Izolacja testów:** sesja z `join_transaction_mode="create_savepoint"`, więc `commit` w kodzie aplikacji zamyka tylko punkt zapisu, a cała transakcja jest wycofywana po teście.
+- **Zgodność schematu:** test buduje drugą, tymczasową bazę przez `create_all` i porównuje obie w katalogu PostgreSQL: kolumny z wartościami domyślnymi, ograniczenia (`pg_get_constraintdef`) i indeksy. Definicje zapisuje sam PostgreSQL, więc różny zapis tej samej reguły nie daje fałszywego alarmu.
+- **Blokada:** funkcje usuwające odmawiają pracy na bazie bez `_test` w nazwie, co ma własny test.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Celowe przepuszczenie zbyt długiego hasła do Argon2 nie zostało wykryte, bo odpowiedź nadal była 401 | nowy test sprawdzający, że takie hasło nie trafia do `verify_password` |
+| Pierwsza wersja testu „`/me` bez logowania” niczego nie zmieniała: zależność nadal działała | poprawiony przypadek, faktycznie usuwający zależność; testy go wykrywają |
+| `fileConfig` Alembica wyłączał istniejące loggery, więc po migracjach w testach logi aplikacji mogły zniknąć, a test braku haseł w logach przechodziłby bez sprawdzania | `disable_existing_loggers=False` |
+| Funkcja pomocnicza `test_database_url` była uruchamiana przez pytest jako test | przeniesienie do `db_helpers.py` i zmiana nazwy |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 69 testów zaliczonych, ok. 1,5 s |
+| 20 jednoczesnych rejestracji tego samego e-maila przez działające API | 1 × 201, 19 × 409, jedno konto w bazie, brak błędów 500 |
+| znacznik w bazie deweloperskiej przed testami | zostaje; testy nie zmieniają tej bazy |
+
+**Zmiany modelu bez migracji** (test zgodności schematu):
+
+| Zmiana | Test | `alembic check` |
+|---|---|---|
+| reguła `CHECK` waluty | wykrywa | nie wykrywa |
+| reguła `CHECK` e-maila | wykrywa | nie wykrywa |
+| wartość domyślna `kind` | wykrywa | nie wykrywa |
+| domyślna waluta | wykrywa | nie wykrywa |
+| długość kolumny, usunięty indeks, `ondelete`, `NULLS NOT DISTINCT` | wykrywa | wykrywa |
+
+**Celowo wprowadzone błędy w logowaniu:** m.in. hash w odpowiedzi, niesprawdzane hasło, brak stałego czasu, akceptowanie złego tokenu, logowanie hasła, odsyłanie wartości w 422. Wszystkie 16 przypadków jest wykrywanych. Pierwszy przebieg ujawnił lukę i źle przygotowany przypadek opisane wyżej. Kod został przywrócony.
+
+### Dalej
+Dzień 6: przejście całości w Swaggerze i czysty start ze świeżego klonu.
