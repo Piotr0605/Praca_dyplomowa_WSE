@@ -42,16 +42,18 @@ Mamy ok. 11 tygodni, w tym okres świąteczny. Dlatego:
 
 ```
 users
-  id (PK), email (unique), password_hash, created_at
+  id (PK), email (unique, małe litery), password_hash, created_at
 
 categories
   id (PK), user_id (FK, NULL = kategoria systemowa), name, color, icon, is_income
+  UNIQUE (user_id, name), także dla kategorii systemowych
 
 transactions
-  id (PK), user_id (FK), date, amount NUMERIC(12,2), currency,
+  id (PK), user_id (FK), date (operacji), booking_date (NULL), amount NUMERIC(12,2), currency,
   description, description_normalized, counterparty,
   category_id (FK, NULL = nieprzypisana), source ('pdf' | 'csv' | 'manual'),
-  import_batch_id (FK, NULL), dedup_hash, created_at
+  kind ('card' | 'blik' | 'transfer' | 'own_transfer' | 'refund' | 'cash' | 'fee' | 'other'),
+  import_batch_id (FK, NULL), dedup_hash (NULL = transakcja ręczna), created_at
   UNIQUE (user_id, dedup_hash)
 
 import_batches
@@ -59,7 +61,7 @@ import_batches
   rows_duplicated, created_at
 
 category_rules                      ← „pamięć” poprawek użytkownika
-  id (PK), user_id (FK, NULL = reguła systemowa), keyword/pattern,
+  id (PK), user_id (FK, NULL = reguła systemowa), pattern,
   match_type ('contains' | 'exact_counterparty' | 'regex'),
   category_id (FK), priority, source ('system' | 'user'), created_at
 
@@ -73,6 +75,9 @@ ai_advice
   provider, model, prompt_payload JSONB (zanonimizowane agregaty!),
   response_text, tokens_in, tokens_out, created_at
 ```
+
+**Usuwanie:** usunięcie użytkownika kasuje wszystkie jego dane. Usunięcie kategorii lub importu zostawia transakcje bez
+powiązania, a reguły znikają razem ze swoją kategorią.
 
 **Zasada izolacji:** każde repozytorium przyjmuje `user_id` jako obowiązkowy argument; nie istnieje
 metoda pobierająca transakcje „wszystkich”. Test integracyjny sprawdza, że użytkownik B dostaje 404

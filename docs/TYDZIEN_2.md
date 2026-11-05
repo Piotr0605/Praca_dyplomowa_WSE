@@ -74,11 +74,11 @@ ustalimy w dniu 3: backend przy tym kluczu co najmniej wypisze ostrzeżenie; roz
 ## 4. Kolejne dni
 
 ### Dzień 1: modele
-- [ ] `backend/app/models/`: `User`, `Category`, `Transaction`, `ImportBatch`, `CategoryRule`, `AIAdvice`
-- [ ] W `Transaction` dodatkowo: `booking_date` obok daty operacji oraz `kind` (rodzaj: karta, BLIK, przelew, przelew własny, zwrot, gotówka, prowizja, inne), wynikające z analizy wyciągów ING
-- [ ] Ograniczenia i indeksy: `UNIQUE(user_id, dedup_hash)`, unikalny e-mail, indeks `(user_id, date)` pod filtrowanie
-- [ ] Decyzje `ondelete`: co się dzieje z transakcjami po usunięciu użytkownika lub kategorii
-- [ ] Model danych w `PLAN_IMPLEMENTACJI.md` zgodny z kodem
+- [x] `backend/app/models/`: `User`, `Category`, `Transaction`, `ImportBatch`, `CategoryRule`, `AIAdvice`
+- [x] W `Transaction` dodatkowo: `booking_date` obok daty operacji oraz `kind` (rodzaj: karta, BLIK, przelew, przelew własny, zwrot, gotówka, prowizja, inne), wynikające z analizy wyciągów ING
+- [x] Ograniczenia i indeksy: `UNIQUE(user_id, dedup_hash)`, unikalny e-mail, indeks `(user_id, date)` pod filtrowanie
+- [x] Decyzje `ondelete`: co się dzieje z transakcjami po usunięciu użytkownika lub kategorii
+- [x] Model danych w `PLAN_IMPLEMENTACJI.md` zgodny z kodem
 
 ### Dzień 2: migracje i kategorie
 - [ ] Pierwsza migracja autogenerate, przeczytana przed commitem
