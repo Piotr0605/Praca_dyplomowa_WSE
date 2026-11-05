@@ -81,10 +81,10 @@ ustalimy w dniu 3: backend przy tym kluczu co najmniej wypisze ostrzeżenie; roz
 - [x] Model danych w `PLAN_IMPLEMENTACJI.md` zgodny z kodem
 
 ### Dzień 2: migracje i kategorie
-- [ ] Pierwsza migracja autogenerate, przeczytana przed commitem
-- [ ] Migracja z kategoriami systemowymi (16 kategorii z planu)
-- [ ] Sprawdzenie: `upgrade`, `alembic check`, `downgrade`, ponowny `upgrade`
-- [ ] Diagram ERD do pracy (`docs/diagramy/`)
+- [x] Pierwsza migracja autogenerate, przeczytana przed commitem
+- [x] Migracja z kategoriami systemowymi (16 kategorii z planu)
+- [x] Sprawdzenie: `upgrade`, `alembic check`, `downgrade`, ponowny `upgrade`
+- [x] Diagram ERD do pracy (`docs/diagramy/`)
 
 ### Dzień 3: bezpieczeństwo
 - [ ] Zależności: `argon2-cffi`, `PyJWT`, `email-validator`, `python-multipart`

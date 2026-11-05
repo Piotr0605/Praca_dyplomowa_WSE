@@ -518,3 +518,49 @@ Skrypt kontrolny był jednorazowy i nie ma go w repozytorium. Trwałe testy na b
 
 ### Dalej
 Dzień 2: pierwsza migracja i kategorie systemowe.
+
+---
+
+## Tydzień 2, dzień 2: pierwsza migracja i kategorie systemowe (wykonano 5.11.2026)
+
+### Co zostało zrobione
+- Pierwsza migracja tworzy 6 tabel, a druga dodaje 16 kategorii systemowych. Obie działają już w bazie deweloperskiej.
+- Diagram ERD w `docs/diagramy/erd.md`.
+- CI sprawdza teraz zgodność modeli z migracjami oraz cofanie migracji.
+- Odłożone sprawy trafiły jako zadania do właściwych etapów planu.
+
+### Dlaczego
+- **Schemat i kategorie w osobnych migracjach.** Zmiana struktury i wstawienie danych to różne operacje, łatwiej je czytać i cofać osobno.
+- **Lista kategorii zapisana w migracji**, a nie importowana z kodu aplikacji. Migracja ma działać tak samo także po przyszłych zmianach modeli.
+- **`alembic check` i cofanie w CI.** Bez tego zmiana modelu bez migracji przeszłaby testy, a aplikacja nie działałaby na czystej bazie.
+- **ERD generowany ze schematu**, a nie rysowany ręcznie, więc odpowiada faktycznym kolumnom.
+
+### W jaki sposób
+- Migrację schematu wygenerował `alembic revision --autogenerate`; plik przeczytano przed commitem.
+- Kategorie dodaje `op.bulk_insert` na lekkim widoku tabeli `sa.table(...)`, niezależnym od modeli ORM.
+- `downgrade()` usuwa tylko kategorie systemowe z tej listy.
+- Kolory i ikony kategorii są na razie puste; zostaną dobrane pod wykresy w etapie 6.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Ruff uznawał katalog `backend/alembic/` za własny pakiet i odrzucał kolejność importów w migracjach, co zatrzymałoby CI | `known-third-party = ["alembic"]` w `pyproject.toml` zamiast ręcznej poprawy każdej migracji |
+| `alembic check` nie porównuje ograniczeń `CHECK`, więc ich późniejsza zmiana w modelu nie zostanie wykryta | sprawdzono je w bazie po migracji; przy zmianach trzeba pisać je w migracji ręcznie |
+| Renderowanie diagramu narzędziem `mermaid-cli` zablokował mechanizm uprawnień, bo wymagało pobrania pakietu | diagram w formacie Mermaid, wyświetlany przez GitHub; poprawność wyglądu trzeba sprawdzić po wypchnięciu |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| restart backendu | obie migracje wykonane automatycznie, health HTTP 200 |
+| `alembic check` po `upgrade` | „No new upgrade operations detected” |
+| ograniczenia `CHECK` w bazie po migracji | wszystkie 8 obecnych |
+| kategorie systemowe | 16, w tym 1 przychodowa (Wynagrodzenie) |
+| `alembic downgrade base` | została tylko tabela `alembic_version` |
+| ponowny `upgrade` | 7 tabel, 16 kategorii, `alembic check` bez różnic |
+| cofnięcie kategorii przy istniejącej kategorii użytkownika | systemowe usunięte, kategoria użytkownika zostaje |
+| dane testowe po sprawdzeniach | usunięte: 0 użytkowników, 16 kategorii |
+| `pytest` | 10 testów zaliczonych |
+| `ruff check`, `ruff format --check`, lokalnie i w kontenerze | bez uwag |
+
+### Dalej
+Dzień 3: hasła Argon2, tokeny JWT i rozwiązanie problemu przykładowego klucza z `.env.example`.

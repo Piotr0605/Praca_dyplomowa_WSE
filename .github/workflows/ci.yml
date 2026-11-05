@@ -45,8 +45,12 @@ jobs:
         run: ruff check .
       - name: Formatowanie
         run: ruff format --check .
-      - name: Migracje
+      - name: Migracje działają od zera
         run: alembic upgrade head
+      - name: Modele i migracje są zgodne
+        run: alembic check
+      - name: Migracje można cofnąć i zastosować ponownie
+        run: alembic downgrade base && alembic upgrade head
       - name: Testy
         run: pytest
 
