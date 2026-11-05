@@ -20,6 +20,8 @@ COPY . .
 
 # Aplikacja nie działa jako root (dobra praktyka bezpieczeństwa kontenerów).
 RUN useradd --create-home --uid 1000 appuser
+# Katalog na klucz JWT. Właściciela dziedziczy po nim wolumen z docker-compose.yml.
+RUN mkdir /data && chown appuser:appuser /data
 USER appuser
 
 EXPOSE 8000

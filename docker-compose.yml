@@ -40,6 +40,8 @@ services:
     # restartuje serwer po każdym zapisie pliku (bez przebudowy obrazu).
     volumes:
       - ./backend:/app
+      # Automatycznie wygenerowany klucz JWT: poza katalogiem kodu i repozytorium.
+      - backend_data:/data
     command: ["sh", "start.sh", "--reload", "--reload-dir", "app"]
 
   frontend:
@@ -62,3 +64,4 @@ services:
 
 volumes:
   pgdata:
+  backend_data:

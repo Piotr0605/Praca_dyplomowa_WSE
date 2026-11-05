@@ -564,3 +564,54 @@ Dzień 2: pierwsza migracja i kategorie systemowe.
 
 ### Dalej
 Dzień 3: hasła Argon2, tokeny JWT i rozwiązanie problemu przykładowego klucza z `.env.example`.
+
+---
+
+## Tydzień 2, dzień 3: hasła, tokeny i klucz JWT (wykonano 5.11.2026)
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/app/core/security.py` | `hash_password`, `verify_password`, `create_access_token`, `decode_access_token` |
+| `backend/app/core/jwt_key.py` | odczyt klucza albo wygenerowanie go przy pierwszym uruchomieniu |
+| `backend/app/core/config.py` | ustawienia JWT z walidacją |
+| `backend/app/main.py` | sprawdzenie klucza przy starcie aplikacji |
+| `backend/tests/unit/test_security.py` | testy haseł, tokenów i klucza |
+| `.env.example`, `docker-compose.yml`, `Dockerfile` | pusty klucz w przykładzie, wolumen `backend_data` na klucz |
+
+Endpointów logowania jeszcze nie ma: powstaną w dniu 4.
+
+### Dlaczego
+- **Argon2id.** Zużywa czas i pamięć, więc masowe zgadywanie haseł po wycieku bazy jest kosztowne. Sól jest losowa, więc te same hasła mają różne hashe.
+- **W tokenie tylko identyfikator użytkownika.** Zawartość JWT można odczytać bez klucza, więc e-mail ani inne dane osobowe nie mogą się w nim znaleźć.
+- **Brak klucza w repozytorium.** Repozytorium jest publiczne, więc każdy mógłby użyć przykładowego klucza do podrobienia tokenu. Samo ostrzeżenie zostawiałoby tę możliwość otwartą.
+- **Klucz generowany automatycznie, a nie obowiązkowo wpisywany.** `cp .env.example .env` ma nadal wystarczać do uruchomienia, np. u promotora.
+
+### W jaki sposób
+- **Argon2:** domyślne parametry biblioteki `argon2-cffi` (profil RFC 9106: 64 MiB pamięci, 3 iteracje, 4 wątki).
+- **Weryfikacja tokenu:** jawna lista algorytmów blokuje token z `alg: none` i z innym algorytmem niż ustawiony. `exp` i `sub` są wymagane. Każdy błąd daje jeden wyjątek `InvalidTokenError`, więc później przełoży się na jeden kod odpowiedzi 401.
+- **Klucz:** `secrets.token_hex(32)`, plik `/data/jwt_secret` w wolumenie Dockera z uprawnieniami 600. `O_EXCL` gwarantuje, że istniejący klucz nie zostanie nadpisany. Usunięcie wolumenu tylko wyloguje użytkowników.
+- **Szybki błąd:** niepoprawny klucz zatrzymuje start aplikacji, zamiast ujawnić się przy pierwszym logowaniu.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Publiczny przykładowy klucz w `.env.example` umożliwiałby podrabianie tokenów | pusta wartość i automatyczne generowanie; stary przykład odrzucany, jeśli ktoś ma go w swoim `.env` |
+| Komunikat błędu Pydantic wypisywał odrzuconą wartość, więc za krótki klucz trafiłby do logów | `hide_input_in_errors=True` i test |
+| Pierwsze sprawdzenia generowania klucza nie wykonały się, bo zsh nie rozdzielił zmiennej z poleceniem, a puste wyniki wyglądały jak zaliczone | powtórzenie z funkcją powłoki i sprawdzeniem kodu wyjścia |
+| Logowanie mogłoby zdradzać istnienie konta przez czas odpowiedzi, a bardzo długie hasło obciążać serwer | dopisane jako zadania do dnia 4 |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| pusty klucz, dwa osobne uruchomienia kontenera | ten sam wygenerowany klucz (porównanie skrótów, bez wypisywania klucza) |
+| plik klucza | uprawnienia 600, właściciel `appuser` |
+| publiczny przykład lub za krótki klucz | start zatrzymany, kod wyjścia 1, czytelny komunikat |
+| nie można zapisać klucza | start aplikacji zatrzymany |
+| hash | `$argon2id$v=19$m=65536,t=3,p=4` |
+| 15 celowo osłabionych zabezpieczeń, m.in. brak sprawdzania podpisu, akceptowanie wygasłych tokenów, hasło bez hashowania, plik klucza dostępny dla wszystkich | 15 z 15 wykrytych przez testy; kod przywrócony |
+| `pytest` | wszystkie zaliczone |
+| `ruff check`, `ruff format` | bez uwag |
+
+### Dalej
+Dzień 4: endpointy `register`, `login` i `me`.

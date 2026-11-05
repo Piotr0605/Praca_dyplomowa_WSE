@@ -65,9 +65,8 @@ Zapytanie:   Authorization: Bearer <token> ──► get_current_user ──► 
 | Pola transakcji z analizy PDF | data operacji, data księgowania, rodzaj operacji | zob. dzień 1 |
 | Tabela `bank_profiles` | migracja dopiero w etapie 4 | powstanie razem z importerem CSV, który z niej korzysta |
 
-**Otwarty problem:** `.env.example` zawiera przykładowy `JWT_SECRET_KEY`, a cel `cp .env.example .env` ma dawać działającą
-aplikację. Aplikacja z tym kluczem pozwalałaby każdemu podrobić token, jeśli kod repozytorium jest publiczny. Rozwiązanie
-ustalimy w dniu 3: backend przy tym kluczu co najmniej wypisze ostrzeżenie; rozważamy też generowanie klucza przy pierwszym uruchomieniu.
+**Klucz JWT (rozwiązane w dniu 3):** `.env.example` zawiera pusty `JWT_SECRET_KEY`. Backend generuje losowy klucz przy pierwszym
+uruchomieniu i zapisuje go w wolumenie Dockera, a dawny przykładowy klucz zatrzymuje start.
 
 ---
 
@@ -87,16 +86,18 @@ ustalimy w dniu 3: backend przy tym kluczu co najmniej wypisze ostrzeżenie; roz
 - [x] Diagram ERD do pracy (`docs/diagramy/`)
 
 ### Dzień 3: bezpieczeństwo
-- [ ] Zależności: `argon2-cffi`, `PyJWT`, `email-validator`, `python-multipart`
-- [ ] `core/security.py`: `hash_password`, `verify_password`, `create_access_token`, `decode_access_token`
-- [ ] `JWT_SECRET_KEY` w `Settings`: wymagany, minimalna długość; rozwiązanie otwartego problemu z sekcji 3
-- [ ] Testy jednostkowe: poprawne i złe hasło, różne hashe tego samego hasła, token wygasły, podrobiony, z innym kluczem
+- [x] Zależności: `argon2-cffi`, `PyJWT`, `email-validator`, `python-multipart`
+- [x] `core/security.py`: `hash_password`, `verify_password`, `create_access_token`, `decode_access_token`
+- [x] `JWT_SECRET_KEY` w `Settings`: minimalna długość, odrzucenie publicznego przykładu, automatyczne generowanie
+- [x] Testy jednostkowe: poprawne i złe hasło, różne hashe tego samego hasła, token wygasły, podrobiony, z innym kluczem
 
 ### Dzień 4: endpointy
 - [ ] `schemas/user.py`: `UserCreate` (`EmailStr`, minimalna długość hasła), `UserRead` (bez hasła), `Token`
 - [ ] `repositories/user_repository.py`, `api/routes/auth.py`: `register`, `login`, `me`
 - [ ] `api/deps.py`: `get_current_user` i alias `CurrentUser`
 - [ ] E-mail normalizowany (małe litery), a duplikat obsłużony także przy jednoczesnej rejestracji (`IntegrityError` → 409)
+- [ ] Czas logowania nie zdradza, czy konto istnieje: przy nieznanym e-mailu też liczony jest hash Argon2
+- [ ] Limit długości hasła (minimum i maksimum), żeby bardzo długie hasła nie obciążały serwera
 
 ### Dzień 5: baza testowa i testy API
 - [ ] `conftest.py`: tworzenie bazy `finanse_test`, migracje, transakcja wycofywana po każdym teście

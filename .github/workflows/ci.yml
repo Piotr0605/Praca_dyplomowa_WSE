@@ -33,6 +33,8 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql+psycopg://ci:ci@localhost:5432/ci
+      # Klucz tylko do testów, bez znaczenia poza tym przebiegiem.
+      JWT_SECRET_KEY: klucz-testowy-ci-bez-znaczenia-poza-testami
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
