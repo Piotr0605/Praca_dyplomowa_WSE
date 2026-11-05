@@ -79,8 +79,8 @@ docker compose up --build
 Pierwsze uruchomienie pobiera obrazy i zależności, więc trwa dłużej i wymaga internetu. Później wystarczy
 `docker compose up`. Przy starcie backend sam wykonuje migracje bazy.
 
-Przed dłuższym użyciem zmień w `.env` wartości `POSTGRES_PASSWORD` (także w `DATABASE_URL`) i `JWT_SECRET_KEY`,
-np. na wynik `openssl rand -hex 32`.
+Klucz podpisujący tokeny logowania powstaje automatycznie przy pierwszym uruchomieniu. Przed dłuższym użyciem zmień
+w `.env` wartość `POSTGRES_PASSWORD` (także w `DATABASE_URL`), np. na wynik `openssl rand -hex 16`.
 
 | Adres | Co tam jest |
 |---|---|
