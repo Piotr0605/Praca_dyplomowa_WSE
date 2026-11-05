@@ -682,11 +682,11 @@ Dzień 5: osobna baza testowa, testy API i test zgodności schematu.
 | `backend/tests/integration/test_schema_parity.py` | porównanie schematu z modeli i z migracji |
 | `backend/alembic/env.py` | możliwość podania adresu bazy przez testy, logi aplikacji nie są wyłączane |
 
-Łącznie jest 69 testów.
+Łącznie jest 70 testów.
 
 ### Dlaczego
 - **Osobna baza.** Testy zakładają konta i usuwają dane, więc nie mogą działać na bazie deweloperskiej, a później na prawdziwych transakcjach.
-- **Wycofywana transakcja.** Testy nie wpływają na siebie nawzajem, a przebieg jest szybki: 69 testów trwa ok. 1,5 s.
+- **Wycofywana transakcja.** Testy nie wpływają na siebie nawzajem, a przebieg jest szybki: 70 testów trwa ok. 1,5 s.
 - **Schemat z migracji.** Testy sprawdzają bazę w takim stanie, w jakim będzie działać u użytkownika, więc przy okazji sprawdzają migracje.
 - **Test zgodności schematu.** Zamyka lukę `alembic check` opisaną w dniu 2: zmiana reguły `CHECK` w modelu bez migracji przechodziła niezauważona.
 
@@ -703,11 +703,12 @@ Dzień 5: osobna baza testowa, testy API i test zgodności schematu.
 | Pierwsza wersja testu „`/me` bez logowania” niczego nie zmieniała: zależność nadal działała | poprawiony przypadek, faktycznie usuwający zależność; testy go wykrywają |
 | `fileConfig` Alembica wyłączał istniejące loggery, więc po migracjach w testach logi aplikacji mogły zniknąć, a test braku haseł w logach przechodziłby bez sprawdzania | `disable_existing_loggers=False` |
 | Funkcja pomocnicza `test_database_url` była uruchamiana przez pytest jako test | przeniesienie do `db_helpers.py` i zmiana nazwy |
+| Ostrzeżenie PyJWT w CI: ustawienia dopuszczały HS512, który zaleca klucz od 64 bajtów, a walidacja przepuszczała już 32 znaki | ograniczenie `JWT_ALGORITHM` do HS256 i dłuższy klucz testowy w CI |
 
 ### Weryfikacja
 | Test | Wynik |
 |---|---|
-| `pytest` | 69 testów zaliczonych, ok. 1,5 s |
+| `pytest` | 70 testów zaliczonych, ok. 1,5 s, także w CI |
 | 20 jednoczesnych rejestracji tego samego e-maila przez działające API | 1 × 201, 19 × 409, jedno konto w bazie, brak błędów 500 |
 | znacznik w bazie deweloperskiej przed testami | zostaje; testy nie zmieniają tej bazy |
 

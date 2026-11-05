@@ -37,8 +37,8 @@ class Settings(BaseSettings):
     # Pusty klucz oznacza: wygeneruj losowy i zapisz w JWT_SECRET_FILE (zob. core/jwt_key.py).
     JWT_SECRET_KEY: str = ""
     JWT_SECRET_FILE: Path = Path("/data/jwt_secret")
-    # Tylko algorytmy HMAC: wartość "none" wyłączałaby podpis.
-    JWT_ALGORITHM: Literal["HS256", "HS384", "HS512"] = "HS256"
+    # Tylko HS256: wartość "none" wyłączałaby podpis, a silniejsze warianty wymagają dłuższego klucza.
+    JWT_ALGORITHM: Literal["HS256"] = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60, gt=0)
 
     @field_validator("JWT_SECRET_KEY")

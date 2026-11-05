@@ -172,9 +172,12 @@ def test_niebezpieczny_klucz_jest_odrzucany(
     assert klucz not in str(blad.value)
 
 
-def test_algorytm_none_jest_odrzucany(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("algorytm", ["none", "HS512"])
+def test_inny_algorytm_w_ustawieniach_jest_odrzucany(
+    algorytm: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@localhost/db")
-    monkeypatch.setenv("JWT_ALGORITHM", "none")
+    monkeypatch.setenv("JWT_ALGORITHM", algorytm)
 
     with pytest.raises(ValidationError, match="JWT_ALGORITHM"):
         Settings(_env_file=None)
