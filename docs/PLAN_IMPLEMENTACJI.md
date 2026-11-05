@@ -129,13 +129,13 @@ Każdy etap kończy się checklistą „Definition of Done”. Zasady gałęzi o
 **DoD:** `docker compose up --build` → frontend pokazuje „API OK, baza OK”; `/docs` (Swagger) działa.
 
 ### Etap 2 · do 8 XI — Model danych i uwierzytelnianie
-- [ ] Modele SQLAlchemy: `User`, `Category`, `Transaction`, `ImportBatch`, `CategoryRule`, `AIAdvice`
-- [ ] Pierwsza migracja Alembic + migracja z **seedem kategorii systemowych** (Jedzenie, Zakupy spożywcze, Restauracje, Transport, Paliwo, Mieszkanie, Rachunki, Subskrypcje, Rozrywka, Zdrowie, Odzież, Edukacja, Prezenty, Przelewy własne, Wynagrodzenie, Inne)
-- [ ] `core/security.py`: hash/verify Argon2, tworzenie i dekodowanie JWT
-- [ ] `api/deps.py`: `get_current_user`
-- [ ] Endpointy `register`, `login`, `me` + schematy Pydantic (`EmailStr`, min. długość hasła)
-- [ ] Testy: rejestracja, duplikat e-maila, złe hasło, dostęp bez tokenu → 401
-- [ ] Osobna baza testowa (np. `postgres` w CI lub transakcja z rollbackiem per test)
+- [x] Modele SQLAlchemy: `User`, `Category`, `Transaction`, `ImportBatch`, `CategoryRule`, `AIAdvice`
+- [x] Pierwsza migracja Alembic + migracja z **seedem kategorii systemowych** (Jedzenie, Zakupy spożywcze, Restauracje, Transport, Paliwo, Mieszkanie, Rachunki, Subskrypcje, Rozrywka, Zdrowie, Odzież, Edukacja, Prezenty, Przelewy własne, Wynagrodzenie, Inne)
+- [x] `core/security.py`: hash/verify Argon2, tworzenie i dekodowanie JWT
+- [x] `api/deps.py`: `get_current_user`
+- [x] Endpointy `register`, `login`, `me` + schematy Pydantic (`EmailStr`, min. długość hasła)
+- [x] Testy: rejestracja, duplikat e-maila, złe hasło, dostęp bez tokenu → 401
+- [x] Osobna baza testowa (np. `postgres` w CI lub transakcja z rollbackiem per test)
 
 **DoD:** przez Swagger można się zarejestrować, zalogować i wywołać `/me`; testy zielone.
 
@@ -249,7 +249,8 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 - [ ] Obsługa błędów i stanów pustych w UI (brak danych, błędny plik, błąd AI), walidacja formularzy
 - [ ] Responsywność, spójny wygląd
 - [ ] Docker Compose: produkcyjny build frontendu (nginx, wspólny adres dla API, bez `VITE_API_URL`), bez `--reload`, bez podmontowanego kodu i narzędzi deweloperskich w obrazie; `alembic upgrade head` przy starcie już działa
-- [ ] Sprawdzenie reguły prywatności: strona i backend nie łączą się z zewnętrznymi serwerami poza `ai/providers/`
+- [ ] Swagger UI serwowany lokalnie: `/docs` pobiera teraz pliki z `cdn.jsdelivr.net` i bez internetu jest pusta (sprawdzone w tygodniu 2)
+- [ ] Sprawdzenie reguły prywatności: strona, `/docs` i backend nie łączą się z zewnętrznymi serwerami poza `ai/providers/`
 - [ ] Skrypt danych demo (użytkownik demo + sztuczne transakcje z 6 miesięcy)
 - [ ] README: instalacja, uruchomienie, zrzuty ekranu
 
@@ -318,7 +319,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 |---|---|---|---|
 | 0. Struktura repo + plan | ✅ | 2026-11-02 | |
 | 1. Fundament | ✅ | 2026-11-04 | format wyciągu opisany, pliki w `data/private/` |
-| 2. Model danych + auth | ⏳ | | |
+| 2. Model danych + auth | ✅ | 2026-11-05 | |
 | 3. CRUD + frontend logowania | ⏳ | | |
 | 4. Import CSV | ⏳ | | |
 | 5. Kategoryzacja | ⏳ | | |
@@ -358,7 +359,8 @@ na tym serwerze. To kierunek rozwoju, a nie zakres pracy.
 1. **Dzień przed:** `git pull`, `docker compose up --build` przy dostępie do internetu (pobranie obrazów),
    wczytanie danych demo, przejście całego scenariusza raz na próbę.
 2. **Przed wejściem na salę:** wyłączyć inne projekty Dockera zajmujące porty (np. finshield-api),
-   uruchomić `docker compose up`, otworzyć w przeglądarce kartę aplikacji i kartę `localhost:8000/docs`.
+   uruchomić `docker compose up`, otworzyć w przeglądarce kartę aplikacji i kartę `localhost:8000/docs`
+   (`/docs` działa bez internetu dopiero po zadaniu z etapu 9).
 3. **AI:** jeśli jest internet i ważny klucz API, `AI_PROVIDER=openai` lub `anthropic`; jeśli nie, `mock`
    albo zapisane wcześniej porady z historii.
 4. **Plan B:** nagranie ekranu całego scenariusza i zrzuty ekranu (`docs/zrzuty/`) na pendrive i w chmurze.

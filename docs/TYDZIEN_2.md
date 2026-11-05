@@ -107,21 +107,21 @@ uruchomieniu i zapisuje go w wolumenie Dockera, a dawny przykładowy klucz zatrz
 - [x] Celowe wprowadzenie błędów, żeby sprawdzić, czy testy je wykrywają
 
 ### Dzień 6: sprawdzenie w całości
-- [ ] Ręczny przebieg w Swaggerze: rejestracja, „Authorize”, `/me`
-- [ ] Czysty start: `docker compose down -v && docker compose up --build`
-- [ ] Sprawdzenie w bazie, że hasło jest hashem Argon2
+- [x] Ręczny przebieg w Swaggerze: rejestracja, „Authorize”, `/me`
+- [x] Czysty start: `docker compose down -v && docker compose up --build`
+- [x] Sprawdzenie w bazie, że hasło jest hashem Argon2
 
 ### Dzień 7: domknięcie
-- [ ] Wpisy w dzienniku prac, odhaczony postęp w planie
-- [ ] Uzupełnienie notatek o technologiach (Argon2, JWT)
+- [x] Wpisy w dzienniku prac, odhaczony postęp w planie
+- [x] Uzupełnienie notatek o technologiach (Argon2, JWT)
 - [ ] PR do `main` i tag
 
 ---
 
 ## 5. Definition of Done tygodnia 2
-- [ ] Przez Swagger można się zarejestrować, zalogować i wywołać `/api/auth/me`
-- [ ] Wszystkie tabele z sekcji 2 planu istnieją, z wyjątkiem `bank_profiles` (etap 4)
-- [ ] Baza zawiera kategorie systemowe po czystym starcie
-- [ ] Hasła są zapisane wyłącznie jako hash Argon2
-- [ ] Testy przechodzą lokalnie i w GitHub Actions na osobnej bazie
-- [ ] Dziennik prac i plan są aktualne
+- [x] Przez Swagger można się zarejestrować, zalogować i wywołać `/api/auth/me`
+- [x] Wszystkie tabele z sekcji 2 planu istnieją, z wyjątkiem `bank_profiles` (etap 4)
+- [x] Baza zawiera kategorie systemowe po czystym starcie
+- [x] Hasła są zapisane wyłącznie jako hash Argon2
+- [x] Testy przechodzą lokalnie i w GitHub Actions na osobnej bazie
+- [x] Dziennik prac i plan są aktualne

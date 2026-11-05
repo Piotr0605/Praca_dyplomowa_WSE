@@ -726,3 +726,75 @@ Dzień 5: osobna baza testowa, testy API i test zgodności schematu.
 
 ### Dalej
 Dzień 6: przejście całości w Swaggerze i czysty start ze świeżego klonu.
+
+---
+
+## Tydzień 2, dzień 6: sprawdzenie całości (wykonano 5.11.2026)
+
+### Co zostało zrobione
+Sprawdzono cały przebieg: czysty start, świeży klon z pustym kluczem JWT oraz rejestrację i logowanie w prawdziwym Swaggerze.
+Kod aplikacji się nie zmienił.
+
+### Dlaczego
+- **Swagger w przeglądarce.** Kryterium ukończenia etapu mówi o Swaggerze, a testy automatyczne i `curl` nie sprawdzają okna „Authorize” ani tego, jak strona działa w przeglądarce.
+- **Świeży klon z pustym kluczem.** Dotąd generowanie klucza sprawdzano tylko w kontenerze z istniejącej instalacji, a nie w scenariuszu nowej osoby.
+
+### W jaki sposób
+- **Czysty start:** `docker compose down -v`, po sprawdzeniu, że baza nie zawiera danych, potem `docker compose up --build`.
+- **Świeży klon:** `git clone` gałęzi `develop`, `cp .env.example .env`, build bez cache, osobny projekt Compose; zmieniono tylko porty.
+- **Swagger:** Chromium sterowany przez Playwright, użyty jednorazowo i poza repozytorium, klika te same elementy co użytkownik: „Try it out”, „Execute”, „Authorize”. Wyniki odczytano z odpowiedzi HTTP i z ekranu.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| `/docs` pobiera Swagger UI z `cdn.jsdelivr.net`. Bez internetu strona jest pusta, co psuje krok pokazu i narusza regułę braku zewnętrznych połączeń | zadanie w etapie 9: serwowanie Swagger UI lokalnie; adnotacja w scenariuszu pokazu. Dotyczy tylko dokumentacji API, a nie danych użytkownika |
+| Skrypt pokazał 401 dla `/me` po zalogowaniu, choć treść zawierała e-mail: odczytał status sprzed odświeżenia wyniku | odczyt statusu z faktycznej odpowiedzi HTTP; wynik to 200 |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `down -v` + `up --build` | 3 kontenery działają, gotowe po 33 s, migracje na bieżącej wersji |
+| świeży klon, build bez cache | gotowy po 49 s (obrazy bazowe były już pobrane) |
+| klucz JWT w klonie | wygenerowany: 64 znaki, uprawnienia 600, właściciel `appuser` |
+| `pytest` (oba przypadki) | 70 testów zaliczonych |
+| Swagger: `/me` bez logowania | 401 |
+| Swagger: rejestracja | 201 |
+| Swagger: logowanie w oknie „Authorize” | 200 |
+| Swagger: `/me` po zalogowaniu | 200, nagłówek `Bearer`, w odpowiedzi e-mail, bez hasha |
+| hasło w bazie | `$argon2id$v=19$m=65536,t=3,p=4` |
+| ekran stanu w klonie | „API: OK, Baza: OK” |
+| `/docs` bez dostępu do zewnętrznych serwerów | 0 sekcji API, zob. problem wyżej |
+
+Domyślne porty i pierwsze pobranie obrazów nadal nie są sprawdzone: to zadanie etapu 9.
+
+### Dalej
+Dzień 7: domknięcie etapu 2.
+
+---
+
+## Tydzień 2, dzień 7: domknięcie etapu 2 (wykonano 5.11.2026)
+
+### Co zostało zrobione
+- Etap 2 oznaczony w planie jako ukończony, a notatki o technologiach uzupełnione o Argon2 i JWT.
+- Harmonogram przesunięty pod oddanie pracy do 15 stycznia 2027, a część pisemna dopisana do planu (sekcja 10).
+- Wszystkie 6 kryteriów ukończenia tygodnia sprawdzone.
+
+### Dlaczego
+- **Zmiana harmonogramu.** Pierwotny plan kończył program 17 stycznia, czyli po docelowym terminie oddania.
+- **Część pisemna w planie.** Program i tekst powstają równolegle, więc obie części muszą mieć terminy.
+
+### W jaki sposób
+- Program ma być gotowy do 20 grudnia, święta przeznaczono na pomiary i poprawki, a od 4 stycznia tylko na krytyczne błędy. Terminy są robocze do czasu potwierdzenia terminu WSE, procedury JSA i czasu promotora.
+- Ustalono kolejność cięć, gdyby zabrakło czasu: funkcje COULD, importer uniwersalny CSV, drugi dostawca AI.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Bufor ze stycznia zniknął, więc margines błędu jest mniejszy | bufor świąteczny, zapas 11–15 stycznia i ustalona kolejność cięć |
+| Formalne terminy nie są jeszcze znane | harmonogram oznaczony jako roboczy, zadanie ich ustalenia w sekcji 10 |
+
+### Weryfikacja
+Kryteria ukończenia z `TYDZIEN_2.md`: rejestracja i `/me` w Swaggerze, tabele, kategorie po czystym starcie, hash Argon2 i testy na osobnej bazie, lokalnie oraz w CI. Sprawdzone w dniach 1–6.
+
+### Dalej
+Etap 3 (9–15 listopada): transakcje, kategorie i logowanie w przeglądarce.

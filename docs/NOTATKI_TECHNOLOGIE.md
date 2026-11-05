@@ -1,6 +1,6 @@
 # Notatki do rozdziału „Wykorzystane technologie”
 
-Stan po tygodniu 1. Wersje pochodzą z plików projektu (`requirements*.txt`, `package.json`, `docker-compose.yml`).
+Stan po tygodniu 2. Wersje pochodzą z plików projektu (`requirements*.txt`, `package.json`, `docker-compose.yml`).
 Szersze opisy działania każdej technologii: [`TYDZIEN_1.md`](TYDZIEN_1.md), sekcja 2.
 
 ## Zestawienie
@@ -14,6 +14,8 @@ Szersze opisy działania każdej technologii: [`TYDZIEN_1.md`](TYDZIEN_1.md), se
 | Backend | Pydantic Settings | 2.16 | konfiguracja ze zmiennych środowiskowych, walidowana przy starcie |
 | Backend | SQLAlchemy | 2.1 | mapowanie obiektowo-relacyjne (ORM), pula połączeń |
 | Backend | Alembic | 1.20 | wersjonowane migracje schematu bazy |
+| Bezpieczeństwo | argon2-cffi | 25.1 | hashowanie haseł algorytmem Argon2id |
+| Bezpieczeństwo | PyJWT | 2.15 | tokeny logowania JWT |
 | Analityka | Pandas | 3.1 | import CSV i agregacje (używane od etapu 4) |
 | Frontend | React | 19 | interfejs użytkownika z komponentów |
 | Frontend | TypeScript | 7 | statyczne typowanie kodu frontendu |
@@ -37,6 +39,13 @@ bezpośredni dostęp do Pandas i bibliotek klienckich modeli językowych, potrze
 **SQLAlchemy i Alembic.** Zapytania parametryzowane chronią przed SQL injection. Migracje wersjonowane razem z kodem
 pozwalają odtworzyć schemat bazy na dowolnym komputerze.
 
+**Argon2id.** Zwycięzca Password Hashing Competition, zalecany przez OWASP [źródło do uzupełnienia]. Wymaga dużo czasu
+i pamięci, więc masowe zgadywanie haseł po wycieku bazy jest kosztowne. Użyto profilu RFC 9106: 64 MiB, 3 iteracje, 4 wątki.
+
+**JWT.** Token podpisany kluczem pozwala obsługiwać logowanie bez przechowywania sesji po stronie serwera. Zawartość
+tokenu można odczytać, dlatego zawiera on wyłącznie identyfikator użytkownika i czasy. Klucz jest generowany przy pierwszym
+uruchomieniu, więc w publicznym repozytorium nie ma żadnego klucza.
+
 **React, TypeScript, Vite.** Komponenty odpowiadają częściom interfejsu (karty, wykresy, tabele), a TypeScript wykrywa
 niezgodności z API przed uruchomieniem kodu.
 
@@ -51,7 +60,8 @@ zanonimizowane agregaty (plan, sekcja 9).
 
 - Testy automatyczne uruchamiane przy każdej zmianie w GitHub Actions, na czystej maszynie z prawdziwą bazą PostgreSQL.
 - Gałąź `main` jest chroniona: scalenie wymaga Pull Requesta i zielonych testów.
-- Skuteczność testów sprawdzono, wprowadzając celowe błędy; wszystkie 4 zostały wykryte (dziennik, dzień 6).
+- Skuteczność testów sprawdzano, wprowadzając celowe błędy; po uzupełnieniu testów wszystkie są wykrywane (dziennik, tydzień 1 dzień 6 oraz tydzień 2 dni 3 i 5).
+- Osobny test porównuje schemat bazy z modeli i z migracji, wykrywając zmiany niewidoczne dla `alembic check` (dziennik, tydzień 2, dzień 5).
 - Zachowanie przy awarii zweryfikowano w przeglądarce: zatrzymanie bazy lub backendu jest widoczne na ekranie stanu (dziennik, dzień 5).
 
 ## Do uzupełnienia w pracy
