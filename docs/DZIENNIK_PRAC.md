@@ -798,3 +798,48 @@ Kryteria ukończenia z `TYDZIEN_2.md`: rejestracja i `/me` w Swaggerze, tabele, 
 
 ### Dalej
 Etap 3 (9–15 listopada): transakcje, kategorie i logowanie w przeglądarce.
+
+---
+
+## Tydzień 3, dni 1–3: kategorie, transakcje i izolacja danych w API (wykonano 7.11.2026)
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `schemas/category.py`, `repositories/category_repository.py`, `services/category_service.py`, `api/routes/categories.py` | kategorie: lista, dodawanie, edycja i usuwanie własnych |
+| `schemas/transaction.py`, `repositories/transaction_repository.py`, `services/transaction_service.py`, `api/routes/transactions.py` | transakcje: lista z filtrami i paginacją, dodawanie ręczne, edycja, usuwanie |
+| `tests/integration/test_categories.py`, `test_transactions.py`, `test_isolation.py`, `helpers.py` | 81 nowych testów |
+
+Rozwiązano dwie sprawy odłożone w tygodniu 2: kategoria przypisana do transakcji musi być systemowa albo użytkownika,
+a kategorii systemowych nie można zmienić ani usunąć.
+
+### Dlaczego
+- **Cudzy zasób daje 404, a nie 403.** Kod 403 zdradzałby, że zasób o danym numerze istnieje i należy do kogoś innego. Odpowiedź dla cudzej i nieistniejącej transakcji jest identyczna, co sprawdza osobny test.
+- **Sprawdzanie kategorii w aplikacji.** Kategoria systemowa nie ma właściciela, więc prosty klucz obcy nie wyrazi warunku „systemowa albo moja”.
+- **Dane bankowe z importu są zablokowane.** Data, kwota i waluta z wyciągu są podstawą sum kontrolnych i wykrywania duplikatów (etap 4). W takiej transakcji można zmienić tylko kategorię, rodzaj i opis.
+- **Kwoty jako tekst w JSON** (`"-12.50"`). Liczba w JSON to `float` i mogłaby stracić dokładność.
+- **Nazwy kategorii bez powtórzeń**, także z kategoriami systemowymi i bez względu na wielkość liter: dwie „Inne” na liście byłyby mylące.
+
+### W jaki sposób
+- **Izolacja w jednym miejscu:** każda metoda repozytorium wymaga `user_id`, a zapytania budowane są od `WHERE user_id = :id`. Repozytorium nie ma metody pobierającej dane wszystkich użytkowników.
+- **Wyszukiwanie:** `ILIKE` z `autoescape=True`, więc `%` i `_` w szukanym tekście są zwykłymi znakami, a nie wzorcem.
+- **Częściowa edycja:** zmieniane są tylko przysłane pola (`exclude_unset`). `category_id: null` usuwa kategorię, a `null` w polu wymaganym daje 422.
+- **Paginacja:** sortowanie od najnowszych (data, potem identyfikator), strona do 200 pozycji, w odpowiedzi łączna liczba wyników.
+- **Jednoczesne utworzenie tej samej nazwy kategorii** wychwytuje ograniczenie `UNIQUE` w bazie, tak jak przy rejestracji.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Transakcji z importu nie da się jeszcze utworzyć przez API, a reguły ich edycji trzeba przetestować | testy wstawiają taką transakcję bezpośrednio do bazy testowej |
+| Część wzorców w skrypcie celowych błędów nie pasowała do kodu, bo formatter przełamał linie | dopasowanie wzorców do faktycznego kodu i ponowne uruchomienie; kod przywrócony |
+| `PATCH` z `"name": null` mógłby usunąć nazwę kategorii | `null` w nazwie jest ignorowany, a w kolorze i ikonie usuwa wartość; oba zachowania mają testy |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 151 testów zaliczonych |
+| 16 celowo usuniętych zabezpieczeń, m.in. lista bez filtra `user_id`, odczyt transakcji bez `user_id`, kategorie widoczne dla wszystkich, brak sprawdzenia kategorii, edytowalna kategoria systemowa, odpowiedź 403 zamiast 404, edytowalne dane bankowe, wyszukiwanie bez `autoescape`, zła paginacja | 16 z 16 wykrytych; kod przywrócony |
+| `ruff check`, `ruff format` | bez uwag |
+
+### Dalej
+Dni 4–5: logowanie i transakcje w przeglądarce.

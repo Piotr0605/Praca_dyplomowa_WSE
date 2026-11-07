@@ -140,12 +140,12 @@ Każdy etap kończy się checklistą „Definition of Done”. Zasady gałęzi o
 **DoD:** przez Swagger można się zarejestrować, zalogować i wywołać `/me`; testy zielone.
 
 ### Etap 3 · 9–15 XI — Transakcje i kategorie (CRUD) + frontend logowania
-- [ ] Repozytoria `TransactionRepository`, `CategoryRepository` (zawsze z `user_id`)
-- [ ] CRUD transakcji (dodanie ręczne, lista z filtrami i paginacją, edycja, usunięcie)
-- [ ] CRUD kategorii użytkownika
-- [ ] **Test izolacji**: użytkownik B nie widzi / nie edytuje danych A
-- [ ] Przypisanie kategorii do transakcji i reguły: kategoria musi być systemowa albo należeć do tego samego użytkownika, bo baza tego nie wymusza; test z cudzą kategorią (zob. dziennik, tydzień 2, dzień 1)
-- [ ] Użytkownik nie może edytować ani usuwać kategorii systemowych
+- [x] Repozytoria `TransactionRepository`, `CategoryRepository` (zawsze z `user_id`)
+- [x] CRUD transakcji (dodanie ręczne, lista z filtrami i paginacją, edycja, usunięcie)
+- [x] CRUD kategorii użytkownika
+- [x] **Test izolacji**: użytkownik B nie widzi / nie edytuje danych A
+- [x] Przypisanie kategorii do transakcji i reguły: kategoria musi być systemowa albo należeć do tego samego użytkownika, bo baza tego nie wymusza; test z cudzą kategorią (zob. dziennik, tydzień 2, dzień 1)
+- [x] Użytkownik nie może edytować ani usuwać kategorii systemowych
 - [ ] Frontend: `AuthContext`, strony Logowanie / Rejestracja, chronione trasy, layout (sidebar, navbar)
 - [ ] Frontend: strona „Transakcje” — tabela + formularz ręcznego dodania wydatku
 
