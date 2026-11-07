@@ -9,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import auth, health
+from app.api.routes import auth, categories, health, transactions
 from app.core.config import get_settings
 from app.core.jwt_key import get_jwt_secret
 
@@ -51,3 +51,5 @@ async def validation_error_handler(
 
 app.include_router(health.router, prefix=settings.API_PREFIX)
 app.include_router(auth.router, prefix=settings.API_PREFIX)
+app.include_router(categories.router, prefix=settings.API_PREFIX)
+app.include_router(transactions.router, prefix=settings.API_PREFIX)

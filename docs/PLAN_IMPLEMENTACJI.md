@@ -140,14 +140,14 @@ Każdy etap kończy się checklistą „Definition of Done”. Zasady gałęzi o
 **DoD:** przez Swagger można się zarejestrować, zalogować i wywołać `/me`; testy zielone.
 
 ### Etap 3 · 9–15 XI — Transakcje i kategorie (CRUD) + frontend logowania
-- [ ] Repozytoria `TransactionRepository`, `CategoryRepository` (zawsze z `user_id`)
-- [ ] CRUD transakcji (dodanie ręczne, lista z filtrami i paginacją, edycja, usunięcie)
-- [ ] CRUD kategorii użytkownika
-- [ ] **Test izolacji**: użytkownik B nie widzi / nie edytuje danych A
-- [ ] Przypisanie kategorii do transakcji i reguły: kategoria musi być systemowa albo należeć do tego samego użytkownika, bo baza tego nie wymusza; test z cudzą kategorią (zob. dziennik, tydzień 2, dzień 1)
-- [ ] Użytkownik nie może edytować ani usuwać kategorii systemowych
-- [ ] Frontend: `AuthContext`, strony Logowanie / Rejestracja, chronione trasy, layout (sidebar, navbar)
-- [ ] Frontend: strona „Transakcje” — tabela + formularz ręcznego dodania wydatku
+- [x] Repozytoria `TransactionRepository`, `CategoryRepository` (zawsze z `user_id`)
+- [x] CRUD transakcji (dodanie ręczne, lista z filtrami i paginacją, edycja, usunięcie)
+- [x] CRUD kategorii użytkownika
+- [x] **Test izolacji**: użytkownik B nie widzi / nie edytuje danych A
+- [x] Przypisanie kategorii do transakcji i reguły: kategoria musi być systemowa albo należeć do tego samego użytkownika, bo baza tego nie wymusza; test z cudzą kategorią (zob. dziennik, tydzień 2, dzień 1)
+- [x] Użytkownik nie może edytować ani usuwać kategorii systemowych
+- [x] Frontend: `AuthContext`, strony Logowanie / Rejestracja, chronione trasy, layout (sidebar, navbar)
+- [x] Frontend: strona „Transakcje” — tabela + formularz ręcznego dodania wydatku
 
 **DoD:** użytkownik loguje się w przeglądarce i ręcznie dodaje/edytuje wydatki.
 
@@ -197,6 +197,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 **DoD:** wgrywasz swój prawdziwy wyciąg, widzisz transakcje w aplikacji; ponowny import nie dubluje danych.
 
 ### Etap 5 · 23–29 XI — Kategoryzacja i „uczenie się” z poprawek
+- [ ] Strona „Kategorie” w przeglądarce: dodawanie, zmiana nazwy i koloru, usuwanie własnych (API gotowe w etapie 3)
 - [ ] Przelewy własne (Smart Saver, „Przelew własny”, „Wpłata na cel”) trafiają do kategorii „Przelewy własne” i nie liczą się jako wydatki ani przychody
 - [ ] Słownik słów kluczowych (reguły systemowe w migracji/seedzie): `biedronka, lidl, żabka → Zakupy spożywcze`, `orlen, bp, shell → Paliwo`, `netflix, spotify → Subskrypcje`, `uber, bolt, jakdojade → Transport` itd.
 - [ ] `services/categorization_service.py` — kolejność dopasowania:
@@ -320,7 +321,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | 0. Struktura repo + plan | ✅ | 2026-11-02 | |
 | 1. Fundament | ✅ | 2026-11-04 | format wyciągu opisany, pliki w `data/private/` |
 | 2. Model danych + auth | ✅ | 2026-11-05 | |
-| 3. CRUD + frontend logowania | ⏳ | | |
+| 3. CRUD + frontend logowania | ✅ | 2026-11-07 | |
 | 4. Import CSV | ⏳ | | |
 | 5. Kategoryzacja | ⏳ | | |
 | 6. Analityka + dashboard | ⏳ | | |
