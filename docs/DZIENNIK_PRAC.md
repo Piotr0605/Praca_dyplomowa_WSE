@@ -564,3 +564,237 @@ Dzień 2: pierwsza migracja i kategorie systemowe.
 
 ### Dalej
 Dzień 3: hasła Argon2, tokeny JWT i rozwiązanie problemu przykładowego klucza z `.env.example`.
+
+---
+
+## Tydzień 2, dzień 3: hasła, tokeny i klucz JWT (wykonano 5.11.2026)
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/app/core/security.py` | `hash_password`, `verify_password`, `create_access_token`, `decode_access_token` |
+| `backend/app/core/jwt_key.py` | odczyt klucza albo wygenerowanie go przy pierwszym uruchomieniu |
+| `backend/app/core/config.py` | ustawienia JWT z walidacją |
+| `backend/app/main.py` | sprawdzenie klucza przy starcie aplikacji |
+| `backend/tests/unit/test_security.py` | testy haseł, tokenów i klucza |
+| `.env.example`, `docker-compose.yml`, `Dockerfile` | pusty klucz w przykładzie, wolumen `backend_data` na klucz |
+
+Endpointów logowania jeszcze nie ma: powstaną w dniu 4.
+
+### Dlaczego
+- **Argon2id.** Zużywa czas i pamięć, więc masowe zgadywanie haseł po wycieku bazy jest kosztowne. Sól jest losowa, więc te same hasła mają różne hashe.
+- **W tokenie tylko identyfikator użytkownika.** Zawartość JWT można odczytać bez klucza, więc e-mail ani inne dane osobowe nie mogą się w nim znaleźć.
+- **Brak klucza w repozytorium.** Repozytorium jest publiczne, więc każdy mógłby użyć przykładowego klucza do podrobienia tokenu. Samo ostrzeżenie zostawiałoby tę możliwość otwartą.
+- **Klucz generowany automatycznie, a nie obowiązkowo wpisywany.** `cp .env.example .env` ma nadal wystarczać do uruchomienia, np. u promotora.
+
+### W jaki sposób
+- **Argon2:** domyślne parametry biblioteki `argon2-cffi` (profil RFC 9106: 64 MiB pamięci, 3 iteracje, 4 wątki).
+- **Weryfikacja tokenu:** jawna lista algorytmów blokuje token z `alg: none` i z innym algorytmem niż ustawiony. `exp` i `sub` są wymagane. Każdy błąd daje jeden wyjątek `InvalidTokenError`, więc później przełoży się na jeden kod odpowiedzi 401.
+- **Klucz:** `secrets.token_hex(32)`, plik `/data/jwt_secret` w wolumenie Dockera z uprawnieniami 600. `O_EXCL` gwarantuje, że istniejący klucz nie zostanie nadpisany. Usunięcie wolumenu tylko wyloguje użytkowników.
+- **Szybki błąd:** niepoprawny klucz zatrzymuje start aplikacji, zamiast ujawnić się przy pierwszym logowaniu.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Publiczny przykładowy klucz w `.env.example` umożliwiałby podrabianie tokenów | pusta wartość i automatyczne generowanie; stary przykład odrzucany, jeśli ktoś ma go w swoim `.env` |
+| Komunikat błędu Pydantic wypisywał odrzuconą wartość, więc za krótki klucz trafiłby do logów | `hide_input_in_errors=True` i test |
+| Pierwsze sprawdzenia generowania klucza nie wykonały się, bo zsh nie rozdzielił zmiennej z poleceniem, a puste wyniki wyglądały jak zaliczone | powtórzenie z funkcją powłoki i sprawdzeniem kodu wyjścia |
+| Logowanie mogłoby zdradzać istnienie konta przez czas odpowiedzi, a bardzo długie hasło obciążać serwer | dopisane jako zadania do dnia 4 |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| pusty klucz, dwa osobne uruchomienia kontenera | ten sam wygenerowany klucz (porównanie skrótów, bez wypisywania klucza) |
+| plik klucza | uprawnienia 600, właściciel `appuser` |
+| publiczny przykład lub za krótki klucz | start zatrzymany, kod wyjścia 1, czytelny komunikat |
+| nie można zapisać klucza | start aplikacji zatrzymany |
+| hash | `$argon2id$v=19$m=65536,t=3,p=4` |
+| 15 celowo osłabionych zabezpieczeń, m.in. brak sprawdzania podpisu, akceptowanie wygasłych tokenów, hasło bez hashowania, plik klucza dostępny dla wszystkich | 15 z 15 wykrytych przez testy; kod przywrócony |
+| `pytest` | wszystkie zaliczone |
+| `ruff check`, `ruff format` | bez uwag |
+
+### Dalej
+Dzień 4: endpointy `register`, `login` i `me`.
+
+---
+
+## Tydzień 2, dzień 4: rejestracja i logowanie (wykonano 5.11.2026)
+
+### Co zostało zrobione
+Działają endpointy `POST /api/auth/register`, `POST /api/auth/login` i `GET /api/auth/me`.
+
+| Plik | Rola |
+|---|---|
+| `backend/app/schemas/user.py` | `UserCreate`, `UserRead` (bez hasła), `Token` |
+| `backend/app/repositories/user_repository.py` | zapytania do tabeli `users` |
+| `backend/app/services/auth_service.py` | logika rejestracji i logowania |
+| `backend/app/api/deps.py` | `get_current_user`, alias `CurrentUser` |
+| `backend/app/api/routes/auth.py` | endpointy |
+| `backend/app/main.py` | obsługa błędów walidacji bez odrzuconej wartości |
+
+### Dlaczego
+- **Warstwy: endpoint, serwis, repozytorium.** Endpoint obsługuje HTTP, serwis reguły, a repozytorium bazę. To samo rozdzielenie posłuży w kolejnych etapach, a izolacja danych po `user_id` będzie mieć jedno miejsce.
+- **Ten sam komunikat i czas przy złym haśle i nieznanym e-mailu.** Inaczej logowanie pozwalałoby sprawdzać, czy dana osoba ma konto.
+- **Hasło od 12 do 128 znaków.** Bez drugiego składnika logowania długość jest główną ochroną hasła, a górna granica chroni serwer przed bardzo długimi danymi.
+- **`OAuth2PasswordRequestForm` przy logowaniu.** Formularz jest wymagany przez przycisk „Authorize” w Swaggerze. Pole nazywa się `username`, ale zawiera e-mail.
+
+### W jaki sposób
+- **E-mail** jest normalizowany w schemacie: bez białych znaków i małymi literami. Baza dodatkowo pilnuje tego ograniczeniem `CHECK`.
+- **Duplikat** wykrywa ograniczenie `UNIQUE` przy zapisie, bez wcześniejszego `SELECT`. Sprawdzenie „czy istnieje” przed zapisem przepuściłoby dwie jednoczesne rejestracje.
+- **Stały czas:** przy nieznanym e-mailu lub zbyt długim haśle liczone jest porównanie z hashem losowego hasła.
+- **Hasło w kodzie** jest typu `SecretStr`, więc nie wypisze się przypadkiem w logu ani w reprezentacji obiektu.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Domyślna odpowiedź 422 w FastAPI odsyła odrzuconą wartość, czyli za krótkie hasło jawnym tekstem | własna obsługa `RequestValidationError` usuwająca pola `input` i `ctx` |
+| Rejestracja i tak ujawnia, że e-mail jest zajęty (409) | świadomy kompromis: aplikacja jest lokalna i nie ma potwierdzania adresu e-mail |
+| Brak ograniczenia liczby prób logowania | świadomie poza zakresem: aplikacja działa lokalnie na `127.0.0.1` |
+
+### Weryfikacja
+Na działającym API, a dane testowe usunięto po sprawdzeniach. Testy automatyczne powstały w dniu 5.
+
+| Test | Wynik |
+|---|---|
+| rejestracja z e-mailem z wielkimi literami | 201, e-mail małymi literami, odpowiedź bez hasła i hasha |
+| ten sam e-mail innymi literami | 409 |
+| za krótkie hasło, błędny e-mail | 422, odpowiedź bez odrzuconej wartości |
+| złe hasło, nieznany e-mail | 401, identyczny komunikat |
+| poprawne logowanie, `/me` z tokenem | 200 |
+| `/me` bez tokenu, ze złym tokenem | 401 |
+| hasło w bazie | hash `$argon2id$v=19$m=65536,t=3,p=4` |
+| czas logowania, po 60 prób: złe hasło / nieznane konto | mediana 23,2 ms / 23,3 ms |
+| `ruff check`, `ruff format` | bez uwag |
+
+### Dalej
+Dzień 5: osobna baza testowa, testy API i test zgodności schematu.
+
+---
+
+## Tydzień 2, dzień 5: baza testowa i testy API (wykonano 5.11.2026)
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/tests/conftest.py` | baza testowa i transakcja wycofywana po każdym teście |
+| `backend/tests/db_helpers.py` | tworzenie i usuwanie baz testowych z blokadą przed usunięciem innej bazy |
+| `backend/tests/integration/test_auth.py` | testy rejestracji, logowania, `/me` i wycieku haseł |
+| `backend/tests/integration/test_schema_parity.py` | porównanie schematu z modeli i z migracji |
+| `backend/alembic/env.py` | możliwość podania adresu bazy przez testy, logi aplikacji nie są wyłączane |
+
+Łącznie jest 70 testów.
+
+### Dlaczego
+- **Osobna baza.** Testy zakładają konta i usuwają dane, więc nie mogą działać na bazie deweloperskiej, a później na prawdziwych transakcjach.
+- **Wycofywana transakcja.** Testy nie wpływają na siebie nawzajem, a przebieg jest szybki: 70 testów trwa ok. 1,5 s.
+- **Schemat z migracji.** Testy sprawdzają bazę w takim stanie, w jakim będzie działać u użytkownika, więc przy okazji sprawdzają migracje.
+- **Test zgodności schematu.** Zamyka lukę `alembic check` opisaną w dniu 2: zmiana reguły `CHECK` w modelu bez migracji przechodziła niezauważona.
+
+### W jaki sposób
+- **Baza testowa:** na początku przebiegu powstaje od zera `<nazwa>_test` i dostaje schemat z migracji. W CI działa to tak samo, bez osobnej konfiguracji.
+- **Izolacja testów:** sesja z `join_transaction_mode="create_savepoint"`, więc `commit` w kodzie aplikacji zamyka tylko punkt zapisu, a cała transakcja jest wycofywana po teście.
+- **Zgodność schematu:** test buduje drugą, tymczasową bazę przez `create_all` i porównuje obie w katalogu PostgreSQL: kolumny z wartościami domyślnymi, ograniczenia (`pg_get_constraintdef`) i indeksy. Definicje zapisuje sam PostgreSQL, więc różny zapis tej samej reguły nie daje fałszywego alarmu.
+- **Blokada:** funkcje usuwające odmawiają pracy na bazie bez `_test` w nazwie, co ma własny test.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Celowe przepuszczenie zbyt długiego hasła do Argon2 nie zostało wykryte, bo odpowiedź nadal była 401 | nowy test sprawdzający, że takie hasło nie trafia do `verify_password` |
+| Pierwsza wersja testu „`/me` bez logowania” niczego nie zmieniała: zależność nadal działała | poprawiony przypadek, faktycznie usuwający zależność; testy go wykrywają |
+| `fileConfig` Alembica wyłączał istniejące loggery, więc po migracjach w testach logi aplikacji mogły zniknąć, a test braku haseł w logach przechodziłby bez sprawdzania | `disable_existing_loggers=False` |
+| Funkcja pomocnicza `test_database_url` była uruchamiana przez pytest jako test | przeniesienie do `db_helpers.py` i zmiana nazwy |
+| Ostrzeżenie PyJWT w CI: ustawienia dopuszczały HS512, który zaleca klucz od 64 bajtów, a walidacja przepuszczała już 32 znaki | ograniczenie `JWT_ALGORITHM` do HS256 i dłuższy klucz testowy w CI |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 70 testów zaliczonych, ok. 1,5 s, także w CI |
+| 20 jednoczesnych rejestracji tego samego e-maila przez działające API | 1 × 201, 19 × 409, jedno konto w bazie, brak błędów 500 |
+| znacznik w bazie deweloperskiej przed testami | zostaje; testy nie zmieniają tej bazy |
+
+**Zmiany modelu bez migracji** (test zgodności schematu):
+
+| Zmiana | Test | `alembic check` |
+|---|---|---|
+| reguła `CHECK` waluty | wykrywa | nie wykrywa |
+| reguła `CHECK` e-maila | wykrywa | nie wykrywa |
+| wartość domyślna `kind` | wykrywa | nie wykrywa |
+| domyślna waluta | wykrywa | nie wykrywa |
+| długość kolumny, usunięty indeks, `ondelete`, `NULLS NOT DISTINCT` | wykrywa | wykrywa |
+
+**Celowo wprowadzone błędy w logowaniu:** m.in. hash w odpowiedzi, niesprawdzane hasło, brak stałego czasu, akceptowanie złego tokenu, logowanie hasła, odsyłanie wartości w 422. Wszystkie 16 przypadków jest wykrywanych. Pierwszy przebieg ujawnił lukę i źle przygotowany przypadek opisane wyżej. Kod został przywrócony.
+
+### Dalej
+Dzień 6: przejście całości w Swaggerze i czysty start ze świeżego klonu.
+
+---
+
+## Tydzień 2, dzień 6: sprawdzenie całości (wykonano 5.11.2026)
+
+### Co zostało zrobione
+Sprawdzono cały przebieg: czysty start, świeży klon z pustym kluczem JWT oraz rejestrację i logowanie w prawdziwym Swaggerze.
+Kod aplikacji się nie zmienił.
+
+### Dlaczego
+- **Swagger w przeglądarce.** Kryterium ukończenia etapu mówi o Swaggerze, a testy automatyczne i `curl` nie sprawdzają okna „Authorize” ani tego, jak strona działa w przeglądarce.
+- **Świeży klon z pustym kluczem.** Dotąd generowanie klucza sprawdzano tylko w kontenerze z istniejącej instalacji, a nie w scenariuszu nowej osoby.
+
+### W jaki sposób
+- **Czysty start:** `docker compose down -v`, po sprawdzeniu, że baza nie zawiera danych, potem `docker compose up --build`.
+- **Świeży klon:** `git clone` gałęzi `develop`, `cp .env.example .env`, build bez cache, osobny projekt Compose; zmieniono tylko porty.
+- **Swagger:** Chromium sterowany przez Playwright, użyty jednorazowo i poza repozytorium, klika te same elementy co użytkownik: „Try it out”, „Execute”, „Authorize”. Wyniki odczytano z odpowiedzi HTTP i z ekranu.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| `/docs` pobiera Swagger UI z `cdn.jsdelivr.net`. Bez internetu strona jest pusta, co psuje krok pokazu i narusza regułę braku zewnętrznych połączeń | zadanie w etapie 9: serwowanie Swagger UI lokalnie; adnotacja w scenariuszu pokazu. Dotyczy tylko dokumentacji API, a nie danych użytkownika |
+| Skrypt pokazał 401 dla `/me` po zalogowaniu, choć treść zawierała e-mail: odczytał status sprzed odświeżenia wyniku | odczyt statusu z faktycznej odpowiedzi HTTP; wynik to 200 |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `down -v` + `up --build` | 3 kontenery działają, gotowe po 33 s, migracje na bieżącej wersji |
+| świeży klon, build bez cache | gotowy po 49 s (obrazy bazowe były już pobrane) |
+| klucz JWT w klonie | wygenerowany: 64 znaki, uprawnienia 600, właściciel `appuser` |
+| `pytest` (oba przypadki) | 70 testów zaliczonych |
+| Swagger: `/me` bez logowania | 401 |
+| Swagger: rejestracja | 201 |
+| Swagger: logowanie w oknie „Authorize” | 200 |
+| Swagger: `/me` po zalogowaniu | 200, nagłówek `Bearer`, w odpowiedzi e-mail, bez hasha |
+| hasło w bazie | `$argon2id$v=19$m=65536,t=3,p=4` |
+| ekran stanu w klonie | „API: OK, Baza: OK” |
+| `/docs` bez dostępu do zewnętrznych serwerów | 0 sekcji API, zob. problem wyżej |
+
+Domyślne porty i pierwsze pobranie obrazów nadal nie są sprawdzone: to zadanie etapu 9.
+
+### Dalej
+Dzień 7: domknięcie etapu 2.
+
+---
+
+## Tydzień 2, dzień 7: domknięcie etapu 2 (wykonano 5.11.2026)
+
+### Co zostało zrobione
+- Etap 2 oznaczony w planie jako ukończony, a notatki o technologiach uzupełnione o Argon2 i JWT.
+- Harmonogram przesunięty pod oddanie pracy do 15 stycznia 2027, a część pisemna dopisana do planu (sekcja 10).
+- Wszystkie 6 kryteriów ukończenia tygodnia sprawdzone.
+
+### Dlaczego
+- **Zmiana harmonogramu.** Pierwotny plan kończył program 17 stycznia, czyli po docelowym terminie oddania.
+- **Część pisemna w planie.** Program i tekst powstają równolegle, więc obie części muszą mieć terminy.
+
+### W jaki sposób
+- Program ma być gotowy do 20 grudnia, święta przeznaczono na pomiary i poprawki, a od 4 stycznia tylko na krytyczne błędy. Terminy są robocze do czasu potwierdzenia terminu WSE, procedury JSA i czasu promotora.
+- Ustalono kolejność cięć, gdyby zabrakło czasu: funkcje COULD, importer uniwersalny CSV, drugi dostawca AI.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Bufor ze stycznia zniknął, więc margines błędu jest mniejszy | bufor świąteczny, zapas 11–15 stycznia i ustalona kolejność cięć |
+| Formalne terminy nie są jeszcze znane | harmonogram oznaczony jako roboczy, zadanie ich ustalenia w sekcji 10 |
+
+### Weryfikacja
+Kryteria ukończenia z `TYDZIEN_2.md`: rejestracja i `/me` w Swaggerze, tabele, kategorie po czystym starcie, hash Argon2 i testy na osobnej bazie, lokalnie oraz w CI. Sprawdzone w dniach 1–6.
+
+### Dalej
+Etap 3 (9–15 listopada): transakcje, kategorie i logowanie w przeglądarce.

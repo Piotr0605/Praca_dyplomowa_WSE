@@ -1,7 +1,6 @@
 # Tydzień 2: model danych i uwierzytelnianie
 
-Plan przewiduje ten etap na 9–15 listopada 2026. Po tygodniu 1 jesteśmy przed harmonogramem, więc numery dni
-oznaczają kolejność pracy, a nie daty.
+Plan przewiduje zakończenie tego etapu do 8 listopada 2026. Numery dni oznaczają kolejność pracy, a nie daty.
 
 **Cel tygodnia:** w bazie są wszystkie główne tabele, a przez Swagger można się zarejestrować, zalogować
 i wywołać `/api/auth/me`. Testy działają na osobnej bazie i nie dotykają danych deweloperskich.
@@ -65,9 +64,8 @@ Zapytanie:   Authorization: Bearer <token> ──► get_current_user ──► 
 | Pola transakcji z analizy PDF | data operacji, data księgowania, rodzaj operacji | zob. dzień 1 |
 | Tabela `bank_profiles` | migracja dopiero w etapie 4 | powstanie razem z importerem CSV, który z niej korzysta |
 
-**Otwarty problem:** `.env.example` zawiera przykładowy `JWT_SECRET_KEY`, a cel `cp .env.example .env` ma dawać działającą
-aplikację. Aplikacja z tym kluczem pozwalałaby każdemu podrobić token, jeśli kod repozytorium jest publiczny. Rozwiązanie
-ustalimy w dniu 3: backend przy tym kluczu co najmniej wypisze ostrzeżenie; rozważamy też generowanie klucza przy pierwszym uruchomieniu.
+**Klucz JWT (rozwiązane w dniu 3):** `.env.example` zawiera pusty `JWT_SECRET_KEY`. Backend generuje losowy klucz przy pierwszym
+uruchomieniu i zapisuje go w wolumenie Dockera, a dawny przykładowy klucz zatrzymuje start.
 
 ---
 
@@ -87,41 +85,43 @@ ustalimy w dniu 3: backend przy tym kluczu co najmniej wypisze ostrzeżenie; roz
 - [x] Diagram ERD do pracy (`docs/diagramy/`)
 
 ### Dzień 3: bezpieczeństwo
-- [ ] Zależności: `argon2-cffi`, `PyJWT`, `email-validator`, `python-multipart`
-- [ ] `core/security.py`: `hash_password`, `verify_password`, `create_access_token`, `decode_access_token`
-- [ ] `JWT_SECRET_KEY` w `Settings`: wymagany, minimalna długość; rozwiązanie otwartego problemu z sekcji 3
-- [ ] Testy jednostkowe: poprawne i złe hasło, różne hashe tego samego hasła, token wygasły, podrobiony, z innym kluczem
+- [x] Zależności: `argon2-cffi`, `PyJWT`, `email-validator`, `python-multipart`
+- [x] `core/security.py`: `hash_password`, `verify_password`, `create_access_token`, `decode_access_token`
+- [x] `JWT_SECRET_KEY` w `Settings`: minimalna długość, odrzucenie publicznego przykładu, automatyczne generowanie
+- [x] Testy jednostkowe: poprawne i złe hasło, różne hashe tego samego hasła, token wygasły, podrobiony, z innym kluczem
 
 ### Dzień 4: endpointy
-- [ ] `schemas/user.py`: `UserCreate` (`EmailStr`, minimalna długość hasła), `UserRead` (bez hasła), `Token`
-- [ ] `repositories/user_repository.py`, `api/routes/auth.py`: `register`, `login`, `me`
-- [ ] `api/deps.py`: `get_current_user` i alias `CurrentUser`
-- [ ] E-mail normalizowany (małe litery), a duplikat obsłużony także przy jednoczesnej rejestracji (`IntegrityError` → 409)
+- [x] `schemas/user.py`: `UserCreate` (`EmailStr`, minimalna długość hasła), `UserRead` (bez hasła), `Token`
+- [x] `repositories/user_repository.py`, `api/routes/auth.py`: `register`, `login`, `me`
+- [x] `api/deps.py`: `get_current_user` i alias `CurrentUser`
+- [x] E-mail normalizowany (małe litery), a duplikat obsłużony także przy jednoczesnej rejestracji (`IntegrityError` → 409)
+- [x] Czas logowania nie zdradza, czy konto istnieje: przy nieznanym e-mailu też liczony jest hash Argon2
+- [x] Limit długości hasła (minimum i maksimum), żeby bardzo długie hasła nie obciążały serwera
 
 ### Dzień 5: baza testowa i testy API
-- [ ] `conftest.py`: tworzenie bazy `finanse_test`, migracje, transakcja wycofywana po każdym teście
-- [ ] CI: testy na tej samej konfiguracji
-- [ ] Testy: rejestracja, duplikat e-maila, wielkość liter w e-mailu, za krótkie hasło, złe hasło, nieistniejący e-mail, `/me` z tokenem i bez, token wygasły
-- [ ] Test: odpowiedzi API i logi nie zawierają hasła ani hasha
-- [ ] Test zgodności schematu: te same modele tworzą bazę przez `create_all` i przez migracje, a test porównuje obie na podstawie katalogu PostgreSQL (ograniczenia `CHECK`, wartości domyślne, indeksy). Zamyka lukę `alembic check`
-- [ ] Celowe wprowadzenie błędów, żeby sprawdzić, czy testy je wykrywają
+- [x] `conftest.py`: tworzenie bazy `finanse_test`, migracje, transakcja wycofywana po każdym teście
+- [x] CI: testy na tej samej konfiguracji
+- [x] Testy: rejestracja, duplikat e-maila, wielkość liter w e-mailu, za krótkie hasło, złe hasło, nieistniejący e-mail, `/me` z tokenem i bez, token wygasły
+- [x] Test: odpowiedzi API i logi nie zawierają hasła ani hasha
+- [x] Test zgodności schematu: te same modele tworzą bazę przez `create_all` i przez migracje, a test porównuje obie na podstawie katalogu PostgreSQL (ograniczenia `CHECK`, wartości domyślne, indeksy). Zamyka lukę `alembic check`
+- [x] Celowe wprowadzenie błędów, żeby sprawdzić, czy testy je wykrywają
 
 ### Dzień 6: sprawdzenie w całości
-- [ ] Ręczny przebieg w Swaggerze: rejestracja, „Authorize”, `/me`
-- [ ] Czysty start: `docker compose down -v && docker compose up --build`
-- [ ] Sprawdzenie w bazie, że hasło jest hashem Argon2
+- [x] Ręczny przebieg w Swaggerze: rejestracja, „Authorize”, `/me`
+- [x] Czysty start: `docker compose down -v && docker compose up --build`
+- [x] Sprawdzenie w bazie, że hasło jest hashem Argon2
 
 ### Dzień 7: domknięcie
-- [ ] Wpisy w dzienniku prac, odhaczony postęp w planie
-- [ ] Uzupełnienie notatek o technologiach (Argon2, JWT)
+- [x] Wpisy w dzienniku prac, odhaczony postęp w planie
+- [x] Uzupełnienie notatek o technologiach (Argon2, JWT)
 - [ ] PR do `main` i tag
 
 ---
 
 ## 5. Definition of Done tygodnia 2
-- [ ] Przez Swagger można się zarejestrować, zalogować i wywołać `/api/auth/me`
-- [ ] Wszystkie tabele z sekcji 2 planu istnieją, z wyjątkiem `bank_profiles` (etap 4)
-- [ ] Baza zawiera kategorie systemowe po czystym starcie
-- [ ] Hasła są zapisane wyłącznie jako hash Argon2
-- [ ] Testy przechodzą lokalnie i w GitHub Actions na osobnej bazie
-- [ ] Dziennik prac i plan są aktualne
+- [x] Przez Swagger można się zarejestrować, zalogować i wywołać `/api/auth/me`
+- [x] Wszystkie tabele z sekcji 2 planu istnieją, z wyjątkiem `bank_profiles` (etap 4)
+- [x] Baza zawiera kategorie systemowe po czystym starcie
+- [x] Hasła są zapisane wyłącznie jako hash Argon2
+- [x] Testy przechodzą lokalnie i w GitHub Actions na osobnej bazie
+- [x] Dziennik prac i plan są aktualne

@@ -18,9 +18,14 @@ from app.core.database import Base
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # disable_existing_loggers=False: migracje uruchamiane z testów nie mogą wyłączać logów aplikacji.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
-config.set_main_option("sqlalchemy.url", get_settings().DATABASE_URL)
+# Testy podają adres swojej bazy. Znak % trzeba podwoić ze względu na format pliku .ini.
+if not config.get_main_option("sqlalchemy.url"):
+    config.set_main_option(
+        "sqlalchemy.url", get_settings().DATABASE_URL.replace("%", "%%")
+    )
 
 target_metadata = Base.metadata
 
