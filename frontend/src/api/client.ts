@@ -34,6 +34,7 @@ type RequestOptions = {
   method?: string
   json?: unknown
   form?: Record<string, string>
+  file?: File
   query?: Record<string, string | number | boolean | undefined>
 }
 
@@ -52,6 +53,10 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     body = JSON.stringify(options.json)
   } else if (options.form) {
     body = new URLSearchParams(options.form)
+  } else if (options.file) {
+    const data = new FormData()
+    data.append('file', options.file)
+    body = data
   }
 
   const response = await fetch(url, { method: options.method ?? 'GET', headers, body })

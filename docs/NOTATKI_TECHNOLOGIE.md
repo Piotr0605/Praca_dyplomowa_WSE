@@ -1,6 +1,6 @@
 # Notatki do rozdziału „Wykorzystane technologie”
 
-Stan po tygodniu 3. Wersje pochodzą z plików projektu (`requirements*.txt`, `package.json`, `docker-compose.yml`).
+Stan po tygodniu 4. Wersje pochodzą z plików projektu (`requirements*.txt`, `package.json`, `docker-compose.yml`).
 Szersze opisy działania każdej technologii: [`TYDZIEN_1.md`](TYDZIEN_1.md), sekcja 2.
 
 ## Zestawienie
@@ -16,7 +16,9 @@ Szersze opisy działania każdej technologii: [`TYDZIEN_1.md`](TYDZIEN_1.md), se
 | Backend | Alembic | 1.20 | wersjonowane migracje schematu bazy |
 | Bezpieczeństwo | argon2-cffi | 25.1 | hashowanie haseł algorytmem Argon2id |
 | Bezpieczeństwo | PyJWT | 2.15 | tokeny logowania JWT |
-| Analityka | Pandas | 3.1 | import CSV i agregacje (używane od etapu 4) |
+| Analityka | Pandas | 3.1 | agregacje i analizy (od etapu 6) |
+| Import | pdfplumber | 0.11 | odczyt wyciągów PDF: znaki i linie tabeli ze współrzędnymi |
+| Testy | ReportLab | 5.1 | generowanie sztucznych wyciągów PDF do testów (tylko obraz deweloperski) |
 | Frontend | React | 19 | interfejs użytkownika z komponentów |
 | Frontend | TypeScript | 7 | statyczne typowanie kodu frontendu |
 | Frontend | Vite | 8 | serwer deweloperski i budowanie aplikacji |
@@ -57,6 +59,10 @@ pobierania. Po wylogowaniu pamięć podręczna jest czyszczona, żeby dane poprz
 
 **Izolacja danych.** Każde zapytanie do bazy zawiera `user_id` zalogowanej osoby, a cudzy zasób daje tę samą odpowiedź
 co nieistniejący (404). Skuteczność sprawdzają testy izolacji i celowe usuwanie zabezpieczeń (dziennik, tydzień 3).
+
+**pdfplumber i kontrola sum.** Wyciąg PDF nie ma struktury tabeli, więc transakcje są odtwarzane ze współrzędnych
+znaków i linii tabeli. Wiarygodność odczytu zapewnia porównanie z sumami kontrolnymi z nagłówka wyciągu: niezgodny
+import jest odrzucany w całości. Na 6 prawdziwych wyciągach zgodność wynosi 100% (1113 transakcji).
 
 **Docker Compose.** Jedno polecenie uruchamia cały system bez ręcznej instalacji bazy czy środowisk. Sprawdzono to na
 świeżym klonie repozytorium (dziennik, dzień 7).

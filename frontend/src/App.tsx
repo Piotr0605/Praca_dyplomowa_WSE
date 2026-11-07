@@ -4,6 +4,7 @@ import { RequireAuth } from './components/RequireAuth'
 import { AppLayout } from './components/layout/AppLayout'
 import { AuthProvider } from './context/AuthProvider'
 import { AuthPage } from './pages/AuthPage'
+import { ImportPage } from './pages/ImportPage'
 import { TransactionsPage } from './pages/TransactionsPage'
 
 const queryClient = new QueryClient({
@@ -21,6 +22,7 @@ export default function App() {
             <Route element={<RequireAuth />}>
               <Route element={<AppLayout />}>
                 <Route path="/transactions" element={<TransactionsPage />} />
+                <Route path="/import" element={<ImportPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/transactions" replace />} />

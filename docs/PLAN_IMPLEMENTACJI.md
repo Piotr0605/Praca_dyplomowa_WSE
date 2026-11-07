@@ -175,24 +175,24 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
    Dodanie banku = nowy profil JSON, bez pisania kodu.
 
 **Parser PDF ING**
-- [ ] Sprawdzenie `pdfplumber` na prawdziwych wyciągach, lokalnie, z raportem bez danych osobowych; wybór biblioteki
-- [ ] `parsers/ing_pdf.py`: odczyt wierszy według współrzędnych kolumn, łączenie transakcji dzielonych między strony, wynik w tym samym `DataFrame` co pozostałe parsery
-- [ ] Walidacja importu: liczba i suma uznań oraz obciążeń, saldo początkowe + uznania − obciążenia = saldo końcowe; niezgodność zatrzymuje zapis i pokazuje błąd
-- [ ] Rozpoznanie rodzajów operacji (karta, BLIK, przelew, Smart Saver, przelew własny, zwrot, wpłata i wypłata gotówki, prowizja)
-- [ ] Skrypt tworzący sztuczny PDF o tym samym układzie (`backend/tests/fixtures/`) + testy: podział między strony, kwoty z separatorem tysięcy, waluta obca, zwrot, duplikaty, celowo niezgodna suma
-- [ ] Porównanie z prawdziwymi wyciągami (lokalnie): liczby i sumy zgodne z nagłówkiem wszystkich 6 plików
+- [x] Sprawdzenie `pdfplumber` na prawdziwych wyciągach, lokalnie, z raportem bez danych osobowych; wybór biblioteki
+- [x] `parsers/ing_pdf.py`: odczyt wierszy według współrzędnych kolumn, łączenie transakcji dzielonych między strony, wynik jako lista transakcji (`ParsedTransaction`); wspólny format z importerem CSV ustalimy razem z nim
+- [x] Walidacja importu: liczba i suma uznań oraz obciążeń, saldo początkowe + uznania − obciążenia = saldo końcowe; niezgodność zatrzymuje zapis i pokazuje błąd
+- [x] Rozpoznanie rodzajów operacji (karta, BLIK, przelew, Smart Saver, przelew własny, zwrot, wpłata i wypłata gotówki, prowizja)
+- [x] Skrypt tworzący sztuczny PDF o tym samym układzie (`backend/tests/fixtures/`) + testy: podział między strony, kwoty z separatorem tysięcy, waluta obca, zwrot, duplikaty, celowo niezgodna suma
+- [x] Porównanie z prawdziwymi wyciągami (lokalnie): liczby i sumy zgodne z nagłówkiem wszystkich 6 plików
 
-**Importer uniwersalny CSV**
+**Importer uniwersalny CSV** (SHOULD; przeniesiony na 21.12–3.01, zob. etap 10)
 - [ ] Analiza eksportu CSV z ING, jeśli jest dostępny (kodowanie, separator, wiersze metadanych, kolumny, format daty i kwot, blokady)
 - [ ] `parsers/profile.py` (model profilu: kodowanie, separator, wiersz nagłówka, mapowanie kolumn, format daty, separator dziesiętny, sposób wyznaczania znaku kwoty)
 - [ ] `parsers/detector.py` (auto-wykrywanie: kodowanie, separator, nagłówek, role kolumn) + `parsers/generic.py` (parsowanie wg profilu do wspólnego `DataFrame`)
 - [ ] `parsers/profiles/ing.json` + testy na sztucznym pliku w formacie ING
 - [ ] tabela `bank_profiles` (migracja), endpoint `POST /imports/detect` (zwraca propozycję mapowania)
 - [ ] Frontend: krok „Mapowanie kolumn” pokazywany tylko wtedy, gdy plik nie pasuje do żadnego profilu
-- [ ] `services/import_service.py`: czyszczenie (białe znaki, wielkie litery, usunięcie prefiksów typu „PŁATNOŚĆ KARTĄ”), normalizacja opisu, `dedup_hash` = hash numeru transakcji z banku, a gdy go brak: hash(data, kwota, opis znormalizowany)
-- [ ] `POST /imports/preview` i `/imports/confirm`, zapis `ImportBatch`
+- [x] `services/import_service.py`: czyszczenie (białe znaki, wielkie litery, usunięcie prefiksów typu „PŁATNOŚĆ KARTĄ”), normalizacja opisu, `dedup_hash` = hash numeru transakcji z banku, a gdy go brak: hash(data, kwota, opis znormalizowany)
+- [x] `POST /imports/preview` i `/imports/confirm`, zapis `ImportBatch`
 - [ ] Sztuczny plik `backend/tests/fixtures/<bank>_sample.csv` + testy parsera (kwoty, daty, polskie znaki, duplikaty)
-- [ ] Frontend: strona „Import” — drag&drop pliku (PDF lub CSV), wybór banku, tabela podglądu, przycisk „Zapisz”
+- [x] Frontend: strona „Import” — wybór pliku PDF, tabela podglądu, przycisk „Zapisz” (CSV i wybór banku razem z importerem uniwersalnym)
 
 **DoD:** wgrywasz swój prawdziwy wyciąg, widzisz transakcje w aplikacji; ponowny import nie dubluje danych.
 
@@ -260,6 +260,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 **DoD:** na czystym komputerze `git clone` + `cp .env.example .env` + `docker compose up --build` = działająca aplikacja z danymi demo.
 
 ### Etap 10 · 21 XII–10 I — Stabilizacja, pomiary i materiały do pracy → **v1.0**
+- [ ] (SHOULD, przeniesione z etapu 4) Importer uniwersalny CSV — tylko jeśli pomiary i część pisemna idą zgodnie z planem
 - [ ] Testy manualne całych scenariuszy, poprawki błędów
 - [ ] Diagramy do pracy (`docs/diagramy/`): architektura warstwowa, ERD bazy (aktualizacja), diagram sekwencji „import wyciągu”, diagram sekwencji „generowanie porady AI” (z krokiem anonimizacji)
 - [ ] Eksport diagramów do PNG lub SVG do pracy (`mermaid-cli` w przypiętej wersji, wymaga zgody na pobranie pakietu)
@@ -322,7 +323,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | 1. Fundament | ✅ | 2026-11-04 | format wyciągu opisany, pliki w `data/private/` |
 | 2. Model danych + auth | ✅ | 2026-11-05 | |
 | 3. CRUD + frontend logowania | ✅ | 2026-11-07 | |
-| 4. Import CSV | ⏳ | | |
+| 4. Import wyciągów | ✅ | 2026-11-07 | PDF z ING gotowy; importer uniwersalny CSV przeniesiony na 21.12–3.01 |
 | 5. Kategoryzacja | ⏳ | | |
 | 6. Analityka + dashboard | ⏳ | | |
 | 7. Moduł AI | ⏳ | | |

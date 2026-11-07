@@ -63,6 +63,43 @@ export type TransactionPage = {
   page_size: number
 }
 
+export type ImportPreviewRow = {
+  date: string
+  booking_date: string
+  amount: string
+  currency: string
+  description: string
+  counterparty: string | null
+  kind: TransactionKind
+  duplicate: boolean
+}
+
+export type ImportPreview = {
+  bank: string
+  period_start: string
+  period_end: string
+  opening_balance: string
+  closing_balance: string
+  credits_count: number
+  credits_sum: string
+  debits_count: number
+  debits_sum: string
+  total: number
+  new: number
+  duplicates: number
+  transactions: ImportPreviewRow[]
+}
+
+export type ImportBatch = {
+  id: number
+  bank: string
+  filename: string
+  rows_total: number
+  rows_imported: number
+  rows_duplicated: number
+  created_at: string
+}
+
 export type TransactionFilters = {
   date_from?: string
   date_to?: string

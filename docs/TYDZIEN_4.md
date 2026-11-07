@@ -1,0 +1,40 @@
+# Tydzień 4: import wyciągów
+
+Plan przewiduje ten etap na 16–22 listopada 2026; wykonano go 7 listopada. Ten plik spisano po wykonaniu prac:
+etap zaczął się od próby biblioteki na prawdziwych wyciągach, bo od jej wyniku zależało całe podejście.
+
+**Cel tygodnia:** użytkownik wgrywa wyciąg z ING w PDF, widzi podgląd zgodny z sumami kontrolnymi banku, zapisuje
+transakcje, a ponowny import nie tworzy duplikatów.
+
+---
+
+## 1. Zakres i decyzje
+
+| Temat | Decyzja | Uzasadnienie |
+|---|---|---|
+| Format | PDF z ING (MUST); importer uniwersalny CSV (SHOULD) przeniesiony na okres świąteczny | PDF to jedyny potwierdzony format; zgodnie z kolejnością cięć z planu |
+| Biblioteka | `pdfplumber` | daje współrzędne znaków i linii, potrzebne do odczytu tabeli bez struktury |
+| Odczyt tekstu | słowa składane ze znaków, a nie przez `extract_words` | przy dolnej krawędzi strony biblioteka dzieliła tekst na litery |
+| Kontrola | import zatrzymany, jeśli liczba lub suma uznań i obciążeń albo saldo nie zgadza się z nagłówkiem wyciągu | błąd odczytu nie może trafić do bazy nawet częściowo |
+| Duplikaty | numer operacji z banku (hash SHA-256), `ON CONFLICT DO NOTHING` | dwa identyczne zakupy tego samego dnia nie są duplikatem |
+| Przechowywanie pliku | żadne: podgląd i zapis przyjmują plik osobno | dane bankowe nie zostają w plikach tymczasowych serwera |
+| Numer karty | usuwany z opisu | nie jest potrzebny do analizy |
+| Testy | sztuczny wyciąg PDF o tym samym układzie, generowany w testach | prawdziwe wyciągi nie mogą trafić do repozytorium |
+
+## 2. Wykonane zadania
+- [x] Próba `pdfplumber` na prawdziwych wyciągach, wyłącznie lokalnie i bez wypisywania treści
+- [x] `parsers/ing_pdf.py`: nagłówek z sumami, tabela według współrzędnych, transakcje dzielone między strony, rodzaje operacji
+- [x] Kontrola sum: zgodność wszystkich 6 prawdziwych wyciągów (1113 transakcji)
+- [x] `tests/fixtures/ing_statement.py`: generator sztucznego wyciągu; `tests/unit/test_ing_pdf.py`
+- [x] `scripts/check_statements.py`: sprawdzenie prawdziwych wyciągów bez ujawniania treści
+- [x] `services/import_service.py`, `api/routes/imports.py`: podgląd, zapis, historia importów; testy
+- [x] Strona „Import wyciągu” w przeglądarce
+- [x] Porządki: usunięte zbędne pliki `.gitkeep` i nieużywane wolumeny Dockera
+- [ ] Importer uniwersalny CSV z kreatorem mapowania i tabelą `bank_profiles` (SHOULD, przeniesiony)
+- [ ] PR do `main`
+
+## 3. Definition of Done
+- [x] Wgranie prawdziwego wyciągu daje transakcje w aplikacji (sprawdzone przez API na tymczasowym koncie)
+- [x] Ponowny import nie tworzy duplikatów
+- [x] Testy przechodzą lokalnie i w CI
+- [x] Dziennik prac, plan i notatki są aktualne

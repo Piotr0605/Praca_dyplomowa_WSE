@@ -109,3 +109,5 @@ Port frontendu (5173) jest stały, bo tylko ten adres jest dopuszczony przez COR
 | Lint backendu | `docker compose exec backend ruff check .` |
 | Po zmianie zależności frontendu | `docker compose up --build -V` |
 | Migracje bazy | zobacz [`backend/alembic/README.md`](backend/alembic/README.md) |
+| Sztuczny wyciąg PDF do pokazu | `docker compose exec backend python -m tests.fixtures.ing_statement /tmp/wyciag.pdf` |
+| Sprawdzenie parsera na własnych wyciągach z `data/private/` (wypisuje tylko liczby) | `cd backend && DATABASE_URL=postgresql+psycopg://x:x@localhost/x .venv/bin/python -m scripts.check_statements` |

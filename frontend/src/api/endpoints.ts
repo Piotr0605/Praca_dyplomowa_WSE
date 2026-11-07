@@ -1,5 +1,7 @@
 import type {
   Category,
+  ImportBatch,
+  ImportPreview,
   Transaction,
   TransactionFilters,
   TransactionInput,
@@ -21,6 +23,12 @@ export const authApi = {
 
 export const categoriesApi = {
   list: () => request<Category[]>('/categories'),
+}
+
+export const importsApi = {
+  preview: (file: File) => request<ImportPreview>('/imports/preview', { method: 'POST', file }),
+  confirm: (file: File) => request<ImportBatch>('/imports/confirm', { method: 'POST', file }),
+  history: () => request<ImportBatch[]>('/imports'),
 }
 
 export const transactionsApi = {
