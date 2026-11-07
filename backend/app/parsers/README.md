@@ -8,7 +8,7 @@ Wyciągi PDF z ING obsługuje osobny parser (`ing_pdf.py`, etap 4). Pliki CSV ob
    separator, wiersz nagłówka i role kolumn, a użytkownik potwierdza mapowanie w UI.
    Potwierdzone mapowanie zapisuje się jako profil użytkownika (tabela `bank_profiles`).
 
-Każda ścieżka kończy się tym samym ujednoliconym `DataFrame`:
+Parser PDF zwraca listę `ParsedTransaction` (`ing_pdf.py`), a importer CSV będzie zwracał te same pola:
 
 | kolumna        | typ        | opis                                  |
 |----------------|------------|---------------------------------------|
@@ -19,6 +19,15 @@ Każda ścieżka kończy się tym samym ujednoliconym `DataFrame`:
 | `counterparty` | str / None | odbiorca lub nadawca                  |
 
 Dalsze kroki (czyszczenie, deduplikacja, kategoryzacja) nie wiedzą, z jakiego banku pochodzi plik.
+
+## Parser PDF z ING (`ing_pdf.py`)
+
+- Słowa są składane ze znaków według współrzędnych, a nie przez `extract_words`: przy dolnej krawędzi strony znaki
+  sąsiednich linii są zapisane w pliku naprzemiennie i biblioteka dzieliła wtedy daty i opisy na pojedyncze litery.
+- Granice transakcji wyznaczają poziome linie tabeli; wiersz bez daty to dokończenie transakcji z poprzedniej strony.
+- `validate_statement` porównuje liczbę i sumę uznań i obciążeń oraz saldo z nagłówkiem wyciągu.
+- Testy: `tests/unit/test_ing_pdf.py` na sztucznym wyciągu z `tests/fixtures/ing_statement.py`.
+- Prawdziwe wyciągi: `python -m scripts.check_statements` (wypisuje tylko liczby i zgodność, bez treści).
 
 ## Format wyciągu PDF z ING
 

@@ -13,6 +13,11 @@ WORKDIR /app
 # przy każdej zmianie kodu, tylko przy zmianie requirements.txt.
 # Plik zależności wybiera docker-compose.yml: w trybie deweloperskim dochodzą pytest i ruff.
 ARG REQUIREMENTS=requirements.txt
+# Tryb deweloperski: czcionka z polskimi znakami dla sztucznych wyciągów PDF w testach.
+RUN if [ "$REQUIREMENTS" = "requirements-dev.txt" ]; then \
+      apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core \
+      && rm -rf /var/lib/apt/lists/*; \
+    fi
 COPY requirements.txt requirements-dev.txt ./
 RUN pip install -r ${REQUIREMENTS}
 
