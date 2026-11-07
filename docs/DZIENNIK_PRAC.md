@@ -843,3 +843,91 @@ a kategorii systemowych nie można zmienić ani usunąć.
 
 ### Dalej
 Dni 4–5: logowanie i transakcje w przeglądarce.
+
+---
+
+## Tydzień 3, dni 4–5: logowanie i transakcje w przeglądarce (wykonano 7.11.2026)
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `src/api/client.ts`, `token.ts`, `endpoints.ts` | zapytania do API z tokenem, obsługa błędów i odrzuconego tokenu |
+| `src/context/`, `src/hooks/useAuth.ts` | stan logowania: logowanie, rejestracja, wylogowanie, sprawdzenie tokenu po odświeżeniu |
+| `src/components/RequireAuth.tsx`, `layout/AppLayout.tsx` | trasy dostępne po zalogowaniu, menu boczne i górny pasek |
+| `src/pages/AuthPage.tsx` | logowanie i rejestracja |
+| `src/pages/TransactionsPage.tsx`, `components/transactions/TransactionForm.tsx` | tabela, filtry, paginacja, dodawanie, edycja, usuwanie |
+| `src/utils/format.ts` | formatowanie kwot i dat, odczyt kwoty wpisanej z przecinkiem |
+
+### Dlaczego
+- **Token w `sessionStorage`.** Przetrwa odświeżenie strony, a znika po zamknięciu karty. `localStorage` przechowywałby go dłużej, a zwykła zmienna wylogowywałaby przy każdym odświeżeniu.
+- **Czyszczenie pamięci podręcznej przy wylogowaniu.** Dane poprzedniego użytkownika nie mogą zostać w przeglądarce dla kolejnej osoby.
+- **Kwota wpisywana bez znaku, z wyborem „Wydatek” albo „Przychód”.** Znak minus łatwo pominąć, a pomyłka odwróciłaby sens operacji.
+- **Odrzucony token wylogowuje z komunikatem.** Po wygaśnięciu sesji użytkownik wie, dlaczego trafił na stronę logowania.
+
+### W jaki sposób
+- **Kwoty:** `parseAmountInput` przyjmuje przecinek, kropkę i spacje, a wysyła do API tekst z dwoma miejscami, np. `"1234.56"`. Obliczenia wykonuje backend; przeglądarka tylko formatuje (`Intl.NumberFormat` dla `pl-PL`).
+- **Transakcja z importu:** formularz blokuje datę, kwotę i kontrahenta, a do API wysyła tylko pola, które wolno zmienić.
+- **Wyszukiwanie** czeka 300 ms po ostatnim znaku, zamiast wysyłać zapytanie po każdej literze.
+- **Zmiana filtra** wraca do pierwszej strony wyników.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Etykieta obejmująca `<select>` dodawała do nazwy pola wszystkie opcje, np. „TypWydatekPrzychód”, więc czytnik ekranu odczytywałby całą listę. Wykrył to test w przeglądarce | etykieta powiązana z polem przez `for`/`id` (`useId`) |
+| Lint Reacta wymaga, żeby plik z komponentem nie eksportował innych rzeczy | kontekst, dostawca i hook `useAuth` w osobnych plikach |
+| Projekt nie ma jeszcze testów frontendu, a od `parseAmountInput` zależy poprawność zapisanych kwot | jednorazowe sprawdzenie 16 przypadków; testy przeglądarkowe w dniu 6 |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `parseAmountInput`: m.in. `1 234,56`, `0,01`, `007,10`, `0`, `-5`, `1,234`, `12,`, 11 cyfr | 16 z 16 poprawnych |
+| `npm run lint`, `format:check`, `build` z kontrolą typów | bez uwag |
+
+### Dalej
+Dzień 6: przejście całości w przeglądarce.
+
+---
+
+## Tydzień 3, dni 6–7: sprawdzenie całości i domknięcie etapu 3 (wykonano 7.11.2026)
+
+### Co zostało zrobione
+- Pełne przejście w przeglądarce, scenariuszem użytkownika.
+- Etap 3 oznaczony w planie jako ukończony, notatki o technologiach uzupełnione o React Router, TanStack Query i izolację danych.
+- Strona zarządzania kategoriami w przeglądarce dopisana do etapu 5.
+
+### Dlaczego
+- **Test w przeglądarce.** Kryterium ukończenia etapu mówi o logowaniu i dodawaniu wydatków w przeglądarce. Testy API nie sprawdzają przekierowań, formularzy, formatowania ani zachowania po odświeżeniu strony.
+
+### W jaki sposób
+Chromium sterowany przez Playwright, użyty jednorazowo i poza repozytorium. Skrypt wykonuje te same czynności co
+użytkownik i odczytuje wynik z ekranu. Dane testowe usunięto po sprawdzeniu.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Usterka dostępności etykiet | zob. dni 4–5 |
+| Pole daty w filtrach pokazuje `mm/dd/yyyy` w testowej przeglądarce po angielsku | format ustala przeglądarka na podstawie języka; w polskiej przeglądarce `dd.mm.rrrr`. Bez zmian |
+
+### Weryfikacja
+| Test w przeglądarce | Wynik |
+|---|---|
+| niezalogowany wchodzi na `/transactions` | przekierowanie na `/login` |
+| rejestracja | automatyczne zalogowanie, pusta lista z komunikatem |
+| błędna kwota (`12,345`) | komunikat, brak zapisu |
+| 3 transakcje: wydatek z kategorią, przychód, wydatek | kolejność od najnowszej, `-1234,56 zł`, `5000,00 zł`, data `03.11.2026` |
+| edycja kwoty i kategorii | zapisana, widoczna w tabeli |
+| szukanie `orlen`, szukanie `%`, filtr „Bez kategorii”, filtr od daty | poprawne liczby wyników |
+| usunięcie | po potwierdzeniu znika |
+| odświeżenie strony | nadal zalogowany |
+| 25 transakcji | 20 na stronie, „Strona 1 z 2”, druga strona: 5 |
+| zepsuty token | wylogowanie z komunikatem „Sesja wygasła” |
+| złe hasło | komunikat „Nieprawidłowy e-mail lub hasło” |
+| wylogowanie, potem „wstecz” | token usunięty, `/transactions` niedostępne |
+| drugi użytkownik | 0 transakcji, nie widzi danych pierwszego |
+| błędy JavaScript, połączenia | brak błędów; tylko `localhost:5173` i `localhost:8001` |
+| łącznie | 26 z 26 |
+| `pytest` | 151 testów zaliczonych |
+
+### Dalej
+Etap 4 (16–22 listopada): import wyciągów PDF z ING. Wracają sprawy odłożone do tego etapu: próba biblioteki na prawdziwych
+wyciągach wyłącznie lokalnie i zgodność z sumami wszystkich 6 wyciągów.

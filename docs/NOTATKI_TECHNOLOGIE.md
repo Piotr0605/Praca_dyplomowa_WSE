@@ -1,6 +1,6 @@
 # Notatki do rozdziału „Wykorzystane technologie”
 
-Stan po tygodniu 2. Wersje pochodzą z plików projektu (`requirements*.txt`, `package.json`, `docker-compose.yml`).
+Stan po tygodniu 3. Wersje pochodzą z plików projektu (`requirements*.txt`, `package.json`, `docker-compose.yml`).
 Szersze opisy działania każdej technologii: [`TYDZIEN_1.md`](TYDZIEN_1.md), sekcja 2.
 
 ## Zestawienie
@@ -21,6 +21,8 @@ Szersze opisy działania każdej technologii: [`TYDZIEN_1.md`](TYDZIEN_1.md), se
 | Frontend | TypeScript | 7 | statyczne typowanie kodu frontendu |
 | Frontend | Vite | 8 | serwer deweloperski i budowanie aplikacji |
 | Frontend | Tailwind CSS | 4 | stylowanie klasami narzędziowymi |
+| Frontend | React Router | 8.5 | nawigacja między stronami, trasy dostępne po zalogowaniu |
+| Frontend | TanStack Query | 5.107 | pobieranie danych z API, pamięć podręczna, odświeżanie po zmianach |
 | Jakość | pytest, httpx2 | 9.2, 2.16 | testy automatyczne API |
 | Jakość | Ruff | 0.17 | linter i formatter Pythona |
 | Jakość | oxlint, Prettier | 1.89, 3.9 | linter i formatter TypeScriptu |
@@ -48,6 +50,13 @@ uruchomieniu, więc w publicznym repozytorium nie ma żadnego klucza.
 
 **React, TypeScript, Vite.** Komponenty odpowiadają częściom interfejsu (karty, wykresy, tabele), a TypeScript wykrywa
 niezgodności z API przed uruchomieniem kodu.
+
+**React Router i TanStack Query.** Router obsługuje strony aplikacji i trasy chronione logowaniem. TanStack Query
+przechowuje odpowiedzi API i odświeża je po zmianach danych, więc komponenty nie muszą same zarządzać stanem
+pobierania. Po wylogowaniu pamięć podręczna jest czyszczona, żeby dane poprzedniego użytkownika nie zostały w przeglądarce.
+
+**Izolacja danych.** Każde zapytanie do bazy zawiera `user_id` zalogowanej osoby, a cudzy zasób daje tę samą odpowiedź
+co nieistniejący (404). Skuteczność sprawdzają testy izolacji i celowe usuwanie zabezpieczeń (dziennik, tydzień 3).
 
 **Docker Compose.** Jedno polecenie uruchamia cały system bez ręcznej instalacji bazy czy środowisk. Sprawdzono to na
 świeżym klonie repozytorium (dziennik, dzień 7).

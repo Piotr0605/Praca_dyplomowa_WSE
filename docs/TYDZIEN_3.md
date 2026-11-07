@@ -61,26 +61,26 @@ zdradzałaby, że zasób o takim numerze istnieje.
 - [x] Celowe wprowadzenie błędów, żeby sprawdzić, czy testy je wykrywają
 
 ### Dzień 4: logowanie w przeglądarce
-- [ ] `react-router`, `@tanstack/react-query`
-- [ ] Klient API z tokenem i obsługą 401, `AuthContext`, strony logowania i rejestracji, chronione trasy
+- [x] `react-router`, `@tanstack/react-query`
+- [x] Klient API z tokenem i obsługą 401, `AuthContext`, strony logowania i rejestracji, chronione trasy
 
 ### Dzień 5: transakcje w przeglądarce
-- [ ] Układ strony (menu boczne, górny pasek z kontem i wylogowaniem)
-- [ ] Strona „Transakcje”: tabela, filtry, paginacja, formularz dodawania, edycja, usuwanie
+- [x] Układ strony (menu boczne, górny pasek z kontem i wylogowaniem)
+- [x] Strona „Transakcje”: tabela, filtry, paginacja, formularz dodawania, edycja, usuwanie
 
 ### Dzień 6: sprawdzenie całości
-- [ ] Przejście w przeglądarce: rejestracja, logowanie, dodanie, edycja, usunięcie, filtry, wylogowanie, odświeżenie strony
-- [ ] Brak połączeń z zewnętrznymi serwerami
+- [x] Przejście w przeglądarce: rejestracja, logowanie, dodanie, edycja, usunięcie, filtry, wylogowanie, odświeżenie strony
+- [x] Brak połączeń z zewnętrznymi serwerami
 
 ### Dzień 7: domknięcie
-- [ ] Dziennik prac, plan, notatki o technologiach
+- [x] Dziennik prac, plan, notatki o technologiach
 - [ ] PR do `main` i tag
 
 ---
 
 ## 4. Definition of Done tygodnia 3
-- [ ] Użytkownik loguje się w przeglądarce i ręcznie dodaje, edytuje i usuwa wydatki
-- [ ] Testy izolacji: użytkownik B nie ma dostępu do danych A
-- [ ] Kategoria transakcji jest zawsze systemowa albo użytkownika, a kategorii systemowych nie można zmienić
-- [ ] Testy przechodzą lokalnie i w CI
-- [ ] Dziennik prac, plan i notatki są aktualne
+- [x] Użytkownik loguje się w przeglądarce i ręcznie dodaje, edytuje i usuwa wydatki
+- [x] Testy izolacji: użytkownik B nie ma dostępu do danych A
+- [x] Kategoria transakcji jest zawsze systemowa albo użytkownika, a kategorii systemowych nie można zmienić
+- [x] Testy przechodzą lokalnie i w CI
+- [x] Dziennik prac, plan i notatki są aktualne
