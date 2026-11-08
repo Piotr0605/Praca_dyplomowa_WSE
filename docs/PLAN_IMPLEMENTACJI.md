@@ -280,7 +280,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 - [ ] Eksport diagramów do PNG lub SVG do pracy (`mermaid-cli` w przypiętej wersji, wymaga zgody na pobranie pakietu)
 - [ ] Zrzuty ekranu (`docs/zrzuty/`)
 - [ ] Pomiary według protokołu [`BADANIA.md`](BADANIA.md) (H1–H4) jednym poleceniem na wersji końcowej; wyniki zbiorcze w `docs/badania/`, sekcje 5–7 protokołu uzupełnione
-- [ ] Ślepa ocena porad przez autora i 2–3 inne osoby (zaprosić je wcześniej, w grudniu)
+- [ ] Ślepa ocena porad przez autora (bez nazwy dostawcy, klucz otwierany po ocenie)
 - [ ] Zapytać promotora, czy repozytorium może być publiczne przed obroną i kontrolą JSA; sprawdzić, czy uczelnia wymaga opisania użycia AI w pracy
 - [ ] Tag `v1.0.0` na GitHubie
 
@@ -409,7 +409,7 @@ wymagania formalne trzeba sprawdzić w wytycznych WSE.
 
 | Część | Szkic gotowy do | Materiał źródłowy |
 |---|---|---|
-| Konspekt i układ rozdziałów, rozmowa z promotorem; zatwierdzenie protokołu badania (hipotezy, progi, testy) | 8 XI | ten plan, `BADANIA.md` |
+| Konspekt i układ rozdziałów, rozmowa z promotorem, gdy będzie możliwa | 8 XI | ten plan, `BADANIA.md` |
 | 1. Podstawy teoretyczne: finanse osobiste, modele językowe | 29 XI | literatura |
 | 2. Przegląd rozwiązań i analiza wymagań | 6 XII | istniejące aplikacje, sekcja 0 |
 | 3. Wykorzystane technologie | 13 XII | `NOTATKI_TECHNOLOGIE.md` |

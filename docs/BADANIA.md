@@ -5,7 +5,8 @@ Ten dokument ustala hipotezy i metodę **przed** pomiarem. Historia repozytorium
 wcześniej niż wyniki. Zmiana protokołu po rozpoczęciu pomiarów jest dopuszczalna tylko z wpisem w sekcji 7
 (co, kiedy i dlaczego).
 
-Stan: wersja robocza z 8.11.2026, do konsultacji z promotorem (zakres badań, progi hipotez, testy statystyczne).
+Stan: wersja z 8.11.2026 przyjęta przez autora. Konsultacja z promotorem nie jest na razie możliwa; jeśli dojdzie
+do skutku przed pomiarem, ewentualne zmiany trafią do sekcji 7.
 
 ---
 
@@ -26,7 +27,7 @@ i daje się sprawdzić testem statystycznym. P1, P3 i P4 weryfikują założenia
 
 ## 2. Hipotezy
 
-Progi ustalono przed pomiarem. Do konsultacji z promotorem: czy są właściwe i czy wszystkie hipotezy zostają.
+Progi ustalono przed pomiarem.
 
 | | Hipoteza | Kryterium przyjęcia |
 |---|---|---|
@@ -111,16 +112,16 @@ w kolejnych miesiącach.
 - **Zgodność liczb (H4a):** skrypt wyciąga z porady liczby (kwoty, procenty) i sprawdza, czy wynikają z pakietu wejściowego
   (wartość wprost albo prosta różnica lub udział). Przypadki niejednoznaczne rozstrzyga ręczny przegląd, a zasady
   przeglądu są zapisane przed pomiarem.
-- **Ocena przydatności (H4b):** porady eksportowane w losowej kolejności, bez nazwy dostawcy. Oceniają je autor i, jeśli
-  to możliwe, 2–3 inne osoby w skali 1–5 w czterech kryteriach: zgodność z danymi, konkretność, wykonalność, zrozumiałość.
-  Zgodność oceniających podawana jest opisowo; przy małej liczbie osób nie liczymy współczynników.
+- **Ocena przydatności (H4b):** porady eksportowane w losowej kolejności, bez nazwy dostawcy i bez numeru powtórzenia.
+  Ocenia je autor w skali 1–5 w czterech kryteriach: zgodność z danymi, konkretność, wykonalność, zrozumiałość.
+  Klucz (która porada od którego dostawcy) jest w osobnym pliku, otwieranym dopiero po zakończeniu oceny.
 - **Koszt i czas (H4c):** tokeny wejścia i wyjścia z odpowiedzi API, przeliczone według cennika z datą pobrania;
   czas od wysłania do odpowiedzi. Podajemy medianę, 95. percentyl i średnią.
 
 ### 3.6. Badania dodatkowe (COULD, jeśli starczy czasu)
 
 - Wydajność: czas importu wyciągu i odpowiedzi analityki dla 10 tys. i 100 tys. sztucznych transakcji.
-- Użyteczność: kwestionariusz SUS po wykonaniu zadań w aplikacji przez 5 osób (do decyzji z promotorem).
+- Użyteczności z udziałem innych osób (np. kwestionariusz SUS) nie planujemy: brak uczestników.
 
 ## 4. Co moduły muszą zapewnić, żeby pomiar był rzetelny
 
@@ -157,8 +158,8 @@ P2–P4: brak (moduły jeszcze nie istnieją).
   przed pomiarem i podział na część roboczą i testową.
 - **Korpus anonimizacji jest sztuczny.** Szablony odwzorowują strukturę prawdziwych tytułów, ale nie ich różnorodność.
   Uzupełnia go kontrola wycieków na prawdziwych danych.
-- **Ocena przydatności porad jest subiektywna i oparta na kilku osobach.** Dlatego jest ślepa, z kryteriami ustalonymi
-  z góry i uzupełniona obiektywną miarą zgodności liczb.
+- **Przydatność porad ocenia jedna osoba, autor systemu.** Ocena jest subiektywna; ograniczają to ślepa ocena (bez nazwy
+  dostawcy), kryteria ustalone z góry i obiektywna miara zgodności liczb (H4a), która nie zależy od oceniającego.
 - **Modele językowe się zmieniają.** Wyniki P4 dotyczą konkretnych wersji modeli i daty pomiaru.
 
 ## 7. Zmiany protokołu
@@ -166,3 +167,4 @@ P2–P4: brak (moduły jeszcze nie istnieją).
 | Data | Zmiana | Powód |
 |---|---|---|
 | 8.11.2026 | pierwsza wersja | — |
+| 8.11.2026 | ocena porad tylko przez autora; bez badania SUS; bez konsultacji z promotorem | brak innych oceniających i uczestników; promotor na razie niedostępny |
