@@ -376,7 +376,7 @@ na tym serwerze. To kierunek rozwoju, a nie zakres pracy.
 ### Uruchomienie na pokazie
 1. **Dzień przed:** `git pull`, `docker compose up --build` przy dostępie do internetu (pobranie obrazów),
    wczytanie danych demo, przejście całego scenariusza raz na próbę.
-2. **Przed wejściem na salę:** wyłączyć inne projekty Dockera zajmujące porty (np. finshield-api),
+2. **Przed wejściem na salę:** wyłączyć inne projekty Dockera zajmujące porty 5432, 8000 lub 5173,
    uruchomić `docker compose up`, otworzyć w przeglądarce kartę aplikacji i kartę `localhost:8000/docs`
    (`/docs` działa bez internetu dopiero po zadaniu z etapu 9).
 3. **AI:** jeśli jest internet i ważny klucz API, `AI_PROVIDER=openai` lub `anthropic`; jeśli nie, `mock`

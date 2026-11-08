@@ -1110,3 +1110,14 @@ zakresem. Uzasadnienie:
 PDF innego banku dostaje teraz komunikat „Wyciągi PDF odczytujemy tylko z ING. Jeśli masz konto w innym banku, pobierz
 historię rachunku w formacie CSV” (test na wygenerowanym PDF „innego banku”). Do protokołu badania dopisano, że ślepa
 ocena porad jest częściowa: styl odpowiedzi może zdradzać model.
+
+**Uzupełnienie 8.11.2026: porty i plik `.env`.** `docker compose up` zatrzymał się na błędzie „port 5432 is already
+allocated”. Przyczyny były dwie:
+- plik `.env` nadpisano kopią `.env.example`, więc porty wróciły na domyślne 5432 i 8000, zajęte wtedy przez inny projekt;
+- hasło bazy wróciło na przykładowe, a baza w wolumenie miała zapisane wcześniejsze losowe hasło, więc backend i tak by się nie połączył.
+
+Rozwiązanie: nowe losowe hasło w `.env` i zmiana hasła w bazie (`ALTER USER`). Dane w bazie zostały, a klucz JWT
+leży osobno w wolumenie `backend_data`. Inny projekt został potem usunięty, więc aplikacja działa na domyślnych
+portach 5432, 8000 i 5173. Lokalny `.env` różni się od `.env.example` już tylko hasłem bazy, czyli tak, jak będzie
+na czystym komputerze. Wniosek do pracy: `.env.example` nie zawiera działającego hasła do istniejącej bazy, więc
+skopiowanie go na istniejący `.env` wymaga zmiany hasła albo `docker compose down -v` (z utratą danych).
