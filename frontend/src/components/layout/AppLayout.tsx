@@ -1,7 +1,10 @@
 import { NavLink, Outlet } from 'react-router'
 import { useAuth } from '../../hooks/useAuth'
 
-const NAV = [{ to: '/transactions', label: 'Transakcje' }]
+const NAV = [
+  { to: '/transactions', label: 'Transakcje' },
+  { to: '/import', label: 'Import wyciągu' },
+]
 
 export function AppLayout() {
   const { user, logout } = useAuth()

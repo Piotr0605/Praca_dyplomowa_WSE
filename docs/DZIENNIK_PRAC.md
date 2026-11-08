@@ -931,3 +931,126 @@ użytkownik i odczytuje wynik z ekranu. Dane testowe usunięto po sprawdzeniu.
 ### Dalej
 Etap 4 (16–22 listopada): import wyciągów PDF z ING. Wracają sprawy odłożone do tego etapu: próba biblioteki na prawdziwych
 wyciągach wyłącznie lokalnie i zgodność z sumami wszystkich 6 wyciągów.
+
+---
+
+## Tydzień 4: import wyciągów PDF z ING (wykonano 7.11.2026)
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/app/parsers/ing_pdf.py` | odczyt wyciągu, kontrola sum, rozpoznanie rodzaju operacji |
+| `backend/app/services/import_service.py`, `api/routes/imports.py`, `schemas/imports.py` | podgląd, zapis, historia importów |
+| `backend/tests/fixtures/ing_statement.py` | generator sztucznego wyciągu PDF o tym samym układzie |
+| `backend/tests/unit/test_ing_pdf.py`, `tests/integration/test_imports.py` | nowe testy parsera i API importu |
+| `backend/scripts/check_statements.py` | sprawdzenie prawdziwych wyciągów bez ujawniania treści |
+| `frontend/src/pages/ImportPage.tsx` | strona „Import wyciągu” |
+
+Importer uniwersalny CSV (SHOULD) nie powstał i zgodnie z kolejnością cięć przeszedł na okres świąteczny.
+Plan tygodnia (`TYDZIEN_4.md`) spisano po wykonaniu prac, bo etap zaczął się od próby biblioteki, od której zależało podejście.
+
+### Dlaczego
+- **Kontrola sum przed zapisem.** Wyciąg zawiera liczbę i sumę uznań i obciążeń oraz salda. Ich porównanie z odczytem to obiektywna miara poprawności parsera, a niezgodny import nie trafia do bazy nawet częściowo.
+- **Numer operacji jako klucz duplikatów.** Hash daty, kwoty i opisu uznałby dwa identyczne zakupy tego samego dnia za duplikat.
+- **Brak przechowywania pliku.** Podgląd i zapis przyjmują plik osobno, więc dane bankowe nie zostają w plikach tymczasowych serwera.
+- **Prywatność w trakcie pracy.** Parser był rozwijany na prawdziwych wyciągach, ale narzędzia diagnostyczne wypisywały wyłącznie liczby, zgodność sum i „kształt” tekstu (litery zamienione na `a`, cyfry na `9`), bez treści transakcji.
+
+### W jaki sposób
+- **Kolumny:** granice wyznaczają słowa nagłówka tabeli leżące w jednej linii ze słowem „kontrahenta”.
+- **Wiersze:** granice transakcji wyznaczają poziome linie tabeli dłuższe niż 400 pkt. Wiersz bez daty na początku strony to dokończenie transakcji z poprzedniej strony.
+- **Tekst:** słowa są składane ze znaków (grupowanie po współrzędnej y, podział według odstępu między znakami).
+- **Data:** do analizy służy data z tytułu („Płatność kartą 29.09.2026”), a data księgowania jest zapisywana osobno.
+- **Rodzaj operacji:** z tytułu i kodu z kolumny „Szczegóły” (`TR.KART`, `P.BLIK`, `PRZELEW`…); Smart Saver, przelew własny i wpłata na cel to przelewy własne.
+- **Zapis:** `INSERT … ON CONFLICT (user_id, dedup_hash) DO NOTHING RETURNING id`, więc duplikaty pomija baza, także przy dwóch jednoczesnych importach.
+- **Przeglądarka:** strona wysyła plik do podglądu, pokazuje sumy z wyciągu obok sum odczytanych, a po „Zapisz” wysyła ten sam plik ponownie do zapisu. Historia importów jest pod formularzem.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| W nagłówku leżą w jednym wierszu „Saldo końcowe” i „Saldo dostępne”; słownik po (nazwa, wysokość) gubił jedną etykietę, a kontrola salda nie przechodziła w żadnym wyciągu | lista etykiet i wybór etykiety z pierwszej kolumny |
+| W 4 z 6 wyciągów brakowało 1–2 obciążeń. Diagnoza (same liczby): każda strona miała tyle dat, ile wierszy, ale jedna kwota nie trafiała do żadnej transakcji. Przyczyna: przy dolnej krawędzi strony znaki dwóch linii są zapisane w pliku naprzemiennie, a `extract_words` dzielił daty na fragmenty; wiersz bez rozpoznanej daty był dołączany do poprzedniego | słowa składane bezpośrednio ze znaków według współrzędnych; potem zgodność 6 z 6 |
+| Opisy z dołu strony były rozbite na litery, a rodzaj operacji „inny” | ta sama zmiana dla wszystkich kolumn; 0 z 1113 opisów rozbitych |
+| Sztuczny wyciąg ujawnił, że parser szukał słowa „Dane” w całym dokumencie (na str. 1 jest też „Dane posiadacza”); w prawdziwych plikach działało przypadkiem | słowa nagłówka muszą leżeć w linii ze słowem „kontrahenta” |
+| Kilka dokończeń z kolejnych stron dostawało to samo przesunięcie w pionie, co mieszałoby ich linie | rosnące przesunięcie przy każdym scaleniu |
+| Wbudowana czcionka ReportLab nie ma polskich znaków, a parser rozpoznaje m.in. „Płatność kartą” | czcionka DejaVu (`fonts-dejavu-core`) tylko w obrazie deweloperskim i w CI |
+| Generator sztucznego wyciągu nie zawijał tekstu, przez co nachodził na sąsiednie kolumny (prawdziwy wyciąg zawija) | zawijanie do szerokości kolumny i mniejszy, dwuliniowy nagłówek tabeli |
+| Skrypt kontrolny uruchamiany poza kontenerem nie miał `DATABASE_URL`, bo import `app.models` wczytuje ustawienia | adres zastępczy w poleceniu; parser sam nie łączy się z bazą |
+| Pierwszy test w przeglądarce nie wystartował, bo przeglądarka testowa nie zdążyła się pobrać | osobna instalacja przeglądarki przed testem |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| 6 prawdziwych wyciągów, parser | 1113 transakcji, zgodność z sumami 6 z 6, 1113 unikalnych numerów operacji |
+| 6 prawdziwych wyciągów przez API (tymczasowe konto, usunięte po teście) | 1113 zapisanych; ponowny import: 0 nowych, 1113 duplikatów |
+| suma zaimportowanych kwot | 321,52 zł = saldo końcowe ostatniego wyciągu − saldo początkowe pierwszego |
+| sztuczny wyciąg | 3 strony, transakcja dzielona między strony, 25 z 25 transakcji, zgodność z sumami |
+| celowo zepsute sumy (liczba i suma uznań, obciążeń, saldo) i brak jednej transakcji | wykryte |
+| plik niebędący wyciągiem, za duży (> 5 MB), uszkodzony PDF | 422 / 413, nic nie zapisano |
+| inny użytkownik importuje ten sam plik | zapisuje własne transakcje; duplikaty liczone osobno dla każdego |
+| przeglądarka: zły plik, zepsute sumy, podgląd, zapis, historia, edycja zaimportowanej transakcji, ponowny import | 15 z 15; połączenia tylko z `localhost` |
+| `pytest` | 205 testów zaliczonych |
+
+### Porządki w projekcie
+Na prośbę o usunięcie zbędnych plików:
+- **Repozytorium:** usunięto 5 plików `.gitkeep` z katalogów, które mają już zawartość. Zostały 2 zalążki pustych katalogów na kolejne etapy (`parsers/profiles/`, `components/charts/`).
+- **Docker:** usunięto 4 nieużywane wolumeny (stare kopie `node_modules` po 116 MB) i obraz pomocniczy `alpine`.
+- **Lokalnie:** usunięto katalog `frontend/dist`, czyli wynik budowania odtwarzany przy każdym buildzie.
+
+### Dalej
+Etap 5 (23–29 listopada): kategoryzacja i zapamiętywanie poprawek, strona „Kategorie”.
+
+---
+
+## Tydzień 4, dodatkowo: importer uniwersalny CSV (wykonano 7.11.2026)
+
+Importer CSV był w planie oznaczony jako SHOULD i po domknięciu części PDF został przeniesiony na okres świąteczny.
+Użytkownik poprosił o wykonanie go od razu, więc wrócił do etapu 4.
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/app/parsers/csv_profile.py`, `profiles/ing.json` | model profilu pliku CSV i wbudowany profil ING |
+| `backend/app/parsers/csv_detect.py` | rozpoznanie formatu nieznanego pliku: kodowanie, separator, nagłówek, role kolumn, format daty |
+| `backend/app/parsers/csv_generic.py` | odczyt pliku według profilu |
+| `backend/app/parsers/common.py` | elementy wspólne z parserem PDF (normalizacja opisu, usuwanie numeru karty) |
+| `backend/app/models/bank_profile.py`, migracja `profile_bankow` | tabela profili zapisanych przez użytkowników |
+| `backend/app/services/import_service.py`, `api/routes/imports.py` | podgląd i zapis dla PDF i CSV, endpointy `banks` i `detect` |
+| `frontend/src/components/imports/ColumnMapping.tsx`, `pages/ImportPage.tsx` | kreator mapowania kolumn i lista profili |
+| `backend/tests/fixtures/csv_samples.py`, `tests/unit/test_csv_import.py`, `tests/integration/test_csv_imports.py` | sztuczne pliki CSV i 72 testy |
+| `backend/scripts/check_statements.py` | sprawdzenie plików CSV z `data/private/` i porównanie z wyciągami PDF |
+
+### Dlaczego
+- **Dwa poziomy.** Parser „dla wszystkich banków” nie istnieje: banki różnią się kodowaniem, separatorem, metadanymi nad tabelą, nazwami kolumn, formatem daty i zapisem kwoty. Detektor zgaduje te ustawienia, a użytkownik potwierdza je raz; potem plik z tego banku jest rozpoznawany automatycznie.
+- **Kolumny po nazwach.** Profil wskazuje kolumnę nazwą z nagłówka, a nie numerem, więc zmiana liczby wierszy metadanych nad tabelą (np. inny zakres dat w eksporcie) nie psuje profilu.
+- **Profile wbudowane jako pliki JSON.** Plan przewidywał je jako wiersze tabeli `bank_profiles` z pustym `user_id`. Plik w kodzie ma testy i zmienia się razem z aplikacją, bez migracji danych, a tabela trzyma tylko profile użytkowników (`user_id` obowiązkowy). Plan zaktualizowano.
+- **Błędny wiersz zatrzymuje import.** Wyciąg PDF chronią sumy kontrolne, plik CSV nie ma niczego podobnego. Dlatego wiersz z datą, którego nie da się odczytać, zatrzymuje import z numerem wiersza, zamiast zostać po cichu pominięty. Pomijane są tylko wiersze bez daty (metadane, stopka) i bez kwoty (blokady kartowe), a te drugie są pokazywane w podglądzie.
+- **Wspólny klucz duplikatów z PDF.** Profil ING buduje klucz z numeru operacji tak samo jak parser PDF, więc import wyciągu PDF i pliku CSV z tego samego okresu nie dubluje transakcji.
+
+### W jaki sposób
+- **Kodowanie:** UTF-8, a gdy plik nie jest poprawnym UTF-8: cp1250 albo ISO-8859-2. Oba odczytają każdy bajt, więc rozstrzyga liczba polskich liter (te kodowania różnią się m.in. kodami „ą”, „ś”, „ź”).
+- **Separator:** ten, przy którym najwięcej wierszy ma tę samą liczbę kolumn.
+- **Nagłówek:** wiersz z największą liczbą znanych nazw kolumn wśród pierwszych 50.
+- **Role kolumn:** słownik nazw (bez polskich znaków i wielkości liter), dokładna nazwa wygrywa z początkiem nazwy. Potem sprawdzenie zawartości wyłącznie w wierszach z poprawną datą: kolumna „Data” bez dat nie jest datą, kwota musi mieć część dziesiętną.
+- **Bez numeru operacji:** klucz duplikatów to data, kwota, waluta, opis i kontrahent z numerem kolejnym wystąpienia w pliku. Dwie identyczne kawy tego samego dnia to dwie transakcje, a ponowny import tego samego pliku daje te same klucze.
+- **Przeglądarka:** plik PDF trafia od razu do podglądu. Plik CSV najpierw do `detect`: rozpoznany profil prowadzi do podglądu bez pytań, a nieznany plik otwiera kreator. Kreator pokazuje 5 przykładowych wierszy z oznaczeniem ról kolumn, a zmiana kodowania lub separatora ponawia rozpoznanie. Profil jest zapisywany dopiero przy zatwierdzeniu importu, czyli gdy plik dał się według niego odczytać.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| W sztucznym pliku ING detektor uznał za kwotę kolumnę „Nr rachunku”. Stopka pod tabelą („Saldo końcowe”) nie przechodziła sprawdzenia kwoty, więc właściwa kolumna odpadała, a numer konta po usunięciu spacji wyglądał jak liczba | sprawdzanie zawartości tylko w wierszach z poprawną datą; kwota musi mieć część dziesiętną w co najmniej połowie wierszy |
+| „Opłata za kartę” rozpoznana jako płatność kartą | słowa kluczowe opłat sprawdzane przed słowem „kart” |
+| Test wykrył, że tekst „abc” w kolumnie kwoty był traktowany jak kod waluty, czyli pusta kwota: wiersz zostałby po cichu pominięty jako blokada | waluta usuwana tylko wtedy, gdy stoi po liczbie |
+| Separator dziesiętny w kwocie „1,250.00” był zgadywany błędnie (obie metody liczenia dawały remis) | separatorem jest ostatni znak „,” lub „.” przed jedną lub dwiema cyframi na końcu kwoty |
+| Test w przeglądarce: po zapisaniu importu ponowny wybór tego samego pliku nic nie robił, bo pole pliku dalej go pokazywało, a przeglądarka nie zgłasza zmiany przy wyborze tego samego pliku | pole pliku jest czyszczone razem ze stanem strony |
+| Celowe błędy w kodzie: zmiana wykluczenia „saldo”/„blokada” z kandydatów na kwotę nie była wykryta, bo w pliku ING właściwa kolumna wygrywała i bez niej | test z kolumnami „Kwota blokady”, „Saldo po operacji” i „Kwota (PLN)” |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 277 testów zaliczonych (72 nowe dla CSV) |
+| celowe błędy: licznik identycznych wierszy, znak obciążeń, wykluczenie salda, pomijanie stopki, zapis profilu tylko na życzenie, izolacja listy i usuwania profili, waluta po liczbie | 8 z 8 wykrytych |
+| migracja: `upgrade`, `alembic check`, `downgrade`, `upgrade` | bez błędów |
+| przeglądarka: CSV z ING bez kreatora, ponowny import, plik innego banku przez kreator, zły format daty, zapamiętany profil, nieznane nazwy kolumn, zmiana separatora, usunięcie profilu, PDF nadal z kontrolą sum | 26 z 26; połączenia tylko z `localhost` |
+| prawdziwe dane | brak: nie ma jeszcze prawdziwego eksportu CSV z ING. Profil ING powstał na podstawie opisu formatu; jeśli prawdziwy plik się różni, trafi do kreatora |
+
+Zrzut kreatora na sztucznych danych: `docs/zrzuty/tydzien4_kreator_csv.png`.

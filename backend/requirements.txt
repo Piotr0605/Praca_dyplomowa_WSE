@@ -10,3 +10,4 @@ argon2-cffi==25.1.0
 PyJWT==2.15.1
 email-validator==2.3.0
 python-multipart==0.0.33
+pdfplumber==0.11.10

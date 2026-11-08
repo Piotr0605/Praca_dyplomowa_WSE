@@ -67,9 +67,10 @@ category_rules                      ← „pamięć” poprawek użytkownika
   category_id (FK), priority, source ('system' | 'user'), created_at
 
 bank_profiles                       ← mapowanie kolumn CSV (wbudowane + zapisane przez użytkownika)
-  id (PK), user_id (FK, NULL = profil wbudowany, np. ING), bank_name,
-  config JSONB (kodowanie, separator, wiersz nagłówka, mapowanie kolumn,
-  format daty, separator dziesiętny, znak kwoty), created_at
+  id (PK), user_id (FK), bank_name (UNIQUE z user_id),
+  config JSONB (kodowanie, separator, mapowanie kolumn po nazwach,
+  format daty, separator dziesiętny, sposób zapisu kwoty), created_at
+  — profile wbudowane (np. ING) to pliki JSON w kodzie, nie wiersze tabeli
 
 ai_advice
   id (PK), user_id (FK), period_start, period_end,
@@ -97,9 +98,9 @@ na zasobie użytkownika A.
 | PATCH/DELETE | `/api/transactions/{id}` | edycja (w tym zmiana kategorii → tworzy regułę) / usunięcie |
 | GET/POST/PATCH/DELETE | `/api/categories` | kategorie użytkownika + systemowe |
 | GET/DELETE | `/api/rules` | podgląd/usuwanie zapamiętanych reguł |
-| GET | `/api/imports/banks` | lista profili banków (wbudowane + użytkownika) |
+| GET/DELETE | `/api/imports/banks` | lista profili banków (wbudowane + użytkownika) / usunięcie własnego |
 | POST | `/api/imports/detect` | auto-wykrycie formatu CSV → propozycja mapowania kolumn |
-| POST | `/api/imports/preview` | wgranie CSV → podgląd + proponowane kategorie (bez zapisu) |
+| POST | `/api/imports/preview` | wgranie PDF lub CSV → podgląd (bez zapisu); proponowane kategorie od etapu 5 |
 | POST | `/api/imports/confirm` | zapis zaimportowanych transakcji |
 | GET | `/api/analytics/summary?from&to` | przychody, wydatki, saldo okresu |
 | GET | `/api/analytics/by-category?from&to` | sumy i udziały % w kategoriach |
@@ -175,24 +176,24 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
    Dodanie banku = nowy profil JSON, bez pisania kodu.
 
 **Parser PDF ING**
-- [ ] Sprawdzenie `pdfplumber` na prawdziwych wyciągach, lokalnie, z raportem bez danych osobowych; wybór biblioteki
-- [ ] `parsers/ing_pdf.py`: odczyt wierszy według współrzędnych kolumn, łączenie transakcji dzielonych między strony, wynik w tym samym `DataFrame` co pozostałe parsery
-- [ ] Walidacja importu: liczba i suma uznań oraz obciążeń, saldo początkowe + uznania − obciążenia = saldo końcowe; niezgodność zatrzymuje zapis i pokazuje błąd
-- [ ] Rozpoznanie rodzajów operacji (karta, BLIK, przelew, Smart Saver, przelew własny, zwrot, wpłata i wypłata gotówki, prowizja)
-- [ ] Skrypt tworzący sztuczny PDF o tym samym układzie (`backend/tests/fixtures/`) + testy: podział między strony, kwoty z separatorem tysięcy, waluta obca, zwrot, duplikaty, celowo niezgodna suma
-- [ ] Porównanie z prawdziwymi wyciągami (lokalnie): liczby i sumy zgodne z nagłówkiem wszystkich 6 plików
+- [x] Sprawdzenie `pdfplumber` na prawdziwych wyciągach, lokalnie, z raportem bez danych osobowych; wybór biblioteki
+- [x] `parsers/ing_pdf.py`: odczyt wierszy według współrzędnych kolumn, łączenie transakcji dzielonych między strony, wynik jako lista transakcji (`ParsedTransaction`); wspólny format z importerem CSV ustalimy razem z nim
+- [x] Walidacja importu: liczba i suma uznań oraz obciążeń, saldo początkowe + uznania − obciążenia = saldo końcowe; niezgodność zatrzymuje zapis i pokazuje błąd
+- [x] Rozpoznanie rodzajów operacji (karta, BLIK, przelew, Smart Saver, przelew własny, zwrot, wpłata i wypłata gotówki, prowizja)
+- [x] Skrypt tworzący sztuczny PDF o tym samym układzie (`backend/tests/fixtures/`) + testy: podział między strony, kwoty z separatorem tysięcy, waluta obca, zwrot, duplikaty, celowo niezgodna suma
+- [x] Porównanie z prawdziwymi wyciągami (lokalnie): liczby i sumy zgodne z nagłówkiem wszystkich 6 plików
 
-**Importer uniwersalny CSV**
-- [ ] Analiza eksportu CSV z ING, jeśli jest dostępny (kodowanie, separator, wiersze metadanych, kolumny, format daty i kwot, blokady)
-- [ ] `parsers/profile.py` (model profilu: kodowanie, separator, wiersz nagłówka, mapowanie kolumn, format daty, separator dziesiętny, sposób wyznaczania znaku kwoty)
-- [ ] `parsers/detector.py` (auto-wykrywanie: kodowanie, separator, nagłówek, role kolumn) + `parsers/generic.py` (parsowanie wg profilu do wspólnego `DataFrame`)
-- [ ] `parsers/profiles/ing.json` + testy na sztucznym pliku w formacie ING
-- [ ] tabela `bank_profiles` (migracja), endpoint `POST /imports/detect` (zwraca propozycję mapowania)
-- [ ] Frontend: krok „Mapowanie kolumn” pokazywany tylko wtedy, gdy plik nie pasuje do żadnego profilu
-- [ ] `services/import_service.py`: czyszczenie (białe znaki, wielkie litery, usunięcie prefiksów typu „PŁATNOŚĆ KARTĄ”), normalizacja opisu, `dedup_hash` = hash numeru transakcji z banku, a gdy go brak: hash(data, kwota, opis znormalizowany)
-- [ ] `POST /imports/preview` i `/imports/confirm`, zapis `ImportBatch`
-- [ ] Sztuczny plik `backend/tests/fixtures/<bank>_sample.csv` + testy parsera (kwoty, daty, polskie znaki, duplikaty)
-- [ ] Frontend: strona „Import” — drag&drop pliku (PDF lub CSV), wybór banku, tabela podglądu, przycisk „Zapisz”
+**Importer uniwersalny CSV** (SHOULD; wykonany 7.11 na prośbę użytkownika)
+- [ ] Analiza prawdziwego eksportu CSV z ING (czeka na plik; profil przygotowany na podstawie opisu formatu) (kodowanie, separator, wiersze metadanych, kolumny, format daty i kwot, blokady)
+- [x] `parsers/csv_profile.py` (model profilu: kodowanie, separator, wiersz nagłówka, mapowanie kolumn, format daty, separator dziesiętny, sposób wyznaczania znaku kwoty)
+- [x] `parsers/csv_detect.py` (auto-wykrywanie: kodowanie, separator, nagłówek, role kolumn) + `parsers/csv_generic.py` (odczyt według profilu, te same pola co parser PDF)
+- [x] `parsers/profiles/ing.json` + testy na sztucznym pliku w formacie ING
+- [x] tabela `bank_profiles` (migracja), endpoint `POST /imports/detect` (zwraca propozycję mapowania)
+- [x] Frontend: krok „Mapowanie kolumn” pokazywany tylko wtedy, gdy plik nie pasuje do żadnego profilu
+- [x] `services/import_service.py`: czyszczenie (białe znaki, wielkie litery, usunięcie prefiksów typu „PŁATNOŚĆ KARTĄ”), normalizacja opisu, `dedup_hash` = hash numeru transakcji z banku, a gdy go brak: hash(data, kwota, opis znormalizowany)
+- [x] `POST /imports/preview` i `/imports/confirm`, zapis `ImportBatch`
+- [x] Sztuczne pliki CSV (`backend/tests/fixtures/csv_samples.py`) + testy parsera (kwoty, daty, polskie znaki, duplikaty)
+- [x] Frontend: strona „Import” — wybór pliku PDF, tabela podglądu, przycisk „Zapisz” i CSV; bank rozpoznawany po profilu zamiast ręcznego wyboru
 
 **DoD:** wgrywasz swój prawdziwy wyciąg, widzisz transakcje w aplikacji; ponowny import nie dubluje danych.
 
@@ -322,7 +323,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | 1. Fundament | ✅ | 2026-11-04 | format wyciągu opisany, pliki w `data/private/` |
 | 2. Model danych + auth | ✅ | 2026-11-05 | |
 | 3. CRUD + frontend logowania | ✅ | 2026-11-07 | |
-| 4. Import CSV | ⏳ | | |
+| 4. Import wyciągów | ✅ | 2026-11-07 | PDF z ING i importer uniwersalny CSV z kreatorem mapowania; profil ING CSV czeka na prawdziwy plik |
 | 5. Kategoryzacja | ⏳ | | |
 | 6. Analityka + dashboard | ⏳ | | |
 | 7. Moduł AI | ⏳ | | |

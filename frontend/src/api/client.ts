@@ -34,6 +34,7 @@ type RequestOptions = {
   method?: string
   json?: unknown
   form?: Record<string, string>
+  file?: File
   query?: Record<string, string | number | boolean | undefined>
 }
 
@@ -50,6 +51,12 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   if (options.json !== undefined) {
     headers['Content-Type'] = 'application/json'
     body = JSON.stringify(options.json)
+  } else if (options.file) {
+    // Plik razem z ewentualnymi polami formularza (multipart/form-data).
+    const data = new FormData()
+    data.append('file', options.file)
+    for (const [key, value] of Object.entries(options.form ?? {})) data.append(key, value)
+    body = data
   } else if (options.form) {
     body = new URLSearchParams(options.form)
   }
