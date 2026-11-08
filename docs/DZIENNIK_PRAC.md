@@ -1121,3 +1121,29 @@ leży osobno w wolumenie `backend_data`. Inny projekt został potem usunięty, w
 portach 5432, 8000 i 5173. Lokalny `.env` różni się od `.env.example` już tylko hasłem bazy, czyli tak, jak będzie
 na czystym komputerze. Wniosek do pracy: `.env.example` nie zawiera działającego hasła do istniejącej bazy, więc
 skopiowanie go na istniejący `.env` wymaga zmiany hasła albo `docker compose down -v` (z utratą danych).
+
+**Uzupełnienie 8.11.2026: prawdziwy eksport CSV z ING.** Użytkownik wgrał w przeglądarce prawdziwy eksport historii
+z ING. Plik nie został dopasowany do profilu ING i otworzył się kreator. Przyczyna: jedna nazwa kolumny. Profil
+zakładał „Kwota transakcji (płatności, obciążenia, uznania)”, a bank używa „Kwota transakcji (waluta rachunku)”.
+Kodowanie, separator, 18 wierszy metadanych, format daty i pozostałe kolumny były zgodne z założeniami. Detektor
+rozpoznał wszystkie role sam, dlatego kreator był wypełniony poprawnie. Plik przeniesiono do `data/private/`
+(bez kopii w Pobranych); sprawdzano wyłącznie nazwy kolumn z nagłówka i liczby zbiorcze.
+
+Po poprawce profilu i sztucznego pliku testowego (ten sam układ kolumn co prawdziwy):
+
+| Sprawdzenie | Wynik |
+|---|---|
+| transakcje w CSV | 669, pominięte blokady bez kwoty: 20 |
+| ten sam klucz duplikatów co w PDF | 612; kwoty zgodne w 100% |
+| różne daty | 8 (prowizje, płatności kartą, zwrot): 1–2 dni, bo PDF bierze datę z tytułu, a CSV z kolumny „Data transakcji” |
+| w wspólnym okresie tylko w PDF | 432, wszystkie to automatyczne przelewy Smart Saver: eksport CSV ich nie zawiera |
+| w wspólnym okresie tylko w CSV | 6 płatności kartą zaksięgowanych po ostatnim wyciągu PDF |
+
+Wnioski do pracy:
+- **Weryfikacja na prawdziwym pliku była potrzebna.** Profil zbudowany z opisu formatu różnił się jedną nazwą kolumny.
+- **Kreator zabezpieczył przed tym błędem.** Bez kreatora import by nie zadziałał.
+- **CSV z ING nie zastąpi PDF przy kontroli salda,** bo brakuje w nim przelewów Smart Saver.
+
+Przy okazji poprawiono dwa problemy interfejsu:
+- ponowne „Pokaż podgląd” zostawiało stary podgląd obok kreatora;
+- tekst kreatora brzmiał jak komunikat o błędzie i został przeredagowany.

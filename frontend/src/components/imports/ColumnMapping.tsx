@@ -171,9 +171,10 @@ export function ColumnMapping({
       <div>
         <h2 className="text-base font-semibold text-slate-900">Mapowanie kolumn</h2>
         <p className="text-sm text-slate-600">
-          Plik nie pasuje do żadnego zapisanego profilu. Sprawdź propozycję na przykładowych
-          wierszach i popraw ją w razie potrzeby. Po zapisaniu profilu kolejne pliki z tego banku
-          zostaną rozpoznane automatycznie.
+          Ten format pliku nie jest jeszcze zapisany, więc kolumny zostały rozpoznane automatycznie.
+          Sprawdź propozycję na przykładowych wierszach, wpisz nazwę banku i w razie potrzeby popraw
+          kolumny. Po zapisaniu profilu kolejne pliki z tego banku zostaną rozpoznane bez tego
+          kroku.
         </p>
       </div>
 

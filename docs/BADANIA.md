@@ -146,7 +146,10 @@ Wypełniane w etapie 10 na wersji końcowej. Wyniki wcześniejsze są wstępne.
 **P1 (wstępnie, 7–8.11.2026):** 6 z 6 wyciągów zgodnych z sumami kontrolnymi, 1113 transakcji, 1113 unikalnych
 numerów operacji. Ponowny import: 0 nowych i 1113 duplikatów. Suma zaimportowanych kwot równa saldu końcowemu
 ostatniego wyciągu minus saldo początkowe pierwszego. Te same dane przez importer CSV: 1113 z 1113, bez różnic
-w polach, te same klucze duplikatów; detektor rozpoznał 8 z 8 ról kolumn. Prawdziwy eksport CSV z ING: brak.
+w polach, te same klucze duplikatów; detektor rozpoznał 8 z 8 ról kolumn. Prawdziwy eksport CSV z ING (8.11.2026, 6 miesięcy): po poprawieniu nazwy kolumny kwoty
+669 transakcji i 20 pominiętych blokad. 612 transakcji ma ten sam klucz co w wyciągach PDF, a ich kwoty są zgodne
+w 100%; 8 dat różni się o 1–2 dni. Różnice w zakresie danych są wyjaśnione: eksport CSV nie zawiera 432 automatycznych
+przelewów Smart Saver, a 6 transakcji zaksięgowano po ostatnim wyciągu PDF.
 
 P2–P4: brak (moduły jeszcze nie istnieją).
 

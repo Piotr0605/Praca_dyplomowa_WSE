@@ -188,7 +188,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 - [x] Porównanie z prawdziwymi wyciągami (lokalnie): liczby i sumy zgodne z nagłówkiem wszystkich 6 plików
 
 **Importer uniwersalny CSV** (SHOULD; wykonany 7.11 na prośbę użytkownika)
-- [ ] Analiza prawdziwego eksportu CSV z ING (czeka na plik; profil przygotowany na podstawie opisu formatu) (kodowanie, separator, wiersze metadanych, kolumny, format daty i kwot, blokady)
+- [x] Analiza prawdziwego eksportu CSV z ING (8.11; poprawiona nazwa kolumny kwoty, brak przelewów Smart Saver w eksporcie) (kodowanie, separator, wiersze metadanych, kolumny, format daty i kwot, blokady)
 - [x] `parsers/csv_profile.py` (model profilu: kodowanie, separator, wiersz nagłówka, mapowanie kolumn, format daty, separator dziesiętny, sposób wyznaczania znaku kwoty)
 - [x] `parsers/csv_detect.py` (auto-wykrywanie: kodowanie, separator, nagłówek, role kolumn) + `parsers/csv_generic.py` (odczyt według profilu, te same pola co parser PDF)
 - [x] `parsers/profiles/ing.json` + testy na sztucznym pliku w formacie ING
@@ -339,7 +339,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | 1. Fundament | ✅ | 2026-11-04 | format wyciągu opisany, pliki w `data/private/` |
 | 2. Model danych + auth | ✅ | 2026-11-05 | |
 | 3. CRUD + frontend logowania | ✅ | 2026-11-07 | |
-| 4. Import wyciągów | ✅ | 2026-11-07 | PDF z ING i importer uniwersalny CSV z kreatorem mapowania; profil ING CSV czeka na prawdziwy plik |
+| 4. Import wyciągów | ✅ | 2026-11-07 | PDF z ING i importer uniwersalny CSV z kreatorem mapowania; profil ING CSV sprawdzony na prawdziwym pliku 8.11 |
 | 5. Kategoryzacja | ⏳ | | |
 | 6. Analityka + dashboard | ⏳ | | |
 | 7. Moduł AI | ⏳ | | |
