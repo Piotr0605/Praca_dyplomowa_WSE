@@ -1099,3 +1099,14 @@ przed wynikami.
 
 ### Dalej
 Konsultacja protokołu z promotorem: zakres, progi hipotez, testy statystyczne, ewentualne badanie SUS.
+
+**Uzupełnienie 8.11.2026: obsługiwane formaty plików.** Decyzja: aplikacja przyjmuje wyciąg PDF tylko z ING oraz plik
+CSV z dowolnego banku (profil albo kreator mapowania); inne formaty (PDF innych banków, MT940, XML, OFX, XLS) są poza
+zakresem. Uzasadnienie:
+- każdy polski bank daje eksport historii do CSV;
+- parser PDF to osobna i krucha praca dla każdego układu wyciągu, a bez prawdziwych wyciągów innego banku nie da się go sprawdzić;
+- jedno zdanie na prezentacji jest prostsze niż lista formatów.
+
+PDF innego banku dostaje teraz komunikat „Wyciągi PDF odczytujemy tylko z ING. Jeśli masz konto w innym banku, pobierz
+historię rachunku w formacie CSV” (test na wygenerowanym PDF „innego banku”). Do protokołu badania dopisano, że ślepa
+ocena porad jest częściowa: styl odpowiedzi może zdradzać model.

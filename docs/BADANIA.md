@@ -160,6 +160,8 @@ P2–P4: brak (moduły jeszcze nie istnieją).
   Uzupełnia go kontrola wycieków na prawdziwych danych.
 - **Przydatność porad ocenia jedna osoba, autor systemu.** Ocena jest subiektywna; ograniczają to ślepa ocena (bez nazwy
   dostawcy), kryteria ustalone z góry i obiektywna miara zgodności liczb (H4a), która nie zależy od oceniającego.
+  Ślepota jest częściowa: styl odpowiedzi może zdradzać model, mimo usunięcia nazw dostawcy i zdań, w których
+  model się przedstawia.
 - **Modele językowe się zmieniają.** Wyniki P4 dotyczą konkretnych wersji modeli i daty pomiaru.
 
 ## 7. Zmiany protokołu

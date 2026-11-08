@@ -1,5 +1,8 @@
 # Import wyciągów bankowych
 
+Aplikacja przyjmuje dwa rodzaje plików: **wyciąg PDF z ING** i **plik CSV z dowolnego banku**. Parserów PDF innych
+banków celowo nie ma (decyzja w planie, sekcja 1): PDF innego banku dostaje komunikat z prośbą o eksport CSV.
+
 Wyciągi PDF z ING obsługuje osobny parser (`ing_pdf.py`). Pliki CSV obsługują dwa poziomy:
 
 1. **Profile** (`csv_profile.py`): opis formatu pliku: kodowanie, separator, format daty, separator dziesiętny

@@ -30,6 +30,7 @@ Mamy ok. 10 tygodni, w tym okres świąteczny, a równolegle powstaje część p
 | Decyzja | Propozycja | Uzasadnienie |
 |---|---|---|
 | Bank dla parsera | **ING** (profil wbudowany) + importer uniwersalny z kreatorem mapowania | Własne dane do testów; inne banki przez profil bez pisania kodu |
+| Obsługiwane formaty (decyzja 8.11) | **PDF tylko z ING** (z kontrolą sum) + **CSV z dowolnego banku** (profil lub kreator); PDF innego banku dostaje komunikat z prośbą o CSV | każdy polski bank daje eksport historii do CSV, a parser PDF to osobna, krucha praca dla każdego układu wyciągu i bez prawdziwych wyciągów nie da się go sprawdzić. MT940, XML (camt.053), OFX i XLS poza zakresem: służą głównie firmom. Na pokazie jedno zdanie zamiast listy formatów |
 | Hashowanie haseł | **Argon2** (`pwdlib[argon2]` lub `argon2-cffi`) | Zwycięzca Password Hashing Competition, zalecany przez OWASP |
 | JWT | `PyJWT`, access token ~60 min, nagłówek `Authorization: Bearer` | Prosty i wystarczający dla projektu; refresh token jako SHOULD |
 | Sterownik DB | `psycopg` 3 + SQLAlchemy 2.0 (styl `Mapped[...]`) | Aktualny standard |

@@ -86,7 +86,11 @@ def _read_error(error: Exception) -> HTTPException:
             error.problems
         )
     elif isinstance(error, StatementParseError):
-        detail = f"Nie rozpoznano wyciągu ING: {error}"
+        # Parser PDF jest tylko dla ING; inne banki obsługuje importer CSV.
+        detail = (
+            f"Nie rozpoznano wyciągu ING ({error}). Wyciągi PDF odczytujemy tylko z ING. "
+            "Jeśli masz konto w innym banku, pobierz historię rachunku w formacie CSV."
+        )
     elif isinstance(error, UnknownCsvFormatError):
         detail = (
             "Nie rozpoznano formatu pliku CSV. Wskaż kolumny w kreatorze mapowania."
