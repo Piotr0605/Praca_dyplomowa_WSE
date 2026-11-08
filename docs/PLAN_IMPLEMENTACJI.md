@@ -9,6 +9,8 @@ Mamy ok. 10 tygodni, w tym okres świąteczny, a równolegle powstaje część p
 2. **Każdy tydzień kończy się działającą wersją** wypchniętą na GitHub (nawet jeśli skromną).
 3. Święta (21.12–3.01) to **pomiary, poprawki i bufor** — nie planujemy tam nowych funkcji.
 4. Moduł AI zaczynamy od **providera `mock`**, więc rozwój i testy nie kosztują nic i nie zależą od internetu.
+5. **Badanie aplikacyjne** (hipotezy, metoda, wyniki, dyskusja) jest zaplanowane w [`BADANIA.md`](BADANIA.md) przed budową modułów;
+   zadania oznaczone „(badanie)” zapewniają dane potrzebne do rzetelnego pomiaru.
 
 ---
 
@@ -74,7 +76,8 @@ bank_profiles                       ← mapowanie kolumn CSV (wbudowane + zapisa
 
 ai_advice
   id (PK), user_id (FK), period_start, period_end,
-  provider, model, prompt_payload JSONB (zanonimizowane agregaty!),
+  provider, model, prompt_version, temperature, latency_ms (etap 7, badanie),
+  prompt_payload JSONB (zanonimizowane agregaty!),
   response_text, tokens_in, tokens_out, created_at
 ```
 
@@ -207,6 +210,11 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
   3. brak dopasowania → „Inne / do przypisania”
 - [ ] Zmiana kategorii transakcji przez użytkownika ⇒ automatyczne utworzenie reguły użytkownika (+ opcja „zastosuj do podobnych transakcji wstecz”)
 - [ ] Endpoint statystyki: % transakcji skategoryzowanych automatycznie (**metryka do rozdziału badawczego pracy**)
+- [ ] (badanie) Kategoryzacja jako czysta funkcja (transakcja + reguły → kategoria + dopasowana reguła), tworzenie reguły z poprawki jako osobna funkcja: tej samej logiki używa aplikacja i symulacja
+- [ ] (badanie) Pole `transactions.categorized_by` (`system_rule` / `user_rule` / `manual`) i identyfikator dopasowanej reguły (migracja)
+- [ ] (badanie) Słownik reguł systemowych w wersjonowanym pliku, strojony tylko na miesiącach 1–3; tag `badanie-slownik` przed pomiarem
+- [ ] (badanie) `backend/research/`: narzędzie do ręcznego etykietowania transakcji (grupowanie po kontrahencie, wynik w `data/private/`) i skrypt symulacji 6 miesięcy, wariant A (słownik) i B (słownik + poprawki), wyniki tylko zbiorcze
+- [ ] (badanie) Etykietowanie 1113 transakcji przez autora, przed pomiarem (ok. 1–2 godz.)
 - [ ] Testy jednostkowe kategoryzacji (priorytety, wielkość liter, polskie znaki, reguła użytkownika nadpisuje systemową)
 - [ ] Frontend: zmiana kategorii z poziomu tabeli (dropdown), widok „Do przypisania”, lista zapamiętanych reguł
 
@@ -230,10 +238,14 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 
 ### Etap 7 · 7–13 XII — Moduł doradczy AI
 - [ ] `ai/anonymizer.py` (regex): numery kont/IBAN (`PL\d{26}`, 26 cyfr), numery kart, PESEL, telefony, e-maile, kody pocztowe/adresy, imiona i nazwiska (słownik polskich imion + heurystyka „Imię Nazwisko” wielkimi literami w przelewach)
+- [ ] (badanie) Anonimizator jako czysta funkcja zwracająca też listę zamaskowanych fragmentów z typem
+- [ ] (badanie) Generator sztucznego korpusu tytułów z oznaczonymi danymi osobowymi (stałe ziarno), część robocza i testowa; testową zamrozić przed strojeniem reguł
 - [ ] Testy anonimizacji — **dużo przypadków**, to mocny punkt pracy; także dane z tytułów przelewów: imiona i nazwiska, nazwy kontaktów, telefony częściowo zamaskowane, dowolny tekst. Tylko sztuczne przypadki w repozytorium
 - [ ] `ai/prompt_builder.py`: tylko agregaty (sumy w kategoriach, zmiany %, top kategorie, stopa oszczędności) → JSON; **bez pojedynczych transakcji**; prompt systemowy z rolą doradcy, zakazem wymyślania liczb i wymaganym formatem odpowiedzi (np. 3–5 rekomendacji z uzasadnieniem i szacowaną kwotą oszczędności)
 - [ ] `ai/providers/base.py` (interfejs `generate_advice(payload) -> AdviceResult`), `openai.py`, `anthropic.py`, `mock.py`; wybór przez `AI_PROVIDER`
 - [ ] Obsługa błędów (timeout, brak klucza, limit) + zapis do `ai_advice` (tokeny ⇒ koszt)
+- [ ] (badanie) `ai_advice`: wersja promptu, temperatura, czas odpowiedzi w ms (migracja); stała temperatura i wersja promptu
+- [ ] (badanie) Skrypt zgodności liczb: czy kwoty i procenty z porady wynikają z wysłanego pakietu agregatów
 - [ ] Ograniczenie kosztów: cache porady dla tego samego okresu i niezmienionych danych, limit zapytań/dzień na użytkownika
 - [ ] `GET /advice/preview-payload` — użytkownik widzi dokładnie, co wychodzi do API
 - [ ] Testy endpointu z providerem `mock`
@@ -243,6 +255,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 ### Etap 8 · 14–20 XII — Frontend porad
 - [ ] Strona „Porady AI”: wybór okresu, podgląd wysyłanych danych, wynik (karty rekomendacji), historia porad
 - [ ] (COULD) budżety miesięczne
+- [ ] (badanie) Eksport porad do ślepej oceny: losowa kolejność, bez nazwy dostawcy, klucz w osobnym pliku
 
 **DoD:** wszystkie funkcje MUST działają w przeglądarce.
 
@@ -254,6 +267,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 - [ ] Swagger UI serwowany lokalnie: `/docs` pobiera teraz pliki z `cdn.jsdelivr.net` i bez internetu jest pusta (sprawdzone w tygodniu 2)
 - [ ] Sprawdzenie reguły prywatności: strona, `/docs` i backend nie łączą się z zewnętrznymi serwerami poza `ai/providers/`
 - [ ] Skrypt danych demo (użytkownik demo + sztuczne transakcje z 6 miesięcy)
+- [ ] (badanie) Kilka sztucznych profili finansowych do porównania porad AI (zbiór D5 w `BADANIA.md`)
 - [ ] README: instalacja, uruchomienie, zrzuty ekranu
 
 - [ ] Test na komputerze bez pobranych obrazów i z domyślnymi portami, z pomiarem czasu pierwszego uruchomienia (w tygodniu 1 nie zostało to sprawdzone)
@@ -265,7 +279,8 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 - [ ] Diagramy do pracy (`docs/diagramy/`): architektura warstwowa, ERD bazy (aktualizacja), diagram sekwencji „import wyciągu”, diagram sekwencji „generowanie porady AI” (z krokiem anonimizacji)
 - [ ] Eksport diagramów do PNG lub SVG do pracy (`mermaid-cli` w przypiętej wersji, wymaga zgody na pobranie pakietu)
 - [ ] Zrzuty ekranu (`docs/zrzuty/`)
-- [ ] Pomiary do rozdziału badawczego: skuteczność kategoryzacji przed/po poprawkach, skuteczność anonimizacji, koszt i czas zapytania AI, porównanie OpenAI vs Anthropic na tych samych agregatach
+- [ ] Pomiary według protokołu [`BADANIA.md`](BADANIA.md) (H1–H4) jednym poleceniem na wersji końcowej; wyniki zbiorcze w `docs/badania/`, sekcje 5–7 protokołu uzupełnione
+- [ ] Ślepa ocena porad przez autora i 2–3 inne osoby (zaprosić je wcześniej, w grudniu)
 - [ ] Zapytać promotora, czy repozytorium może być publiczne przed obroną i kontrolą JSA; sprawdzić, czy uczelnia wymaga opisania użycia AI w pracy
 - [ ] Tag `v1.0.0` na GitHubie
 
@@ -394,13 +409,13 @@ wymagania formalne trzeba sprawdzić w wytycznych WSE.
 
 | Część | Szkic gotowy do | Materiał źródłowy |
 |---|---|---|
-| Konspekt i układ rozdziałów, rozmowa z promotorem | 8 XI | ten plan |
+| Konspekt i układ rozdziałów, rozmowa z promotorem; zatwierdzenie protokołu badania (hipotezy, progi, testy) | 8 XI | ten plan, `BADANIA.md` |
 | 1. Podstawy teoretyczne: finanse osobiste, modele językowe | 29 XI | literatura |
 | 2. Przegląd rozwiązań i analiza wymagań | 6 XII | istniejące aplikacje, sekcja 0 |
 | 3. Wykorzystane technologie | 13 XII | `NOTATKI_TECHNOLOGIE.md` |
 | 4. Architektura i model danych | 13 XII | `diagramy/`, sekcje 2, 3 i 5 |
 | 5. Implementacja: import, kategoryzacja, analityka, anonimizacja, moduł AI | 20 XII | `DZIENNIK_PRAC.md` |
-| 6. Weryfikacja i wyniki pomiarów | 3 I | testy, pomiary z etapu 10 |
+| 6. Badanie aplikacyjne: hipotezy, metoda, wyniki, dyskusja | metoda 20 XII, wyniki 3 I | `BADANIA.md`, pomiary z etapu 10 |
 | Zakończenie, wstęp, streszczenie, bibliografia | 3 I | gotowy tekst |
 
 - [ ] Stała pozycja w tygodniu: 1–2 godziny na literaturę; pozycje zapisywane od razu z pełnym opisem bibliograficznym

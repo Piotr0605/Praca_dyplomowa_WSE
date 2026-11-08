@@ -1063,3 +1063,39 @@ polskie znaki w Windows-1250, cudzysłowy w 5 tytułach i kwoty z separatorem ty
 wszystkie 8 ról kolumn. Ograniczenie: format pliku pochodzi z założeń profilu, a rodzaj operacji odtworzono z wyniku
 parsera PDF, więc test nie potwierdza, że prawdziwy eksport ING ma takie nazwy kolumn i kodowanie. To nadal wymaga
 prawdziwego pliku.
+
+---
+
+## 8.11.2026: protokół badania aplikacyjnego
+
+### Co zostało zrobione
+Powstał `docs/BADANIA.md`: pytania badawcze P1–P4, hipotezy H1–H4 z progami przyjęcia, dane, metoda, miary, testy
+statystyczne, ograniczenia i rejestr zmian protokołu. Zadania wynikające z protokołu (oznaczone „(badanie)”) trafiły
+do etapów 5, 7, 8, 9 i 10 planu, a rozdział 6 pracy nazywa się teraz „Badanie aplikacyjne: hipotezy, metoda, wyniki,
+dyskusja”.
+
+### Dlaczego
+Zarządzenie dla IS wymaga pracy z badaniem aplikacyjnym albo eksperymentem (hipoteza, metoda, wyniki, dyskusja).
+Plan miał tylko ogólne „pomiary w etapie 10”. Rzetelność pomiaru zależy jednak od budowy modułów:
+- symulacja kategoryzacji musi używać tej samej logiki co aplikacja;
+- słownik reguł nie może być strojony na danych testowych;
+- porada AI musi zapisywać wersję promptu i czas odpowiedzi.
+
+Dlatego metodę ustalono przed budową modułów, a nie po. Data commita protokołu pokazuje, że hipotezy powstały
+przed wynikami.
+
+### W jaki sposób
+- **Badanie główne (P2):** porównanie kategoryzacji samym słownikiem (A) i słownikiem z regułami z poprawek (B). Symulacja odtwarza 6 miesięcy prawdziwych transakcji w kolejności dat. Etykiety autor nadaje osobnym narzędziem, a nie przez kategoryzację systemu. Miesiące 1–3 służą do strojenia, 4–6 do testu. Test McNemara dla par przewidywań.
+- **Anonimizacja (P3):** sztuczny korpus z oznaczonymi danymi osobowymi, z częścią testową zamrożoną przed strojeniem reguł, oraz kontrola wycieków w pakietach z prawdziwych danych.
+- **Porady (P4):** obiektywna zgodność liczb z danymi wejściowymi, ślepa ocena przydatności i koszt.
+- **Import (P1):** wyniki z 7–8.11 wpisane jako wstępne.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Etykiety kategorii nadaje autor systemu, co grozi stronniczością | osobne narzędzie etykietowania, etykiety przed pomiarem, podział na część roboczą i testową; ograniczenie opisane w dyskusji |
+| Prawdziwych tytułów przelewów nie można oznaczyć w repozytorium | sztuczny korpus o strukturze prawdziwych tytułów oraz kontrola wycieków na prawdziwych danych, z wynikami tylko zbiorczymi |
+| Dane jednej osoby nie pozwalają na uogólnienie | nazwane wprost w ograniczeniach; wyniki opisują przypadek |
+
+### Dalej
+Konsultacja protokołu z promotorem: zakres, progi hipotez, testy statystyczne, ewentualne badanie SUS.
