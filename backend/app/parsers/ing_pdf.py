@@ -20,15 +20,14 @@ from decimal import Decimal
 import pdfplumber
 
 from app.models.enums import TransactionKind
+from app.parsers.common import CARD_NUMBER_RE, DATE_RE, clean
 
 BANK = "ING"
-DATE_RE = re.compile(r"\d{2}\.\d{2}\.\d{4}")
 AMOUNT_RE = re.compile(r"(-?\d{1,3}(?: \d{3})*,\d{2}) PLN")
 REFERENCE_RE = re.compile(r"\d{18}")
 OPERATION_DATE_RE = re.compile(
     r"(?:Płatność kartą|Zwrot płatności kartą|Płatność BLIK|gotówki BLIK) (\d{2}\.\d{2}\.\d{4})"
 )
-CARD_NUMBER_RE = re.compile(r"Nr karty \S+")
 COUNTERPARTY_LABEL_RE = re.compile(r"Nazwa i adres (?:odbiorcy|płatnika):")
 # Najmniejsza długość linii uznawanej za granicę wiersza tabeli (szerokość tabeli to ok. 520 pkt).
 ROW_LINE_MIN_WIDTH = 400
@@ -99,10 +98,6 @@ def parse_amount(text: str) -> Decimal:
 
 def parse_date(text: str) -> dt.date:
     return dt.datetime.strptime(text, "%d.%m.%Y").date()
-
-
-def _clean(text: str) -> str:
-    return re.sub(r"\s+", " ", text).strip()
 
 
 def detect_kind(title: str, bank_type: str | None) -> TransactionKind:
@@ -308,14 +303,13 @@ def _parse_row(row: _Row) -> ParsedTransaction:
         raise StatementParseError("Wiersz tabeli bez dat, kwoty lub numeru operacji")
     bank_type = next((t for t in details if not REFERENCE_RE.fullmatch(t)), None)
 
-    title = _clean(row.text(2))
-    party = _clean(row.text(1))
+    title = clean(row.text(2))
+    party = clean(row.text(1))
     label = COUNTERPARTY_LABEL_RE.search(party)
-    counterparty = _clean(party[label.end() :]) if label else None
+    counterparty = clean(party[label.end() :]) if label else None
     operation_date = OPERATION_DATE_RE.search(title)
-    # Numer karty nie jest potrzebny do analizy, więc nie trafia do bazy.
     description = (
-        _clean(CARD_NUMBER_RE.sub("", title)) or counterparty or bank_type or "Operacja"
+        clean(CARD_NUMBER_RE.sub("", title)) or counterparty or bank_type or "Operacja"
     )
 
     return ParsedTransaction(

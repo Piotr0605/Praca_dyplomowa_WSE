@@ -998,3 +998,59 @@ Na prośbę o usunięcie zbędnych plików:
 
 ### Dalej
 Etap 5 (23–29 listopada): kategoryzacja i zapamiętywanie poprawek, strona „Kategorie”.
+
+---
+
+## Tydzień 4, dodatkowo: importer uniwersalny CSV (wykonano 7.11.2026)
+
+Importer CSV był w planie oznaczony jako SHOULD i po domknięciu części PDF został przeniesiony na okres świąteczny.
+Użytkownik poprosił o wykonanie go od razu, więc wrócił do etapu 4.
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/app/parsers/csv_profile.py`, `profiles/ing.json` | model profilu pliku CSV i wbudowany profil ING |
+| `backend/app/parsers/csv_detect.py` | rozpoznanie formatu nieznanego pliku: kodowanie, separator, nagłówek, role kolumn, format daty |
+| `backend/app/parsers/csv_generic.py` | odczyt pliku według profilu |
+| `backend/app/parsers/common.py` | elementy wspólne z parserem PDF (normalizacja opisu, usuwanie numeru karty) |
+| `backend/app/models/bank_profile.py`, migracja `profile_bankow` | tabela profili zapisanych przez użytkowników |
+| `backend/app/services/import_service.py`, `api/routes/imports.py` | podgląd i zapis dla PDF i CSV, endpointy `banks` i `detect` |
+| `frontend/src/components/imports/ColumnMapping.tsx`, `pages/ImportPage.tsx` | kreator mapowania kolumn i lista profili |
+| `backend/tests/fixtures/csv_samples.py`, `tests/unit/test_csv_import.py`, `tests/integration/test_csv_imports.py` | sztuczne pliki CSV i 72 testy |
+| `backend/scripts/check_statements.py` | sprawdzenie plików CSV z `data/private/` i porównanie z wyciągami PDF |
+
+### Dlaczego
+- **Dwa poziomy.** Parser „dla wszystkich banków” nie istnieje: banki różnią się kodowaniem, separatorem, metadanymi nad tabelą, nazwami kolumn, formatem daty i zapisem kwoty. Detektor zgaduje te ustawienia, a użytkownik potwierdza je raz; potem plik z tego banku jest rozpoznawany automatycznie.
+- **Kolumny po nazwach.** Profil wskazuje kolumnę nazwą z nagłówka, a nie numerem, więc zmiana liczby wierszy metadanych nad tabelą (np. inny zakres dat w eksporcie) nie psuje profilu.
+- **Profile wbudowane jako pliki JSON.** Plan przewidywał je jako wiersze tabeli `bank_profiles` z pustym `user_id`. Plik w kodzie ma testy i zmienia się razem z aplikacją, bez migracji danych, a tabela trzyma tylko profile użytkowników (`user_id` obowiązkowy). Plan zaktualizowano.
+- **Błędny wiersz zatrzymuje import.** Wyciąg PDF chronią sumy kontrolne, plik CSV nie ma niczego podobnego. Dlatego wiersz z datą, którego nie da się odczytać, zatrzymuje import z numerem wiersza, zamiast zostać po cichu pominięty. Pomijane są tylko wiersze bez daty (metadane, stopka) i bez kwoty (blokady kartowe), a te drugie są pokazywane w podglądzie.
+- **Wspólny klucz duplikatów z PDF.** Profil ING buduje klucz z numeru operacji tak samo jak parser PDF, więc import wyciągu PDF i pliku CSV z tego samego okresu nie dubluje transakcji.
+
+### W jaki sposób
+- **Kodowanie:** UTF-8, a gdy plik nie jest poprawnym UTF-8: cp1250 albo ISO-8859-2. Oba odczytają każdy bajt, więc rozstrzyga liczba polskich liter (te kodowania różnią się m.in. kodami „ą”, „ś”, „ź”).
+- **Separator:** ten, przy którym najwięcej wierszy ma tę samą liczbę kolumn.
+- **Nagłówek:** wiersz z największą liczbą znanych nazw kolumn wśród pierwszych 50.
+- **Role kolumn:** słownik nazw (bez polskich znaków i wielkości liter), dokładna nazwa wygrywa z początkiem nazwy. Potem sprawdzenie zawartości wyłącznie w wierszach z poprawną datą: kolumna „Data” bez dat nie jest datą, kwota musi mieć część dziesiętną.
+- **Bez numeru operacji:** klucz duplikatów to data, kwota, waluta, opis i kontrahent z numerem kolejnym wystąpienia w pliku. Dwie identyczne kawy tego samego dnia to dwie transakcje, a ponowny import tego samego pliku daje te same klucze.
+- **Przeglądarka:** plik PDF trafia od razu do podglądu. Plik CSV najpierw do `detect`: rozpoznany profil prowadzi do podglądu bez pytań, a nieznany plik otwiera kreator. Kreator pokazuje 5 przykładowych wierszy z oznaczeniem ról kolumn, a zmiana kodowania lub separatora ponawia rozpoznanie. Profil jest zapisywany dopiero przy zatwierdzeniu importu, czyli gdy plik dał się według niego odczytać.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| W sztucznym pliku ING detektor uznał za kwotę kolumnę „Nr rachunku”. Stopka pod tabelą („Saldo końcowe”) nie przechodziła sprawdzenia kwoty, więc właściwa kolumna odpadała, a numer konta po usunięciu spacji wyglądał jak liczba | sprawdzanie zawartości tylko w wierszach z poprawną datą; kwota musi mieć część dziesiętną w co najmniej połowie wierszy |
+| „Opłata za kartę” rozpoznana jako płatność kartą | słowa kluczowe opłat sprawdzane przed słowem „kart” |
+| Test wykrył, że tekst „abc” w kolumnie kwoty był traktowany jak kod waluty, czyli pusta kwota: wiersz zostałby po cichu pominięty jako blokada | waluta usuwana tylko wtedy, gdy stoi po liczbie |
+| Separator dziesiętny w kwocie „1,250.00” był zgadywany błędnie (obie metody liczenia dawały remis) | separatorem jest ostatni znak „,” lub „.” przed jedną lub dwiema cyframi na końcu kwoty |
+| Test w przeglądarce: po zapisaniu importu ponowny wybór tego samego pliku nic nie robił, bo pole pliku dalej go pokazywało, a przeglądarka nie zgłasza zmiany przy wyborze tego samego pliku | pole pliku jest czyszczone razem ze stanem strony |
+| Celowe błędy w kodzie: zmiana wykluczenia „saldo”/„blokada” z kandydatów na kwotę nie była wykryta, bo w pliku ING właściwa kolumna wygrywała i bez niej | test z kolumnami „Kwota blokady”, „Saldo po operacji” i „Kwota (PLN)” |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 277 testów zaliczonych (72 nowe dla CSV) |
+| celowe błędy: licznik identycznych wierszy, znak obciążeń, wykluczenie salda, pomijanie stopki, zapis profilu tylko na życzenie, izolacja listy i usuwania profili, waluta po liczbie | 8 z 8 wykrytych |
+| migracja: `upgrade`, `alembic check`, `downgrade`, `upgrade` | bez błędów |
+| przeglądarka: CSV z ING bez kreatora, ponowny import, plik innego banku przez kreator, zły format daty, zapamiętany profil, nieznane nazwy kolumn, zmiana separatora, usunięcie profilu, PDF nadal z kontrolą sum | 26 z 26; połączenia tylko z `localhost` |
+| prawdziwe dane | brak: nie ma jeszcze prawdziwego eksportu CSV z ING. Profil ING powstał na podstawie opisu formatu; jeśli prawdziwy plik się różni, trafi do kreatora |
+
+Zrzut kreatora na sztucznych danych: `docs/zrzuty/tydzien4_kreator_csv.png`.

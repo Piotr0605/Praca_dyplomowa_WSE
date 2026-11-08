@@ -1,0 +1,19 @@
+{
+  "bank_name": "ING",
+  "encoding": "cp1250",
+  "delimiter": ";",
+  "date_format": "%Y-%m-%d",
+  "decimal_separator": ",",
+  "default_currency": "PLN",
+  "reference_namespace": "ING",
+  "columns": {
+    "date": "Data transakcji",
+    "booking_date": "Data księgowania",
+    "amount": "Kwota transakcji (płatności, obciążenia, uznania)",
+    "currency": "Waluta",
+    "description": ["Tytuł"],
+    "counterparty": "Dane kontrahenta",
+    "kind": "Szczegóły",
+    "reference": "Nr transakcji"
+  }
+}

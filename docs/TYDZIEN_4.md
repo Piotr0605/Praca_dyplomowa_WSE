@@ -12,7 +12,7 @@ transakcje, a ponowny import nie tworzy duplikatów.
 
 | Temat | Decyzja | Uzasadnienie |
 |---|---|---|
-| Format | PDF z ING (MUST); importer uniwersalny CSV (SHOULD) przeniesiony na okres świąteczny | PDF to jedyny potwierdzony format; zgodnie z kolejnością cięć z planu |
+| Format | PDF z ING (MUST), potem importer uniwersalny CSV (SHOULD) | PDF to jedyny potwierdzony format; CSV dodany tego samego dnia na prośbę użytkownika |
 | Biblioteka | `pdfplumber` | daje współrzędne znaków i linii, potrzebne do odczytu tabeli bez struktury |
 | Odczyt tekstu | słowa składane ze znaków, a nie przez `extract_words` | przy dolnej krawędzi strony biblioteka dzieliła tekst na litery |
 | Kontrola | import zatrzymany, jeśli liczba lub suma uznań i obciążeń albo saldo nie zgadza się z nagłówkiem wyciągu | błąd odczytu nie może trafić do bazy nawet częściowo |
@@ -20,6 +20,10 @@ transakcje, a ponowny import nie tworzy duplikatów.
 | Przechowywanie pliku | żadne: podgląd i zapis przyjmują plik osobno | dane bankowe nie zostają w plikach tymczasowych serwera |
 | Numer karty | usuwany z opisu | nie jest potrzebny do analizy |
 | Testy | sztuczny wyciąg PDF o tym samym układzie, generowany w testach | prawdziwe wyciągi nie mogą trafić do repozytorium |
+| Profil CSV | kolumny wskazywane nazwą z nagłówka, nie numerem | inna liczba wierszy metadanych nad tabelą nie psuje profilu |
+| Profile wbudowane | pliki JSON w kodzie, nie wiersze tabeli `bank_profiles` | mają testy i zmieniają się razem z aplikacją; tabela trzyma tylko profile użytkowników (zmiana względem modelu danych w planie) |
+| Błędny wiersz CSV | zatrzymuje import z numerem wiersza | CSV nie ma sum kontrolnych, więc pominięty wiersz byłby niezauważony |
+| Duplikaty CSV | numer operacji; bez niego data, kwota, opis z numerem kolejnym w pliku | profil ING ma ten sam klucz co PDF, więc PDF i CSV z tego samego okresu nie dublują się |
 
 ## 2. Wykonane zadania
 - [x] Próba `pdfplumber` na prawdziwych wyciągach, wyłącznie lokalnie i bez wypisywania treści
@@ -30,7 +34,10 @@ transakcje, a ponowny import nie tworzy duplikatów.
 - [x] `services/import_service.py`, `api/routes/imports.py`: podgląd, zapis, historia importów; testy
 - [x] Strona „Import wyciągu” w przeglądarce
 - [x] Porządki: usunięte zbędne pliki `.gitkeep` i nieużywane wolumeny Dockera
-- [ ] Importer uniwersalny CSV z kreatorem mapowania i tabelą `bank_profiles` (SHOULD, przeniesiony)
+- [x] Importer uniwersalny CSV: profil, rozpoznawanie formatu, odczyt według profilu, tabela `bank_profiles`
+- [x] Endpointy `GET/DELETE /imports/banks`, `POST /imports/detect`; podgląd i zapis przyjmują PDF i CSV
+- [x] Kreator mapowania kolumn i lista zapisanych profili na stronie importu
+- [ ] Sprawdzenie profilu ING na prawdziwym eksporcie CSV (czeka na plik od użytkownika)
 - [ ] PR do `main`
 
 ## 3. Definition of Done

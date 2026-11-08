@@ -51,12 +51,14 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   if (options.json !== undefined) {
     headers['Content-Type'] = 'application/json'
     body = JSON.stringify(options.json)
-  } else if (options.form) {
-    body = new URLSearchParams(options.form)
   } else if (options.file) {
+    // Plik razem z ewentualnymi polami formularza (multipart/form-data).
     const data = new FormData()
     data.append('file', options.file)
+    for (const [key, value] of Object.entries(options.form ?? {})) data.append(key, value)
     body = data
+  } else if (options.form) {
+    body = new URLSearchParams(options.form)
   }
 
   const response = await fetch(url, { method: options.method ?? 'GET', headers, body })

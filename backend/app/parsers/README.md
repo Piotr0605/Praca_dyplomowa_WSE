@@ -1,14 +1,14 @@
 # Import wyciągów bankowych
 
-Wyciągi PDF z ING obsługuje osobny parser (`ing_pdf.py`, etap 4). Pliki CSV obsługują dwa poziomy:
+Wyciągi PDF z ING obsługuje osobny parser (`ing_pdf.py`). Pliki CSV obsługują dwa poziomy:
 
-1. **Profile banków** (`profiles/*.json`): pełny opis formatu pliku, np. `ing.json`.
-   Plik pasujący do profilu importuje się bez żadnych pytań.
-2. **Importer uniwersalny** (`detector.py` + `generic.py`): dla nieznanego pliku zgaduje kodowanie,
-   separator, wiersz nagłówka i role kolumn, a użytkownik potwierdza mapowanie w UI.
-   Potwierdzone mapowanie zapisuje się jako profil użytkownika (tabela `bank_profiles`).
+1. **Profile** (`csv_profile.py`): opis formatu pliku: kodowanie, separator, format daty, separator dziesiętny
+   i nazwy kolumn. Profile wbudowane to pliki `profiles/*.json` (np. `ing.json`), a profile użytkowników
+   leżą w tabeli `bank_profiles`. Plik pasujący do profilu importuje się bez żadnych pytań.
+2. **Importer uniwersalny** (`csv_detect.py`): dla nieznanego pliku zgaduje ustawienia, a użytkownik
+   potwierdza je w kreatorze mapowania kolumn. Potwierdzone ustawienia zapisują się jako jego profil.
 
-Parser PDF zwraca listę `ParsedTransaction` (`ing_pdf.py`), a importer CSV będzie zwracał te same pola:
+Odczyt według profilu wykonuje `csv_generic.py`. Oba parsery zwracają te same pola:
 
 | kolumna        | typ        | opis                                  |
 |----------------|------------|---------------------------------------|
@@ -19,6 +19,38 @@ Parser PDF zwraca listę `ParsedTransaction` (`ing_pdf.py`), a importer CSV będ
 | `counterparty` | str / None | odbiorca lub nadawca                  |
 
 Dalsze kroki (czyszczenie, deduplikacja, kategoryzacja) nie wiedzą, z jakiego banku pochodzi plik.
+
+## Importer CSV
+
+**Rozpoznawanie formatu** (`csv_detect.detect`):
+
+| Krok | Sposób |
+|---|---|
+| kodowanie | UTF-8, a gdy się nie da: cp1250 albo ISO-8859-2, zależnie od tego, które daje więcej polskich liter |
+| separator | `;` `,` tabulator `\|`: ten, przy którym najwięcej wierszy ma tę samą liczbę kolumn |
+| wiersz nagłówka | wiersz z największą liczbą znanych nazw kolumn wśród pierwszych 50 (nad tabelą bywają metadane) |
+| role kolumn | słownik nazw spotykanych w bankach, bez polskich znaków i wielkości liter; dokładna nazwa wygrywa z początkiem nazwy |
+| sprawdzenie zawartości | kolumna „Data” bez dat nie jest datą; kwota musi mieć część dziesiętną, więc numer konta nie jest kwotą; „saldo”, „blokada” i „w walucie” nie są kwotą operacji |
+| bez znanych nazw | data i kwota według zawartości, opis to kolumna z najdłuższymi tekstami |
+
+**Odczyt według profilu** (`csv_generic.parse_csv`):
+- Kolumny są wskazywane nazwą z nagłówka, a nie numerem, więc dodatkowy wiersz metadanych nie psuje profilu.
+  Powtórzona nazwa dostaje numer: druga „Waluta” to „Waluta (2)”.
+- Pomijane są wiersze bez daty (metadane, stopka) i bez kwoty (blokady kartowe); te drugie są liczone w podglądzie.
+- Wiersz z datą, którego nie da się odczytać, zatrzymuje import z numerem wiersza. CSV nie ma sum kontrolnych,
+  więc ciche pominięcie wiersza zostałoby niezauważone.
+- Klucz duplikatów: numer operacji z banku, a bez niego data, kwota, waluta, opis i kontrahent z numerem kolejnym
+  w pliku (dwie identyczne kawy tego samego dnia to dwie transakcje). Profil ING używa tego samego klucza co parser
+  PDF, więc ta sama operacja z PDF i z CSV nie zostanie zapisana dwa razy.
+
+**Profil ING** (`profiles/ing.json`) opisuje eksport historii z bankowości ING: Windows-1250, średnik, daty RRRR-MM-DD,
+kolumny „Data transakcji”, „Dane kontrahenta”, „Tytuł”, „Szczegóły”, „Nr transakcji”, „Kwota transakcji (…)”.
+Został przygotowany na podstawie opisu formatu i sztucznego pliku; **nie był jeszcze sprawdzony na prawdziwym
+eksporcie**. Jeśli prawdziwy plik się różni, nie zostanie dopasowany do profilu i trafi do kreatora mapowania.
+Sprawdzenie: `python -m scripts.check_statements` (dla plików CSV w `data/private/` porównuje kwoty i daty
+z wyciągami PDF, wypisując wyłącznie liczby).
+
+Testy: `tests/unit/test_csv_import.py`, `tests/integration/test_csv_imports.py` na plikach z `tests/fixtures/csv_samples.py`.
 
 ## Parser PDF z ING (`ing_pdf.py`)
 

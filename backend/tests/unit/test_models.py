@@ -16,6 +16,7 @@ def test_wszystkie_tabele_sa_zarejestrowane() -> None:
         "import_batches",
         "category_rules",
         "ai_advice",
+        "bank_profiles",
     }
 
 
