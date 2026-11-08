@@ -1054,3 +1054,12 @@ Użytkownik poprosił o wykonanie go od razu, więc wrócił do etapu 4.
 | prawdziwe dane | brak: nie ma jeszcze prawdziwego eksportu CSV z ING. Profil ING powstał na podstawie opisu formatu; jeśli prawdziwy plik się różni, trafi do kreatora |
 
 Zrzut kreatora na sztucznych danych: `docs/zrzuty/tydzien4_kreator_csv.png`.
+
+**Uzupełnienie 8.11.2026: prawdziwe dane przez importer CSV.** Prawdziwego eksportu CSV z ING jeszcze nie ma, więc
+transakcje z 6 wyciągów PDF zamieniono w pamięci (bez zapisu na dysk) na plik w formacie profilu ING i odczytano
+importerem CSV. Wynik: 1113 z 1113 transakcji, te same klucze duplikatów co z PDF (import CSV po PDF dałby same
+duplikaty), ta sama suma kwot, zero różnic w datach, kwotach, opisach i kontrahentach. Po drodze sprawdzone zostały
+polskie znaki w Windows-1250, cudzysłowy w 5 tytułach i kwoty z separatorem tysięcy. Detektor bez profilu rozpoznał
+wszystkie 8 ról kolumn. Ograniczenie: format pliku pochodzi z założeń profilu, a rodzaj operacji odtworzono z wyniku
+parsera PDF, więc test nie potwierdza, że prawdziwy eksport ING ma takie nazwy kolumn i kodowanie. To nadal wymaga
+prawdziwego pliku.
