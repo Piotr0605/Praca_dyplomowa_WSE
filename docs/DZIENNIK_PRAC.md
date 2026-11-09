@@ -1224,3 +1224,19 @@ Tryb `--proba` niczego nie zapisuje. Pierwsza próba na koncie użytkownika wyka
 aplikacji ma `autoflush=False`, więc liczba transakcji bez kategorii była liczona przed zapisaniem zmian. Dodano
 `flush()`. Testy (7) obejmują m.in. ponowne uruchomienie, różne etykiety u jednego kontrahenta i izolację innego
 użytkownika. Razem 338 testów.
+
+**Uzupełnienie 9.11.2026: etykiety gotowe, wstępny wynik H2 i kategorie na koncie.**
+- **Co:** autor oznaczył 632 z 632 transakcji. `research.simulate --zapisz` zapisał wyniki zbiorcze
+  w `docs/badania/h2_kategoryzacja.json`, a `scripts.apply_labels` przeniósł etykiety na konto: najpierw próba,
+  potem zapis.
+- **Wynik H2 (miesiące 4–6):** trafność słownika 38,3%, słownika z regułami z poprawek 82,7%. H2a potwierdzona
+  (McNemar p < 0,001). H2b niespełniona: spadek poprawek o 46% przy progu 50%. H2c niespełniona: 82,7% przy progu 85%,
+  ale próg mieści się w przedziale ufności. Prawie wszystkie błędy to brak kategorii u nowych kontrahentów
+  (2 złe kategorie na 347). Szczegóły w `BADANIA.md`, rozdz. 5.
+- **Dlaczego progi bez zmian:** protokół zapisano przed pomiarem. Zmiana progów po zobaczeniu wyniku podważyłaby
+  badanie, więc wynik opisujemy tak, jak wyszedł.
+- **Konto:** 632 kategorie ręczne, 133 reguły, 510 kategorii ze słownika (głównie przelewy własne), 16 z reguł,
+  12 transakcji bez kategorii. Jedna transakcja ma kategorię bez źródła: dodano ją przed powstaniem pola
+  `categorized_by`.
+- **Problem:** `docker compose exec` z plikiem na wejściu przekroczył limit 2 minut przy próbie, ale skończył się
+  poprawnie. Przyczyną było obciążenie komputera, a nie blokada w bazie: w bazie nie było oczekujących zapytań.

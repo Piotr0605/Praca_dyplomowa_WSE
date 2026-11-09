@@ -34,7 +34,8 @@ zbudowany tak, żeby badanie H2 z `BADANIA.md` mierzyło dokładnie to, co robi 
 - [x] Narzędzia badania: `research.label`, `research.simulate`; tag `badanie-slownik`
 - [x] Backend przeładowuje się także po zmianie plików JSON (profile banków, słownik)
 - [x] `scripts/apply_labels.py`: etykiety z badania przenoszone na konto jako kategorie ręczne, z regułami dla kontrahentów, w których słownik się myli (wariant 1 wybrany przez użytkownika: etykietowanie raz, bez drugiego przeglądu w aplikacji)
-- [ ] Etykietowanie 632 transakcji przez autora (`python -m research.label`)
+- [x] Etykietowanie 632 transakcji przez autora (`python -m research.label`), 9.11.2026
+- [x] Wstępny wynik H2 (`research.simulate --zapisz`, `docs/badania/h2_kategoryzacja.json`) i etykiety przeniesione na konto: 632 ręczne, 133 reguły, 526 kategorii z reguł i słownika, 12 bez kategorii
 
 ## 3. Definition of Done
 - [x] Po poprawieniu kategorii jednej transakcji kolejne transakcje od tego kontrahenta, także z następnego importu, dostają tę kategorię
