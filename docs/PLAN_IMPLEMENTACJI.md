@@ -202,22 +202,22 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 **DoD:** wgrywasz swój prawdziwy wyciąg, widzisz transakcje w aplikacji; ponowny import nie dubluje danych.
 
 ### Etap 5 · 23–29 XI — Kategoryzacja i „uczenie się” z poprawek
-- [ ] Strona „Kategorie” w przeglądarce: dodawanie, zmiana nazwy i koloru, usuwanie własnych (API gotowe w etapie 3)
-- [ ] Przelewy własne (Smart Saver, „Przelew własny”, „Wpłata na cel”) trafiają do kategorii „Przelewy własne” i nie liczą się jako wydatki ani przychody
-- [ ] Słownik słów kluczowych (reguły systemowe w migracji/seedzie): `biedronka, lidl, żabka → Zakupy spożywcze`, `orlen, bp, shell → Paliwo`, `netflix, spotify → Subskrypcje`, `uber, bolt, jakdojade → Transport` itd.
-- [ ] `services/categorization_service.py` — kolejność dopasowania:
+- [x] Strona „Kategorie” w przeglądarce: dodawanie, zmiana nazwy i koloru, usuwanie własnych (API gotowe w etapie 3)
+- [x] Przelewy własne (Smart Saver, „Przelew własny”, „Wpłata na cel”) trafiają do kategorii „Przelewy własne” (wyłączenie z wydatków i przychodów w analityce: etap 6)
+- [x] Słownik słów kluczowych (reguły systemowe w pliku `app/categorization/system_rules.json`, 199 wzorców w 13 kategoriach): `biedronka, lidl, żabka → Zakupy spożywcze`, `orlen, bp, shell → Paliwo`, `netflix, spotify → Subskrypcje`, `uber, bolt, jakdojade → Transport` itd.
+- [x] `services/categorization_service.py` — kolejność dopasowania:
   1. reguły użytkownika (`exact_counterparty` > `contains`), wg priorytetu,
   2. reguły systemowe,
-  3. brak dopasowania → „Inne / do przypisania”
-- [ ] Zmiana kategorii transakcji przez użytkownika ⇒ automatyczne utworzenie reguły użytkownika (+ opcja „zastosuj do podobnych transakcji wstecz”)
-- [ ] Endpoint statystyki: % transakcji skategoryzowanych automatycznie (**metryka do rozdziału badawczego pracy**)
-- [ ] (badanie) Kategoryzacja jako czysta funkcja (transakcja + reguły → kategoria + dopasowana reguła), tworzenie reguły z poprawki jako osobna funkcja: tej samej logiki używa aplikacja i symulacja
-- [ ] (badanie) Pole `transactions.categorized_by` (`system_rule` / `user_rule` / `manual`) i identyfikator dopasowanej reguły (migracja)
-- [ ] (badanie) Słownik reguł systemowych w wersjonowanym pliku, strojony tylko na miesiącach 1–3; tag `badanie-slownik` przed pomiarem
-- [ ] (badanie) `backend/research/`: narzędzie do ręcznego etykietowania transakcji (grupowanie po kontrahencie, wynik w `data/private/`) i skrypt symulacji 6 miesięcy, wariant A (słownik) i B (słownik + poprawki), wyniki tylko zbiorcze
-- [ ] (badanie) Etykietowanie 1113 transakcji przez autora, przed pomiarem (ok. 1–2 godz.)
-- [ ] Testy jednostkowe kategoryzacji (priorytety, wielkość liter, polskie znaki, reguła użytkownika nadpisuje systemową)
-- [ ] Frontend: zmiana kategorii z poziomu tabeli (dropdown), widok „Do przypisania”, lista zapamiętanych reguł
+  3. brak dopasowania → „do przypisania” (przelewy własne rozpoznane przez parser mają pierwszeństwo)
+- [x] Zmiana kategorii transakcji przez użytkownika ⇒ automatyczne utworzenie reguły użytkownika (+ opcja „zastosuj do podobnych transakcji wstecz”)
+- [x] Endpoint statystyki: % transakcji skategoryzowanych automatycznie (**metryka do rozdziału badawczego pracy**)
+- [x] (badanie) Kategoryzacja jako czysta funkcja (transakcja + reguły → kategoria + dopasowana reguła), tworzenie reguły z poprawki jako osobna funkcja: tej samej logiki używa aplikacja i symulacja
+- [x] (badanie) Pole `transactions.categorized_by` (`system_rule` / `user_rule` / `manual`) i identyfikator dopasowanej reguły (migracja)
+- [x] (badanie) Słownik reguł systemowych w wersjonowanym pliku, zbudowany bez wglądu w dane autora i niestrojony na nich; tag `badanie-slownik`
+- [x] (badanie) `backend/research/`: narzędzie do ręcznego etykietowania transakcji (grupowanie po kontrahencie, wynik w `data/private/`) i skrypt symulacji 6 miesięcy, wariant A (słownik) i B (słownik + poprawki), wyniki tylko zbiorcze
+- [ ] (badanie) Etykietowanie transakcji przez autora, przed pomiarem: 632 poza przelewami własnymi, narzędzie `python -m research.label`
+- [x] Testy jednostkowe kategoryzacji (priorytety, wielkość liter, polskie znaki, reguła użytkownika nadpisuje systemową)
+- [x] Frontend: zmiana kategorii z poziomu tabeli (dropdown), widok „Do przypisania”, lista zapamiętanych reguł
 
 **DoD:** po poprawieniu kategorii jednej transakcji kolejne podobne transakcje (także z następnego importu) trafiają do właściwej kategorii.
 
@@ -340,7 +340,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | 2. Model danych + auth | ✅ | 2026-11-05 | |
 | 3. CRUD + frontend logowania | ✅ | 2026-11-07 | |
 | 4. Import wyciągów | ✅ | 2026-11-07 | PDF z ING i importer uniwersalny CSV z kreatorem mapowania; profil ING CSV sprawdzony na prawdziwym pliku 8.11 |
-| 5. Kategoryzacja | ⏳ | | |
+| 5. Kategoryzacja | ✅ | 2026-11-09 | słownik + reguły z poprawek, strona „Kategorie”, narzędzia badania H2; etykietowanie czeka na autora |
 | 6. Analityka + dashboard | ⏳ | | |
 | 7. Moduł AI | ⏳ | | |
 | 8. Frontend porad | ⏳ | | |

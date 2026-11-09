@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth'
 
 const NAV = [
   { to: '/transactions', label: 'Transakcje' },
+  { to: '/categories', label: 'Kategorie' },
   { to: '/import', label: 'Import wyciągu' },
 ]
 

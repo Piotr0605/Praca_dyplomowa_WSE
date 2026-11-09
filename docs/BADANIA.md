@@ -71,8 +71,19 @@ W pracy pojawiają się tylko liczby zbiorcze, bez opisów transakcji.
 systemu. Narzędzie grupuje transakcje po kontrahencie, a pojedyncze wyjątki można poprawić. Etykiety powstają
 przed uruchomieniem pomiaru.
 
-**Podział.** Miesiące 1–3 to część robocza: na niej można dostrajać słownik reguł systemowych. Miesiące 4–6 to część
-testowa: nie służą do budowy słownika. Wersja słownika do pomiaru jest zamrażana tagiem w git.
+**Słownik i podział.** Słownik reguł systemowych zbudowano z ogólnej wiedzy o popularnych sieciach handlowych
+i usługach w Polsce, bez wglądu w dane autora, i zamrożono tagiem `badanie-slownik` przed etykietowaniem. Nie jest
+strojony na żadnej części D1, więc nie ma ryzyka, że „zna” dane testowe. Miesiące 1–3 służą wariantowi B do nauki
+z poprawek, a miesiące 4–6 są częścią testową do porównania wariantów (H2a, H2c).
+
+**Przelewy własne** (Smart Saver, przelew własny, wpłata na cel) rozpoznaje parser, a nie kategoryzacja, więc nie
+wymagają etykiet i nie wchodzą do miar. W D1 jest ich 481, do etykietowania zostaje 632 transakcji.
+
+**Narzędzia** (`backend/research/`, uruchamiane z katalogu `backend/`):
+- `python -m research.label`: etykietowanie w terminalu, grupy po kontrahencie od największych, bez podpowiedzi
+  systemu; postęp zapisywany po każdej grupie w `data/private/etykiety.csv`, można przerwać i wrócić;
+- `python -m research.simulate [--zapisz]`: symulacja wariantów A i B na tym samym silniku co aplikacja
+  (`app/categorization/engine.py`), wyniki zbiorcze, z `--zapisz` także w `docs/badania/h2_kategoryzacja.json`.
 
 **Symulacja.** Skrypt odtwarza 6 miesięcy w kolejności dat:
 - wariant A: tylko reguły systemowe;
@@ -151,7 +162,10 @@ w polach, te same klucze duplikatów; detektor rozpoznał 8 z 8 ról kolumn. Pra
 w 100%; 8 dat różni się o 1–2 dni. Różnice w zakresie danych są wyjaśnione: eksport CSV nie zawiera 432 automatycznych
 przelewów Smart Saver, a 6 transakcji zaksięgowano po ostatnim wyciągu PDF.
 
-P2–P4: brak (moduły jeszcze nie istnieją).
+**P2 (informacja wstępna, 9.11.2026, bez etykiet):** słownik w wersji `2026-11-09` przypisuje kategorię 234 z 632
+transakcji D1 poza przelewami własnymi (37%). To pokrycie, a nie trafność: trafność wymaga etykiet.
+
+P3–P4: brak (moduły jeszcze nie istnieją).
 
 ## 6. Ograniczenia (do dyskusji)
 
@@ -173,3 +187,4 @@ P2–P4: brak (moduły jeszcze nie istnieją).
 |---|---|---|
 | 8.11.2026 | pierwsza wersja | — |
 | 8.11.2026 | ocena porad tylko przez autora; bez badania SUS; bez konsultacji z promotorem | brak innych oceniających i uczestników; promotor na razie niedostępny |
+| 9.11.2026 | słownik niestrojony na D1 (zamiast strojenia na miesiącach 1–3); przelewy własne bez etykiet | słownik powstał bez wglądu w dane autora, co usuwa ryzyko przecieku danych testowych; przelewy własne rozpoznaje parser |

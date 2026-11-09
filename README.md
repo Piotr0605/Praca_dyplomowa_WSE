@@ -111,4 +111,6 @@ Port frontendu (5173) jest stały, bo tylko ten adres jest dopuszczony przez COR
 | Migracje bazy | zobacz [`backend/alembic/README.md`](backend/alembic/README.md) |
 | Sztuczny wyciąg PDF do pokazu | `docker compose exec backend python -m tests.fixtures.ing_statement /tmp/wyciag.pdf` |
 | Sztuczne pliki CSV do pokazu (ING i inny bank) | `docker compose exec backend python -m tests.fixtures.csv_samples /tmp/csv` |
+| Badanie H2: etykietowanie własnych transakcji z `data/private/` | `cd backend && .venv/bin/python -m research.label` |
+| Badanie H2: symulacja kategoryzacji (wyniki zbiorcze) | `cd backend && .venv/bin/python -m research.simulate` |
 | Sprawdzenie parsera na własnych wyciągach PDF i plikach CSV z `data/private/` (wypisuje tylko liczby) | `cd backend && DATABASE_URL=postgresql+psycopg://x:x@localhost/x .venv/bin/python -m scripts.check_statements` |

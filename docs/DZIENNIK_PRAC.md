@@ -1147,3 +1147,62 @@ Wnioski do pracy:
 Przy okazji poprawiono dwa problemy interfejsu:
 - ponowne „Pokaż podgląd” zostawiało stary podgląd obok kreatora;
 - tekst kreatora brzmiał jak komunikat o błędzie i został przeredagowany.
+
+---
+
+## Tydzień 5: kategoryzacja i uczenie się z poprawek (wykonano 9.11.2026)
+
+Na prośbę użytkownika etap 5 wykonano w całości tego samego dnia. Wcześniej transakcje z 6 wyciągów PDF i eksportu
+CSV zaimportowano na konto użytkownika przez API: 1113 z PDF, a z CSV 57 nowych i 612 duplikatów, razem z wcześniejszą
+transakcją 1171.
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/app/categorization/engine.py` | silnik: `categorize`, `rule_from_correction`, dopasowanie reguł |
+| `backend/app/categorization/system_rules.json` | słownik: 199 wzorców w 13 kategoriach, wersja `2026-11-09` |
+| `backend/app/services/categorization_service.py` | reguły z bazy i słownika, przypisanie wstecz, zapamiętanie poprawki, statystyka |
+| `backend/app/api/routes/categorization.py`, `rules.py` | `apply`, `stats`, lista i usuwanie reguł |
+| migracja `kto_nadal_kategorie` | pola `categorized_by` i `category_rule_id` w `transactions` |
+| `backend/research/` | etykietowanie (`label.py`) i symulacja H2 (`simulate.py`) |
+| `frontend/src/pages/CategoriesPage.tsx`, `components/transactions/CategorizationBar.tsx` | strona „Kategorie”, pasek skuteczności |
+| `frontend/src/pages/TransactionsPage.tsx` | wybór kategorii w tabeli, „Zastosuj do podobnych”, źródło kategorii |
+| testy: `test_categorization.py`, `test_categorization_api.py`, `test_research.py` | 53 nowe testy |
+
+### Dlaczego
+- **Czysta funkcja zamiast logiki w serwisie.** Badanie H2 symuluje 6 miesięcy poprawek. Gdyby symulacja miała własną kopię logiki, wynik opisywałby kopię, a nie aplikację. `categorize` i `rule_from_correction` nie znają bazy danych, więc używają ich i serwis, i skrypt badania.
+- **Słownik w pliku i bez wglądu w dane.** Plan zakładał reguły systemowe w bazie i strojenie słownika na miesiącach 1–3. Plik w repozytorium ma wersję i tag, a słownik zbudowany wyłącznie z ogólnej wiedzy o sieciach handlowych nie może „znać” danych testowych. To mocniejsze metodologicznie niż strojenie na części danych, a jednocześnie nie wymaga czytania prawdziwych transakcji. Zmianę opisano w protokole badania.
+- **Reguła z dokładnej nazwy kontrahenta.** To najbezpieczniejsze uogólnienie poprawki: ten sam sklep lub ta sama osoba. Ograniczenie: sklepy sieci z numerem placówki w nazwie (np. „ZABKA Z4244”) każda placówka to osobny kontrahent; sieci obsługuje słownik.
+- **Kategorie Twoich transakcji nie zostały przypisane.** Etykiety do badania mają powstać bez sugestii systemu. Po etykietowaniu wystarczy przycisk „Przypisz kategorie automatycznie”.
+
+### W jaki sposób
+- **Dopasowanie:** tekst opisu i kontrahenta jest sprowadzany do małych liter bez polskich znaków; wzorzec musi stać jako całe słowo (granice liter i cyfr).
+- **Kolejność:** w obrębie grupy wyższy priorytet, a przy równym dłuższy wzorzec.
+- **Poprawka:** w `update_transaction` zmiana kategorii na inną ustawia `categorized_by = manual` i zapisuje regułę (`exact_counterparty`); identyfikator reguły wraca w odpowiedzi, więc przeglądarka może zaproponować „Zastosuj do podobnych”. To wywołuje przeliczenie kategorii nadanych przez reguły (`recategorize`).
+- **Symulacja:** poprawki z miesiąca *m* tworzą reguły działające od miesiąca *m+1*. Miary dla każdego miesiąca (trafność, pokrycie, precyzja, poprawki na 100 transakcji), przedział Wilsona i dokładny test McNemara na miesiącach 4–6.
+- **Etykietowanie:** grupy po kontrahencie (bez kontrahenta: opis bez dat), od największych; numer kategorii dla całej grupy albo pojedynczo; zapis po każdej grupie przez plik tymczasowy, z prawami 600.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Import Twoich plików: pętla w powłoce rozdzieliła nazwy plików PDF ze spacjami | import skryptem w Pythonie |
+| Backend trzymał w pamięci stary profil ING: automatyczne przeładowanie reagowało tylko na pliki `.py` | `--reload-include "*.json"` w Compose; dotyczy też słownika |
+| `Result.tuples()` w SQLAlchemy 2.1 jest przestarzałe i zwracało obiekt niedziałający jak lista par | rozpakowanie wierszy wprost |
+| Trzy starsze testy zakładały, że ręczna transakcja nie dostaje kategorii („Kawiarnia”, „Helios” są teraz w słowniku) | dane testów zmienione na kontrahentów spoza słownika, oczekiwania zaktualizowane |
+| Lint nie przeszedł po commicie (kolejność importów w migracji) | osobny commit; od teraz lint przed commitem z `&&`, nie `;` |
+| Test w przeglądarce: zajęta nazwa kategorii dawała poprawny komunikat, ale też nieobsłużony wyjątek w tle | `mutate` z obsługą błędu zamiast `mutateAsync` |
+| Cztery niepowodzenia testu w przeglądarce wynikały z błędnych oczekiwań testu (np. 3 zamiast 5 transakcji bez kategorii w sztucznym pliku) | poprawione oczekiwania; aplikacja działała zgodnie z założeniami |
+| Pliki Playwrighta zniknęły z katalogu tymczasowego | ponowna instalacja; pamięć przeglądarki usunięta po teście |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 331 testów zaliczonych |
+| celowe błędy: znak kwoty, całe słowa, dłuższy wzorzec, kolejność reguł, przelew własny, decyzja ręczna, zapis bez zmiany, zmiana istniejącej reguły, izolacja usuwania i stosowania reguł, test McNemara | 10 z 10 wykrytych; mutant kontrolny (sam komentarz) przeżył zgodnie z oczekiwaniem |
+| przeglądarka: kategorie z importu, wybór w tabeli, zapamiętana reguła, zastosuj do podobnych, „Do przypisania”, strona „Kategorie”, reguły, zajęta nazwa | 20 z 20; połączenia tylko z `localhost` |
+| słownik na prawdziwych danych (bez etykiet, wynik zbiorczy) | 234 z 632 transakcji poza przelewami własnymi (37%) |
+
+### Dalej
+- Etykietowanie przez autora: `cd backend && .venv/bin/python -m research.label` (632 transakcje, grupy po kontrahencie).
+- Potem `python -m research.simulate` daje wstępny wynik H2, a przycisk „Przypisz kategorie automatycznie” przypisze kategorie na koncie.
+- Etap 6: analityka i dashboard (przelewy własne poza wydatkami, kolory kategorii).
