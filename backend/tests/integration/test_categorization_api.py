@@ -236,3 +236,18 @@ def test_wymaga_logowania(client: TestClient) -> None:
     assert client.get("/api/rules").status_code == 401
     assert client.get("/api/categorization/stats").status_code == 401
     assert client.post("/api/categorization/apply").status_code == 401
+
+
+def test_slownik_i_badanie_uzywaja_kategorii_z_bazy(db_session) -> None:
+    """Nazwy kategorii w słowniku i w narzędziach badania muszą istnieć jako kategorie systemowe."""
+    from sqlalchemy import select
+
+    from app.models import Category
+    from app.services.categorization_service import system_rule_definitions
+    from research.data import SYSTEM_CATEGORIES
+
+    w_bazie = set(
+        db_session.scalars(select(Category.name).where(Category.user_id.is_(None)))
+    )
+    assert set(SYSTEM_CATEGORIES) == w_bazie
+    assert {g["category"] for g in system_rule_definitions()} <= w_bazie
