@@ -37,7 +37,7 @@ transakcje, a ponowny import nie tworzy duplikatów.
 - [x] Importer uniwersalny CSV: profil, rozpoznawanie formatu, odczyt według profilu, tabela `bank_profiles`
 - [x] Endpointy `GET/DELETE /imports/banks`, `POST /imports/detect`; podgląd i zapis przyjmują PDF i CSV
 - [x] Kreator mapowania kolumn i lista zapisanych profili na stronie importu
-- [ ] Sprawdzenie profilu ING na prawdziwym eksporcie CSV (czeka na plik od użytkownika)
+- [x] Sprawdzenie profilu ING na prawdziwym eksporcie CSV (8.11: poprawiona nazwa kolumny kwoty)
 - [ ] PR do `main`
 
 ## 3. Definition of Done

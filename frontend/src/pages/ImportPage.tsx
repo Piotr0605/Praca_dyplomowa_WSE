@@ -104,7 +104,10 @@ export function ImportPage() {
 
   function start() {
     if (!file) return
+    // Nowe odczytanie zastępuje poprzedni podgląd: kreator i podgląd nie mogą być widoczne naraz.
     setError(null)
+    setPreview(null)
+    setResult(null)
     if (isPdf(file)) previewMutation.mutate({ file, options: {} })
     else detectMutation.mutate({ file })
   }

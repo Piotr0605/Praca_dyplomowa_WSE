@@ -16,7 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.models.enums import TransactionKind, TransactionSource
+from app.models.enums import CategorizedBy, TransactionKind, TransactionSource
 from app.models.types import CreatedAt, enum_column
 
 
@@ -44,6 +44,14 @@ class Transaction(Base):
     # Usunięcie kategorii lub importu zostawia transakcję, tylko bez powiązania.
     category_id: Mapped[int | None] = mapped_column(
         ForeignKey("categories.id", ondelete="SET NULL"), index=True
+    )
+    # Kto nadał kategorię i, dla reguły użytkownika, która to reguła. Reguły systemowe są w kodzie
+    # (app/categorization/system_rules.json), więc nie mają identyfikatora w bazie.
+    categorized_by: Mapped[CategorizedBy | None] = mapped_column(
+        enum_column(CategorizedBy, "categorized_by")
+    )
+    category_rule_id: Mapped[int | None] = mapped_column(
+        ForeignKey("category_rules.id", ondelete="SET NULL"), index=True
     )
     import_batch_id: Mapped[int | None] = mapped_column(
         ForeignKey("import_batches.id", ondelete="SET NULL"), index=True

@@ -1,6 +1,6 @@
 """Sztuczne pliki CSV w formatach banków, na zmyślonych danych.
 
-`make_ing_csv` odtwarza układ eksportu historii z ING: kodowanie Windows-1250, średnik, kilkanaście wierszy
+`make_ing_csv` odtwarza układ eksportu historii z ING (sprawdzony na prawdziwym pliku 8.11.2026): kodowanie Windows-1250, średnik, kilkanaście wierszy
 metadanych nad tabelą, powtórzona kolumna „Waluta”, blokady kartowe bez kwoty transakcji i stopka.
 `make_other_bank_csv` to inny bank: UTF-8, przecinek, osobne kolumny uznań i obciążeń, kropka dziesiętna.
 
@@ -19,13 +19,12 @@ ING_HEADER = [
     "Nazwa banku",
     "Szczegóły",
     "Nr transakcji",
-    "Kwota transakcji (płatności, obciążenia, uznania)",
+    "Kwota transakcji (waluta rachunku)",
     "Waluta",
     "Kwota blokady/zwolnienie blokady",
     "Waluta",
     "Kwota płatności w walucie",
     "Waluta",
-    "Konto",
     "Saldo po transakcji",
     "Waluta",
 ]
@@ -135,15 +134,15 @@ def make_ing_csv(rows: list[tuple[str, ...]] | None = None) -> bytes:
         "",
         "Rodzaj transakcji:;Wszystkie",
         "",
-        ";".join(f'"{h}"' for h in ING_HEADER) + ";;",
+        ";".join(f'"{h}"' for h in ING_HEADER) + ";;;;;",
     ]
     for date, booking, party, title, code, ref, amount, hold in rows:
         cells = [
             date, booking, party, title, "11 2222 3333 4444 5555 6666 7777", "ING Bank Śląski",
             code, ref, amount, "PLN" if amount else "", hold, "PLN" if hold else "", "", "",
-            "Konto Direct", "1 000,00", "PLN",
+            "1 000,00", "PLN",
         ]  # fmt: skip
-        lines.append(";".join(cells) + ";;")
+        lines.append(";".join(cells) + ";;;;;")
     lines += [
         "",
         '"Dokument ma charakter informacyjny, nie stanowi dowodu księgowego"',

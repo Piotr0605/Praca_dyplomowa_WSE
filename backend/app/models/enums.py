@@ -38,3 +38,11 @@ class RuleSource(StrEnum):
 
     SYSTEM = "system"
     USER = "user"
+
+
+class CategorizedBy(StrEnum):
+    """Kto nadał transakcji kategorię: miara skuteczności kategoryzacji (badanie, H2)."""
+
+    SYSTEM_RULE = "system_rule"
+    USER_RULE = "user_rule"
+    MANUAL = "manual"

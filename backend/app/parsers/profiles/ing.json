@@ -9,7 +9,7 @@
   "columns": {
     "date": "Data transakcji",
     "booking_date": "Data księgowania",
-    "amount": "Kwota transakcji (płatności, obciążenia, uznania)",
+    "amount": "Kwota transakcji (waluta rachunku)",
     "currency": "Waluta",
     "description": ["Tytuł"],
     "counterparty": "Dane kontrahenta",

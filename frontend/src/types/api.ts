@@ -41,8 +41,39 @@ export type Transaction = {
   description: string
   counterparty: string | null
   category_id: number | null
+  /** Kto nadał kategorię: słownik, reguła użytkownika czy sam użytkownik. */
+  categorized_by: CategorizedBy | null
+  /** Reguła, która nadała kategorię, albo zapamiętana z poprawki użytkownika. */
+  category_rule_id: number | null
   kind: TransactionKind
   source: 'pdf' | 'csv' | 'manual'
+  created_at: string
+}
+
+export type CategorizedBy = 'system_rule' | 'user_rule' | 'manual'
+
+export type CategoryInput = {
+  name: string
+  color: string | null
+  is_income: boolean
+}
+
+export type CategorizationStats = {
+  total: number
+  system_rule: number
+  user_rule: number
+  manual: number
+  uncategorized: number
+  rules_version: string
+}
+
+export type CategoryRule = {
+  id: number
+  pattern: string
+  match_type: 'contains' | 'exact_counterparty' | 'regex'
+  category_id: number
+  category_name: string
+  transactions: number
   created_at: string
 }
 

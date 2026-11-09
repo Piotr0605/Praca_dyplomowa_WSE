@@ -9,6 +9,8 @@ Mamy ok. 10 tygodni, w tym okres świąteczny, a równolegle powstaje część p
 2. **Każdy tydzień kończy się działającą wersją** wypchniętą na GitHub (nawet jeśli skromną).
 3. Święta (21.12–3.01) to **pomiary, poprawki i bufor** — nie planujemy tam nowych funkcji.
 4. Moduł AI zaczynamy od **providera `mock`**, więc rozwój i testy nie kosztują nic i nie zależą od internetu.
+5. **Badanie aplikacyjne** (hipotezy, metoda, wyniki, dyskusja) jest zaplanowane w [`BADANIA.md`](BADANIA.md) przed budową modułów;
+   zadania oznaczone „(badanie)” zapewniają dane potrzebne do rzetelnego pomiaru.
 
 ---
 
@@ -28,6 +30,7 @@ Mamy ok. 10 tygodni, w tym okres świąteczny, a równolegle powstaje część p
 | Decyzja | Propozycja | Uzasadnienie |
 |---|---|---|
 | Bank dla parsera | **ING** (profil wbudowany) + importer uniwersalny z kreatorem mapowania | Własne dane do testów; inne banki przez profil bez pisania kodu |
+| Obsługiwane formaty (decyzja 8.11) | **PDF tylko z ING** (z kontrolą sum) + **CSV z dowolnego banku** (profil lub kreator); PDF innego banku dostaje komunikat z prośbą o CSV | każdy polski bank daje eksport historii do CSV, a parser PDF to osobna, krucha praca dla każdego układu wyciągu i bez prawdziwych wyciągów nie da się go sprawdzić. MT940, XML (camt.053), OFX i XLS poza zakresem: służą głównie firmom. Na pokazie jedno zdanie zamiast listy formatów |
 | Hashowanie haseł | **Argon2** (`pwdlib[argon2]` lub `argon2-cffi`) | Zwycięzca Password Hashing Competition, zalecany przez OWASP |
 | JWT | `PyJWT`, access token ~60 min, nagłówek `Authorization: Bearer` | Prosty i wystarczający dla projektu; refresh token jako SHOULD |
 | Sterownik DB | `psycopg` 3 + SQLAlchemy 2.0 (styl `Mapped[...]`) | Aktualny standard |
@@ -74,7 +77,8 @@ bank_profiles                       ← mapowanie kolumn CSV (wbudowane + zapisa
 
 ai_advice
   id (PK), user_id (FK), period_start, period_end,
-  provider, model, prompt_payload JSONB (zanonimizowane agregaty!),
+  provider, model, prompt_version, temperature, latency_ms (etap 7, badanie),
+  prompt_payload JSONB (zanonimizowane agregaty!),
   response_text, tokens_in, tokens_out, created_at
 ```
 
@@ -184,7 +188,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 - [x] Porównanie z prawdziwymi wyciągami (lokalnie): liczby i sumy zgodne z nagłówkiem wszystkich 6 plików
 
 **Importer uniwersalny CSV** (SHOULD; wykonany 7.11 na prośbę użytkownika)
-- [ ] Analiza prawdziwego eksportu CSV z ING (czeka na plik; profil przygotowany na podstawie opisu formatu) (kodowanie, separator, wiersze metadanych, kolumny, format daty i kwot, blokady)
+- [x] Analiza prawdziwego eksportu CSV z ING (8.11; poprawiona nazwa kolumny kwoty, brak przelewów Smart Saver w eksporcie) (kodowanie, separator, wiersze metadanych, kolumny, format daty i kwot, blokady)
 - [x] `parsers/csv_profile.py` (model profilu: kodowanie, separator, wiersz nagłówka, mapowanie kolumn, format daty, separator dziesiętny, sposób wyznaczania znaku kwoty)
 - [x] `parsers/csv_detect.py` (auto-wykrywanie: kodowanie, separator, nagłówek, role kolumn) + `parsers/csv_generic.py` (odczyt według profilu, te same pola co parser PDF)
 - [x] `parsers/profiles/ing.json` + testy na sztucznym pliku w formacie ING
@@ -198,17 +202,22 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 **DoD:** wgrywasz swój prawdziwy wyciąg, widzisz transakcje w aplikacji; ponowny import nie dubluje danych.
 
 ### Etap 5 · 23–29 XI — Kategoryzacja i „uczenie się” z poprawek
-- [ ] Strona „Kategorie” w przeglądarce: dodawanie, zmiana nazwy i koloru, usuwanie własnych (API gotowe w etapie 3)
-- [ ] Przelewy własne (Smart Saver, „Przelew własny”, „Wpłata na cel”) trafiają do kategorii „Przelewy własne” i nie liczą się jako wydatki ani przychody
-- [ ] Słownik słów kluczowych (reguły systemowe w migracji/seedzie): `biedronka, lidl, żabka → Zakupy spożywcze`, `orlen, bp, shell → Paliwo`, `netflix, spotify → Subskrypcje`, `uber, bolt, jakdojade → Transport` itd.
-- [ ] `services/categorization_service.py` — kolejność dopasowania:
+- [x] Strona „Kategorie” w przeglądarce: dodawanie, zmiana nazwy i koloru, usuwanie własnych (API gotowe w etapie 3)
+- [x] Przelewy własne (Smart Saver, „Przelew własny”, „Wpłata na cel”) trafiają do kategorii „Przelewy własne” (wyłączenie z wydatków i przychodów w analityce: etap 6)
+- [x] Słownik słów kluczowych (reguły systemowe w pliku `app/categorization/system_rules.json`, 199 wzorców w 13 kategoriach): `biedronka, lidl, żabka → Zakupy spożywcze`, `orlen, bp, shell → Paliwo`, `netflix, spotify → Subskrypcje`, `uber, bolt, jakdojade → Transport` itd.
+- [x] `services/categorization_service.py` — kolejność dopasowania:
   1. reguły użytkownika (`exact_counterparty` > `contains`), wg priorytetu,
   2. reguły systemowe,
-  3. brak dopasowania → „Inne / do przypisania”
-- [ ] Zmiana kategorii transakcji przez użytkownika ⇒ automatyczne utworzenie reguły użytkownika (+ opcja „zastosuj do podobnych transakcji wstecz”)
-- [ ] Endpoint statystyki: % transakcji skategoryzowanych automatycznie (**metryka do rozdziału badawczego pracy**)
-- [ ] Testy jednostkowe kategoryzacji (priorytety, wielkość liter, polskie znaki, reguła użytkownika nadpisuje systemową)
-- [ ] Frontend: zmiana kategorii z poziomu tabeli (dropdown), widok „Do przypisania”, lista zapamiętanych reguł
+  3. brak dopasowania → „do przypisania” (przelewy własne rozpoznane przez parser mają pierwszeństwo)
+- [x] Zmiana kategorii transakcji przez użytkownika ⇒ automatyczne utworzenie reguły użytkownika (+ opcja „zastosuj do podobnych transakcji wstecz”)
+- [x] Endpoint statystyki: % transakcji skategoryzowanych automatycznie (**metryka do rozdziału badawczego pracy**)
+- [x] (badanie) Kategoryzacja jako czysta funkcja (transakcja + reguły → kategoria + dopasowana reguła), tworzenie reguły z poprawki jako osobna funkcja: tej samej logiki używa aplikacja i symulacja
+- [x] (badanie) Pole `transactions.categorized_by` (`system_rule` / `user_rule` / `manual`) i identyfikator dopasowanej reguły (migracja)
+- [x] (badanie) Słownik reguł systemowych w wersjonowanym pliku, zbudowany bez wglądu w dane autora i niestrojony na nich; tag `badanie-slownik`
+- [x] (badanie) `backend/research/`: narzędzie do ręcznego etykietowania transakcji (grupowanie po kontrahencie, wynik w `data/private/`) i skrypt symulacji 6 miesięcy, wariant A (słownik) i B (słownik + poprawki), wyniki tylko zbiorcze
+- [ ] (badanie) Etykietowanie transakcji przez autora, przed pomiarem: 632 poza przelewami własnymi, narzędzie `python -m research.label`
+- [x] Testy jednostkowe kategoryzacji (priorytety, wielkość liter, polskie znaki, reguła użytkownika nadpisuje systemową)
+- [x] Frontend: zmiana kategorii z poziomu tabeli (dropdown), widok „Do przypisania”, lista zapamiętanych reguł
 
 **DoD:** po poprawieniu kategorii jednej transakcji kolejne podobne transakcje (także z następnego importu) trafiają do właściwej kategorii.
 
@@ -230,10 +239,14 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 
 ### Etap 7 · 7–13 XII — Moduł doradczy AI
 - [ ] `ai/anonymizer.py` (regex): numery kont/IBAN (`PL\d{26}`, 26 cyfr), numery kart, PESEL, telefony, e-maile, kody pocztowe/adresy, imiona i nazwiska (słownik polskich imion + heurystyka „Imię Nazwisko” wielkimi literami w przelewach)
+- [ ] (badanie) Anonimizator jako czysta funkcja zwracająca też listę zamaskowanych fragmentów z typem
+- [ ] (badanie) Generator sztucznego korpusu tytułów z oznaczonymi danymi osobowymi (stałe ziarno), część robocza i testowa; testową zamrozić przed strojeniem reguł
 - [ ] Testy anonimizacji — **dużo przypadków**, to mocny punkt pracy; także dane z tytułów przelewów: imiona i nazwiska, nazwy kontaktów, telefony częściowo zamaskowane, dowolny tekst. Tylko sztuczne przypadki w repozytorium
 - [ ] `ai/prompt_builder.py`: tylko agregaty (sumy w kategoriach, zmiany %, top kategorie, stopa oszczędności) → JSON; **bez pojedynczych transakcji**; prompt systemowy z rolą doradcy, zakazem wymyślania liczb i wymaganym formatem odpowiedzi (np. 3–5 rekomendacji z uzasadnieniem i szacowaną kwotą oszczędności)
 - [ ] `ai/providers/base.py` (interfejs `generate_advice(payload) -> AdviceResult`), `openai.py`, `anthropic.py`, `mock.py`; wybór przez `AI_PROVIDER`
 - [ ] Obsługa błędów (timeout, brak klucza, limit) + zapis do `ai_advice` (tokeny ⇒ koszt)
+- [ ] (badanie) `ai_advice`: wersja promptu, temperatura, czas odpowiedzi w ms (migracja); stała temperatura i wersja promptu
+- [ ] (badanie) Skrypt zgodności liczb: czy kwoty i procenty z porady wynikają z wysłanego pakietu agregatów
 - [ ] Ograniczenie kosztów: cache porady dla tego samego okresu i niezmienionych danych, limit zapytań/dzień na użytkownika
 - [ ] `GET /advice/preview-payload` — użytkownik widzi dokładnie, co wychodzi do API
 - [ ] Testy endpointu z providerem `mock`
@@ -243,6 +256,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 ### Etap 8 · 14–20 XII — Frontend porad
 - [ ] Strona „Porady AI”: wybór okresu, podgląd wysyłanych danych, wynik (karty rekomendacji), historia porad
 - [ ] (COULD) budżety miesięczne
+- [ ] (badanie) Eksport porad do ślepej oceny: losowa kolejność, bez nazwy dostawcy, klucz w osobnym pliku
 
 **DoD:** wszystkie funkcje MUST działają w przeglądarce.
 
@@ -254,6 +268,7 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 - [ ] Swagger UI serwowany lokalnie: `/docs` pobiera teraz pliki z `cdn.jsdelivr.net` i bez internetu jest pusta (sprawdzone w tygodniu 2)
 - [ ] Sprawdzenie reguły prywatności: strona, `/docs` i backend nie łączą się z zewnętrznymi serwerami poza `ai/providers/`
 - [ ] Skrypt danych demo (użytkownik demo + sztuczne transakcje z 6 miesięcy)
+- [ ] (badanie) Kilka sztucznych profili finansowych do porównania porad AI (zbiór D5 w `BADANIA.md`)
 - [ ] README: instalacja, uruchomienie, zrzuty ekranu
 
 - [ ] Test na komputerze bez pobranych obrazów i z domyślnymi portami, z pomiarem czasu pierwszego uruchomienia (w tygodniu 1 nie zostało to sprawdzone)
@@ -265,7 +280,8 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 - [ ] Diagramy do pracy (`docs/diagramy/`): architektura warstwowa, ERD bazy (aktualizacja), diagram sekwencji „import wyciągu”, diagram sekwencji „generowanie porady AI” (z krokiem anonimizacji)
 - [ ] Eksport diagramów do PNG lub SVG do pracy (`mermaid-cli` w przypiętej wersji, wymaga zgody na pobranie pakietu)
 - [ ] Zrzuty ekranu (`docs/zrzuty/`)
-- [ ] Pomiary do rozdziału badawczego: skuteczność kategoryzacji przed/po poprawkach, skuteczność anonimizacji, koszt i czas zapytania AI, porównanie OpenAI vs Anthropic na tych samych agregatach
+- [ ] Pomiary według protokołu [`BADANIA.md`](BADANIA.md) (H1–H4) jednym poleceniem na wersji końcowej; wyniki zbiorcze w `docs/badania/`, sekcje 5–7 protokołu uzupełnione
+- [ ] Ślepa ocena porad przez autora (bez nazwy dostawcy, klucz otwierany po ocenie)
 - [ ] Zapytać promotora, czy repozytorium może być publiczne przed obroną i kontrolą JSA; sprawdzić, czy uczelnia wymaga opisania użycia AI w pracy
 - [ ] Tag `v1.0.0` na GitHubie
 
@@ -323,8 +339,8 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | 1. Fundament | ✅ | 2026-11-04 | format wyciągu opisany, pliki w `data/private/` |
 | 2. Model danych + auth | ✅ | 2026-11-05 | |
 | 3. CRUD + frontend logowania | ✅ | 2026-11-07 | |
-| 4. Import wyciągów | ✅ | 2026-11-07 | PDF z ING i importer uniwersalny CSV z kreatorem mapowania; profil ING CSV czeka na prawdziwy plik |
-| 5. Kategoryzacja | ⏳ | | |
+| 4. Import wyciągów | ✅ | 2026-11-07 | PDF z ING i importer uniwersalny CSV z kreatorem mapowania; profil ING CSV sprawdzony na prawdziwym pliku 8.11 |
+| 5. Kategoryzacja | ✅ | 2026-11-09 | słownik + reguły z poprawek, strona „Kategorie”, narzędzia badania H2; etykietowanie czeka na autora |
 | 6. Analityka + dashboard | ⏳ | | |
 | 7. Moduł AI | ⏳ | | |
 | 8. Frontend porad | ⏳ | | |
@@ -360,7 +376,7 @@ na tym serwerze. To kierunek rozwoju, a nie zakres pracy.
 ### Uruchomienie na pokazie
 1. **Dzień przed:** `git pull`, `docker compose up --build` przy dostępie do internetu (pobranie obrazów),
    wczytanie danych demo, przejście całego scenariusza raz na próbę.
-2. **Przed wejściem na salę:** wyłączyć inne projekty Dockera zajmujące porty (np. finshield-api),
+2. **Przed wejściem na salę:** wyłączyć inne projekty Dockera zajmujące porty 5432, 8000 lub 5173,
    uruchomić `docker compose up`, otworzyć w przeglądarce kartę aplikacji i kartę `localhost:8000/docs`
    (`/docs` działa bez internetu dopiero po zadaniu z etapu 9).
 3. **AI:** jeśli jest internet i ważny klucz API, `AI_PROVIDER=openai` lub `anthropic`; jeśli nie, `mock`
@@ -394,13 +410,13 @@ wymagania formalne trzeba sprawdzić w wytycznych WSE.
 
 | Część | Szkic gotowy do | Materiał źródłowy |
 |---|---|---|
-| Konspekt i układ rozdziałów, rozmowa z promotorem | 8 XI | ten plan |
+| Konspekt i układ rozdziałów, rozmowa z promotorem, gdy będzie możliwa | 8 XI | ten plan, `BADANIA.md` |
 | 1. Podstawy teoretyczne: finanse osobiste, modele językowe | 29 XI | literatura |
 | 2. Przegląd rozwiązań i analiza wymagań | 6 XII | istniejące aplikacje, sekcja 0 |
 | 3. Wykorzystane technologie | 13 XII | `NOTATKI_TECHNOLOGIE.md` |
 | 4. Architektura i model danych | 13 XII | `diagramy/`, sekcje 2, 3 i 5 |
 | 5. Implementacja: import, kategoryzacja, analityka, anonimizacja, moduł AI | 20 XII | `DZIENNIK_PRAC.md` |
-| 6. Weryfikacja i wyniki pomiarów | 3 I | testy, pomiary z etapu 10 |
+| 6. Badanie aplikacyjne: hipotezy, metoda, wyniki, dyskusja | metoda 20 XII, wyniki 3 I | `BADANIA.md`, pomiary z etapu 10 |
 | Zakończenie, wstęp, streszczenie, bibliografia | 3 I | gotowy tekst |
 
 - [ ] Stała pozycja w tygodniu: 1–2 godziny na literaturę; pozycje zapisywane od razu z pełnym opisem bibliograficznym

@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { categoriesApi, transactionsApi } from '../api/endpoints'
+import { categoriesApi, categorizationApi, transactionsApi } from '../api/endpoints'
+import { CategorizationBar } from '../components/transactions/CategorizationBar'
 import { TransactionForm } from '../components/transactions/TransactionForm'
 import {
   ErrorMessage,
@@ -10,10 +11,18 @@ import {
   secondaryButton,
 } from '../components/ui/FormField'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import type { Transaction, TransactionInput } from '../types/api'
+import type { CategorizedBy, Transaction, TransactionInput } from '../types/api'
 import { KIND_LABELS, formatAmount, formatDate } from '../utils/format'
 
 const PAGE_SIZE = 20
+
+const SOURCE_LABELS: Record<CategorizedBy, string> = {
+  system_rule: 'słownik',
+  user_rule: 'Twoja reguła',
+  manual: 'ręcznie',
+}
+
+type Remembered = { pattern: string; category: string }
 
 export function TransactionsPage() {
   const queryClient = useQueryClient()
@@ -25,6 +34,9 @@ export function TransactionsPage() {
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  // Reguła zapamiętana z ostatniej poprawki kategorii: propozycja zastosowania do podobnych.
+  const [remembered, setRemembered] = useState<Remembered | null>(null)
+  const [similarResult, setSimilarResult] = useState<string | null>(null)
   const q = useDebouncedValue(search.trim())
 
   const filters = {
@@ -45,7 +57,11 @@ export function TransactionsPage() {
   const categoryName = new Map((categories.data ?? []).map((c) => [c.id, c.name]))
   const totalPages = Math.max(1, Math.ceil((transactions.data?.total ?? 0) / PAGE_SIZE))
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    queryClient.invalidateQueries({ queryKey: ['categorization-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['rules'] })
+  }
   const create = useMutation({ mutationFn: transactionsApi.create, onSuccess: refresh })
   const update = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<TransactionInput> }) =>
@@ -53,6 +69,38 @@ export function TransactionsPage() {
     onSuccess: refresh,
   })
   const remove = useMutation({ mutationFn: transactionsApi.remove, onSuccess: refresh })
+  const applySimilar = useMutation({
+    mutationFn: () => categorizationApi.apply(true),
+    onSuccess: ({ categorized }) => {
+      setSimilarResult(
+        categorized === 0
+          ? 'Nie znaleziono innych transakcji do zmiany.'
+          : `Zmieniono kategorię ${categorized} podobnych transakcji.`,
+      )
+      setRemembered(null)
+      refresh()
+    },
+    onError: (err) => setActionError(err.message),
+  })
+
+  async function changeCategory(transaction: Transaction, value: string) {
+    setActionError(null)
+    setSimilarResult(null)
+    const categoryId = value ? Number(value) : null
+    try {
+      const updated = await update.mutateAsync({
+        id: transaction.id,
+        data: { category_id: categoryId },
+      })
+      setRemembered(
+        updated.category_rule_id && categoryId && updated.counterparty
+          ? { pattern: updated.counterparty, category: categoryName.get(categoryId) ?? '' }
+          : null,
+      )
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Nie udało się zmienić kategorii')
+    }
+  }
 
   function changeFilter(apply: () => void) {
     apply()
@@ -109,6 +157,36 @@ export function TransactionsPage() {
           onSubmit={handleEdit}
           onCancel={() => setEditing(null)}
         />
+      )}
+
+      <CategorizationBar onShowUncategorized={() => changeFilter(() => setCategory('none'))} />
+
+      {remembered && (
+        <p
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+        >
+          <span>
+            Zapamiętano: transakcje od „{remembered.pattern}” trafią do kategorii „
+            {remembered.category}”.
+          </span>
+          <button
+            type="button"
+            disabled={applySimilar.isPending}
+            onClick={() => applySimilar.mutate()}
+            className="font-medium underline disabled:opacity-50"
+          >
+            Zastosuj do podobnych transakcji
+          </button>
+          <button type="button" onClick={() => setRemembered(null)} className="underline">
+            Zamknij
+          </button>
+        </p>
+      )}
+      {similarResult && (
+        <p role="status" className="rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          {similarResult}
+        </p>
       )}
 
       <section aria-label="Filtry" className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -193,10 +271,24 @@ export function TransactionsPage() {
                   )}
                 </td>
                 <td className="px-4 py-3 text-slate-700">
-                  {t.category_id ? (
-                    categoryName.get(t.category_id)
-                  ) : (
-                    <span className="text-slate-400">brak</span>
+                  <select
+                    aria-label={`Kategoria: ${t.description}`}
+                    value={t.category_id ?? ''}
+                    disabled={update.isPending}
+                    onChange={(e) => changeCategory(t, e.target.value)}
+                    className={`w-full min-w-36 rounded-md border px-2 py-1 text-sm ${t.category_id ? 'border-slate-200 text-slate-900' : 'border-amber-300 bg-amber-50 text-amber-900'}`}
+                  >
+                    <option value="">— do przypisania —</option>
+                    {(categories.data ?? []).map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  {t.category_id && t.categorized_by && (
+                    <span className="mt-0.5 block text-xs text-slate-400">
+                      {SOURCE_LABELS[t.categorized_by]}
+                    </span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-slate-700">{KIND_LABELS[t.kind]}</td>

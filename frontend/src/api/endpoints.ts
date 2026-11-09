@@ -1,6 +1,9 @@
 import type {
   BankProfile,
+  CategorizationStats,
   Category,
+  CategoryInput,
+  CategoryRule,
   CsvDelimiter,
   CsvDetection,
   CsvEncoding,
@@ -28,6 +31,25 @@ export const authApi = {
 
 export const categoriesApi = {
   list: () => request<Category[]>('/categories'),
+  create: (data: CategoryInput) => request<Category>('/categories', { method: 'POST', json: data }),
+  update: (id: number, data: Partial<CategoryInput>) =>
+    request<Category>(`/categories/${id}`, { method: 'PATCH', json: data }),
+  remove: (id: number) => request<void>(`/categories/${id}`, { method: 'DELETE' }),
+}
+
+export const categorizationApi = {
+  /** Przypisuje kategorie według reguł; `recategorize` przelicza też kategorie nadane wcześniej przez reguły. */
+  apply: (recategorize = false) =>
+    request<{ categorized: number }>('/categorization/apply', {
+      method: 'POST',
+      query: { recategorize },
+    }),
+  stats: () => request<CategorizationStats>('/categorization/stats'),
+}
+
+export const rulesApi = {
+  list: () => request<CategoryRule[]>('/rules'),
+  remove: (id: number) => request<void>(`/rules/${id}`, { method: 'DELETE' }),
 }
 
 function importForm(options: ImportOptions): Record<string, string> {

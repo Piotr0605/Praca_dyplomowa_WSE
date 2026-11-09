@@ -4,6 +4,7 @@ import { RequireAuth } from './components/RequireAuth'
 import { AppLayout } from './components/layout/AppLayout'
 import { AuthProvider } from './context/AuthProvider'
 import { AuthPage } from './pages/AuthPage'
+import { CategoriesPage } from './pages/CategoriesPage'
 import { ImportPage } from './pages/ImportPage'
 import { TransactionsPage } from './pages/TransactionsPage'
 
@@ -23,6 +24,7 @@ export default function App() {
               <Route element={<AppLayout />}>
                 <Route path="/transactions" element={<TransactionsPage />} />
                 <Route path="/import" element={<ImportPage />} />
+                <Route path="/categories" element={<CategoriesPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/transactions" replace />} />

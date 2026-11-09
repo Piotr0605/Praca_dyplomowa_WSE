@@ -1054,3 +1054,155 @@ Użytkownik poprosił o wykonanie go od razu, więc wrócił do etapu 4.
 | prawdziwe dane | brak: nie ma jeszcze prawdziwego eksportu CSV z ING. Profil ING powstał na podstawie opisu formatu; jeśli prawdziwy plik się różni, trafi do kreatora |
 
 Zrzut kreatora na sztucznych danych: `docs/zrzuty/tydzien4_kreator_csv.png`.
+
+**Uzupełnienie 8.11.2026: prawdziwe dane przez importer CSV.** Prawdziwego eksportu CSV z ING jeszcze nie ma, więc
+transakcje z 6 wyciągów PDF zamieniono w pamięci (bez zapisu na dysk) na plik w formacie profilu ING i odczytano
+importerem CSV. Wynik: 1113 z 1113 transakcji, te same klucze duplikatów co z PDF (import CSV po PDF dałby same
+duplikaty), ta sama suma kwot, zero różnic w datach, kwotach, opisach i kontrahentach. Po drodze sprawdzone zostały
+polskie znaki w Windows-1250, cudzysłowy w 5 tytułach i kwoty z separatorem tysięcy. Detektor bez profilu rozpoznał
+wszystkie 8 ról kolumn. Ograniczenie: format pliku pochodzi z założeń profilu, a rodzaj operacji odtworzono z wyniku
+parsera PDF, więc test nie potwierdza, że prawdziwy eksport ING ma takie nazwy kolumn i kodowanie. To nadal wymaga
+prawdziwego pliku.
+
+---
+
+## 8.11.2026: protokół badania aplikacyjnego
+
+### Co zostało zrobione
+Powstał `docs/BADANIA.md`: pytania badawcze P1–P4, hipotezy H1–H4 z progami przyjęcia, dane, metoda, miary, testy
+statystyczne, ograniczenia i rejestr zmian protokołu. Zadania wynikające z protokołu (oznaczone „(badanie)”) trafiły
+do etapów 5, 7, 8, 9 i 10 planu, a rozdział 6 pracy nazywa się teraz „Badanie aplikacyjne: hipotezy, metoda, wyniki,
+dyskusja”.
+
+### Dlaczego
+Zarządzenie dla IS wymaga pracy z badaniem aplikacyjnym albo eksperymentem (hipoteza, metoda, wyniki, dyskusja).
+Plan miał tylko ogólne „pomiary w etapie 10”. Rzetelność pomiaru zależy jednak od budowy modułów:
+- symulacja kategoryzacji musi używać tej samej logiki co aplikacja;
+- słownik reguł nie może być strojony na danych testowych;
+- porada AI musi zapisywać wersję promptu i czas odpowiedzi.
+
+Dlatego metodę ustalono przed budową modułów, a nie po. Data commita protokołu pokazuje, że hipotezy powstały
+przed wynikami.
+
+### W jaki sposób
+- **Badanie główne (P2):** porównanie kategoryzacji samym słownikiem (A) i słownikiem z regułami z poprawek (B). Symulacja odtwarza 6 miesięcy prawdziwych transakcji w kolejności dat. Etykiety autor nadaje osobnym narzędziem, a nie przez kategoryzację systemu. Miesiące 1–3 służą do strojenia, 4–6 do testu. Test McNemara dla par przewidywań.
+- **Anonimizacja (P3):** sztuczny korpus z oznaczonymi danymi osobowymi, z częścią testową zamrożoną przed strojeniem reguł, oraz kontrola wycieków w pakietach z prawdziwych danych.
+- **Porady (P4):** obiektywna zgodność liczb z danymi wejściowymi, ślepa ocena przydatności i koszt.
+- **Import (P1):** wyniki z 7–8.11 wpisane jako wstępne.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Etykiety kategorii nadaje autor systemu, co grozi stronniczością | osobne narzędzie etykietowania, etykiety przed pomiarem, podział na część roboczą i testową; ograniczenie opisane w dyskusji |
+| Prawdziwych tytułów przelewów nie można oznaczyć w repozytorium | sztuczny korpus o strukturze prawdziwych tytułów oraz kontrola wycieków na prawdziwych danych, z wynikami tylko zbiorczymi |
+| Dane jednej osoby nie pozwalają na uogólnienie | nazwane wprost w ograniczeniach; wyniki opisują przypadek |
+
+### Dalej
+Konsultacja protokołu z promotorem: zakres, progi hipotez, testy statystyczne, ewentualne badanie SUS.
+
+**Uzupełnienie 8.11.2026: obsługiwane formaty plików.** Decyzja: aplikacja przyjmuje wyciąg PDF tylko z ING oraz plik
+CSV z dowolnego banku (profil albo kreator mapowania); inne formaty (PDF innych banków, MT940, XML, OFX, XLS) są poza
+zakresem. Uzasadnienie:
+- każdy polski bank daje eksport historii do CSV;
+- parser PDF to osobna i krucha praca dla każdego układu wyciągu, a bez prawdziwych wyciągów innego banku nie da się go sprawdzić;
+- jedno zdanie na prezentacji jest prostsze niż lista formatów.
+
+PDF innego banku dostaje teraz komunikat „Wyciągi PDF odczytujemy tylko z ING. Jeśli masz konto w innym banku, pobierz
+historię rachunku w formacie CSV” (test na wygenerowanym PDF „innego banku”). Do protokołu badania dopisano, że ślepa
+ocena porad jest częściowa: styl odpowiedzi może zdradzać model.
+
+**Uzupełnienie 8.11.2026: porty i plik `.env`.** `docker compose up` zatrzymał się na błędzie „port 5432 is already
+allocated”. Przyczyny były dwie:
+- plik `.env` nadpisano kopią `.env.example`, więc porty wróciły na domyślne 5432 i 8000, zajęte wtedy przez inny projekt;
+- hasło bazy wróciło na przykładowe, a baza w wolumenie miała zapisane wcześniejsze losowe hasło, więc backend i tak by się nie połączył.
+
+Rozwiązanie: nowe losowe hasło w `.env` i zmiana hasła w bazie (`ALTER USER`). Dane w bazie zostały, a klucz JWT
+leży osobno w wolumenie `backend_data`. Inny projekt został potem usunięty, więc aplikacja działa na domyślnych
+portach 5432, 8000 i 5173. Lokalny `.env` różni się od `.env.example` już tylko hasłem bazy, czyli tak, jak będzie
+na czystym komputerze. Wniosek do pracy: `.env.example` nie zawiera działającego hasła do istniejącej bazy, więc
+skopiowanie go na istniejący `.env` wymaga zmiany hasła albo `docker compose down -v` (z utratą danych).
+
+**Uzupełnienie 8.11.2026: prawdziwy eksport CSV z ING.** Użytkownik wgrał w przeglądarce prawdziwy eksport historii
+z ING. Plik nie został dopasowany do profilu ING i otworzył się kreator. Przyczyna: jedna nazwa kolumny. Profil
+zakładał „Kwota transakcji (płatności, obciążenia, uznania)”, a bank używa „Kwota transakcji (waluta rachunku)”.
+Kodowanie, separator, 18 wierszy metadanych, format daty i pozostałe kolumny były zgodne z założeniami. Detektor
+rozpoznał wszystkie role sam, dlatego kreator był wypełniony poprawnie. Plik przeniesiono do `data/private/`
+(bez kopii w Pobranych); sprawdzano wyłącznie nazwy kolumn z nagłówka i liczby zbiorcze.
+
+Po poprawce profilu i sztucznego pliku testowego (ten sam układ kolumn co prawdziwy):
+
+| Sprawdzenie | Wynik |
+|---|---|
+| transakcje w CSV | 669, pominięte blokady bez kwoty: 20 |
+| ten sam klucz duplikatów co w PDF | 612; kwoty zgodne w 100% |
+| różne daty | 8 (prowizje, płatności kartą, zwrot): 1–2 dni, bo PDF bierze datę z tytułu, a CSV z kolumny „Data transakcji” |
+| w wspólnym okresie tylko w PDF | 432, wszystkie to automatyczne przelewy Smart Saver: eksport CSV ich nie zawiera |
+| w wspólnym okresie tylko w CSV | 6 płatności kartą zaksięgowanych po ostatnim wyciągu PDF |
+
+Wnioski do pracy:
+- **Weryfikacja na prawdziwym pliku była potrzebna.** Profil zbudowany z opisu formatu różnił się jedną nazwą kolumny.
+- **Kreator zabezpieczył przed tym błędem.** Bez kreatora import by nie zadziałał.
+- **CSV z ING nie zastąpi PDF przy kontroli salda,** bo brakuje w nim przelewów Smart Saver.
+
+Przy okazji poprawiono dwa problemy interfejsu:
+- ponowne „Pokaż podgląd” zostawiało stary podgląd obok kreatora;
+- tekst kreatora brzmiał jak komunikat o błędzie i został przeredagowany.
+
+---
+
+## Tydzień 5: kategoryzacja i uczenie się z poprawek (wykonano 9.11.2026)
+
+Na prośbę użytkownika etap 5 wykonano w całości tego samego dnia. Wcześniej transakcje z 6 wyciągów PDF i eksportu
+CSV zaimportowano na konto użytkownika przez API: 1113 z PDF, a z CSV 57 nowych i 612 duplikatów, razem z wcześniejszą
+transakcją 1171.
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/app/categorization/engine.py` | silnik: `categorize`, `rule_from_correction`, dopasowanie reguł |
+| `backend/app/categorization/system_rules.json` | słownik: 199 wzorców w 13 kategoriach, wersja `2026-11-09` |
+| `backend/app/services/categorization_service.py` | reguły z bazy i słownika, przypisanie wstecz, zapamiętanie poprawki, statystyka |
+| `backend/app/api/routes/categorization.py`, `rules.py` | `apply`, `stats`, lista i usuwanie reguł |
+| migracja `kto_nadal_kategorie` | pola `categorized_by` i `category_rule_id` w `transactions` |
+| `backend/research/` | etykietowanie (`label.py`) i symulacja H2 (`simulate.py`) |
+| `frontend/src/pages/CategoriesPage.tsx`, `components/transactions/CategorizationBar.tsx` | strona „Kategorie”, pasek skuteczności |
+| `frontend/src/pages/TransactionsPage.tsx` | wybór kategorii w tabeli, „Zastosuj do podobnych”, źródło kategorii |
+| testy: `test_categorization.py`, `test_categorization_api.py`, `test_research.py` | 53 nowe testy |
+
+### Dlaczego
+- **Czysta funkcja zamiast logiki w serwisie.** Badanie H2 symuluje 6 miesięcy poprawek. Gdyby symulacja miała własną kopię logiki, wynik opisywałby kopię, a nie aplikację. `categorize` i `rule_from_correction` nie znają bazy danych, więc używają ich i serwis, i skrypt badania.
+- **Słownik w pliku i bez wglądu w dane.** Plan zakładał reguły systemowe w bazie i strojenie słownika na miesiącach 1–3. Plik w repozytorium ma wersję i tag, a słownik zbudowany wyłącznie z ogólnej wiedzy o sieciach handlowych nie może „znać” danych testowych. To mocniejsze metodologicznie niż strojenie na części danych, a jednocześnie nie wymaga czytania prawdziwych transakcji. Zmianę opisano w protokole badania.
+- **Reguła z dokładnej nazwy kontrahenta.** To najbezpieczniejsze uogólnienie poprawki: ten sam sklep lub ta sama osoba. Ograniczenie: sklepy sieci z numerem placówki w nazwie (np. „ZABKA Z4244”) każda placówka to osobny kontrahent; sieci obsługuje słownik.
+- **Kategorie Twoich transakcji nie zostały przypisane.** Etykiety do badania mają powstać bez sugestii systemu. Po etykietowaniu wystarczy przycisk „Przypisz kategorie automatycznie”.
+
+### W jaki sposób
+- **Dopasowanie:** tekst opisu i kontrahenta jest sprowadzany do małych liter bez polskich znaków; wzorzec musi stać jako całe słowo (granice liter i cyfr).
+- **Kolejność:** w obrębie grupy wyższy priorytet, a przy równym dłuższy wzorzec.
+- **Poprawka:** w `update_transaction` zmiana kategorii na inną ustawia `categorized_by = manual` i zapisuje regułę (`exact_counterparty`); identyfikator reguły wraca w odpowiedzi, więc przeglądarka może zaproponować „Zastosuj do podobnych”. To wywołuje przeliczenie kategorii nadanych przez reguły (`recategorize`).
+- **Symulacja:** poprawki z miesiąca *m* tworzą reguły działające od miesiąca *m+1*. Miary dla każdego miesiąca (trafność, pokrycie, precyzja, poprawki na 100 transakcji), przedział Wilsona i dokładny test McNemara na miesiącach 4–6.
+- **Etykietowanie:** grupy po kontrahencie (bez kontrahenta: opis bez dat), od największych; numer kategorii dla całej grupy albo pojedynczo; zapis po każdej grupie przez plik tymczasowy, z prawami 600.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Import Twoich plików: pętla w powłoce rozdzieliła nazwy plików PDF ze spacjami | import skryptem w Pythonie |
+| Backend trzymał w pamięci stary profil ING: automatyczne przeładowanie reagowało tylko na pliki `.py` | `--reload-include "*.json"` w Compose; dotyczy też słownika |
+| `Result.tuples()` w SQLAlchemy 2.1 jest przestarzałe i zwracało obiekt niedziałający jak lista par | rozpakowanie wierszy wprost |
+| Trzy starsze testy zakładały, że ręczna transakcja nie dostaje kategorii („Kawiarnia”, „Helios” są teraz w słowniku) | dane testów zmienione na kontrahentów spoza słownika, oczekiwania zaktualizowane |
+| Lint nie przeszedł po commicie (kolejność importów w migracji) | osobny commit; od teraz lint przed commitem z `&&`, nie `;` |
+| Test w przeglądarce: zajęta nazwa kategorii dawała poprawny komunikat, ale też nieobsłużony wyjątek w tle | `mutate` z obsługą błędu zamiast `mutateAsync` |
+| Cztery niepowodzenia testu w przeglądarce wynikały z błędnych oczekiwań testu (np. 3 zamiast 5 transakcji bez kategorii w sztucznym pliku) | poprawione oczekiwania; aplikacja działała zgodnie z założeniami |
+| Pliki Playwrighta zniknęły z katalogu tymczasowego | ponowna instalacja; pamięć przeglądarki usunięta po teście |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 331 testów zaliczonych |
+| celowe błędy: znak kwoty, całe słowa, dłuższy wzorzec, kolejność reguł, przelew własny, decyzja ręczna, zapis bez zmiany, zmiana istniejącej reguły, izolacja usuwania i stosowania reguł, test McNemara | 10 z 10 wykrytych; mutant kontrolny (sam komentarz) przeżył zgodnie z oczekiwaniem |
+| przeglądarka: kategorie z importu, wybór w tabeli, zapamiętana reguła, zastosuj do podobnych, „Do przypisania”, strona „Kategorie”, reguły, zajęta nazwa | 20 z 20; połączenia tylko z `localhost` |
+| słownik na prawdziwych danych (bez etykiet, wynik zbiorczy) | 234 z 632 transakcji poza przelewami własnymi (37%) |
+
+### Dalej
+- Etykietowanie przez autora: `cd backend && .venv/bin/python -m research.label` (632 transakcje, grupy po kontrahencie).
+- Potem `python -m research.simulate` daje wstępny wynik H2, a przycisk „Przypisz kategorie automatycznie” przypisze kategorie na koncie.
+- Etap 6: analityka i dashboard (przelewy własne poza wydatkami, kolory kategorii).

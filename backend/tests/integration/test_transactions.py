@@ -46,14 +46,16 @@ def test_wymaga_logowania(client: TestClient) -> None:
 
 
 def test_dodanie_transakcji_recznej(client: TestClient, jan: dict[str, str]) -> None:
-    transakcja = dodaj(client, jan, currency="eur", counterparty="  Kawiarnia ")
+    transakcja = dodaj(client, jan, currency="eur", counterparty="  Pan Kowalski ")
 
     assert transakcja["amount"] == "-12.50"
     assert transakcja["currency"] == "EUR"
-    assert transakcja["counterparty"] == "Kawiarnia"
+    assert transakcja["counterparty"] == "Pan Kowalski"
     assert transakcja["source"] == "manual"
     assert transakcja["kind"] == "other"
+    # Żadna reguła nie pasuje, więc transakcja czeka na przypisanie kategorii.
     assert transakcja["category_id"] is None
+    assert transakcja["categorized_by"] is None
 
 
 def test_kwota_jest_dokladna(client: TestClient, jan: dict[str, str]) -> None:
@@ -195,19 +197,20 @@ def test_filtry(client: TestClient, jan: dict[str, str]) -> None:
         amount="5000",
         kind="transfer",
     )
-    dodaj(client, jan, date="2026-11-10", description="Kino", counterparty="Helios")
+    dodaj(client, jan, date="2026-11-10", description="Bilety", counterparty="Helios")
 
     def opisy(**p: object) -> list[str]:
         return [t["description"] for t in lista(client, jan, **p)["items"]]
 
-    assert opisy(date_from="2026-11-01") == ["Kino", "Wypłata"]
+    assert opisy(date_from="2026-11-01") == ["Bilety", "Wypłata"]
     assert opisy(date_to="2026-11-05") == ["Wypłata", "Orlen"]
     assert opisy(date_from="2026-11-05", date_to="2026-11-05") == ["Wypłata"]
     assert opisy(category_id=paliwo) == ["Orlen"]
-    assert opisy(uncategorized=True) == ["Kino", "Wypłata"]
+    # „Helios” rozpoznaje słownik (Rozrywka), więc bez kategorii zostaje tylko „Wypłata”.
+    assert opisy(uncategorized=True) == ["Wypłata"]
     assert opisy(kind="card") == ["Orlen"]
     assert opisy(q="ORL") == ["Orlen"]
-    assert opisy(q="helios") == ["Kino"]
+    assert opisy(q="helios") == ["Bilety"]
 
 
 def test_szukanie_traktuje_znaki_specjalne_doslownie(
@@ -244,6 +247,7 @@ def test_edycja(client: TestClient, jan: dict[str, str]) -> None:
         "amount": "-200.00",
         "description": "Tankowanie",
         "category_id": paliwo,
+        "categorized_by": "manual",
     }
 
 

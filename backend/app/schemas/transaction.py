@@ -13,7 +13,7 @@ from pydantic import (
     model_validator,
 )
 
-from app.models.enums import TransactionKind, TransactionSource
+from app.models.enums import CategorizedBy, TransactionKind, TransactionSource
 
 
 def _not_zero(amount: Decimal) -> Decimal:
@@ -76,6 +76,10 @@ class TransactionRead(BaseModel):
     description: str
     counterparty: str | None
     category_id: int | None
+    # Kto nadał kategorię: słownik, reguła użytkownika czy sam użytkownik.
+    categorized_by: CategorizedBy | None
+    # Reguła, która nadała kategorię, albo reguła zapamiętana z poprawki użytkownika.
+    category_rule_id: int | None
     kind: TransactionKind
     source: TransactionSource
     created_at: dt.datetime

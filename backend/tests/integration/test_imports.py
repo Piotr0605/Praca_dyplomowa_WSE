@@ -1,9 +1,11 @@
 """Testy importu wyciągów: podgląd, zapis, duplikaty, błędy i izolacja."""
 
+import io
 from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
+from reportlab.pdfgen import canvas
 
 from app.services.import_service import MAX_FILE_SIZE, normalize_description
 from tests.fixtures.ing_statement import make_ing_statement, sample_transactions
@@ -146,6 +148,21 @@ def test_plik_niebedacy_wyciagiem_daje_422(
     client: TestClient, jan: dict, dane: bytes
 ) -> None:
     assert wyslij(client, jan, "preview", dane).status_code == 422
+
+
+def test_pdf_innego_banku_podpowiada_csv(client: TestClient, jan: dict) -> None:
+    """Parser PDF obsługuje tylko ING: dla innego PDF komunikat wskazuje eksport CSV."""
+    bufor = io.BytesIO()
+    strona = canvas.Canvas(bufor)
+    strona.drawString(72, 750, "Bank Przykladowy - wyciag z rachunku")
+    strona.save()
+
+    odpowiedz = wyslij(client, jan, "preview", bufor.getvalue())
+
+    assert odpowiedz.status_code == 422
+    komunikat = odpowiedz.json()["detail"]
+    assert "tylko z ING" in komunikat
+    assert "formacie CSV" in komunikat
 
 
 def test_zbyt_duzy_plik_daje_413(client: TestClient, jan: dict) -> None:

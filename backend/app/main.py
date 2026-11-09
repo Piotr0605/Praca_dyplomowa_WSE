@@ -9,7 +9,15 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import auth, categories, health, imports, transactions
+from app.api.routes import (
+    auth,
+    categories,
+    categorization,
+    health,
+    imports,
+    rules,
+    transactions,
+)
 from app.core.config import get_settings
 from app.core.jwt_key import get_jwt_secret
 
@@ -53,4 +61,6 @@ app.include_router(health.router, prefix=settings.API_PREFIX)
 app.include_router(auth.router, prefix=settings.API_PREFIX)
 app.include_router(categories.router, prefix=settings.API_PREFIX)
 app.include_router(transactions.router, prefix=settings.API_PREFIX)
+app.include_router(categorization.router, prefix=settings.API_PREFIX)
+app.include_router(rules.router, prefix=settings.API_PREFIX)
 app.include_router(imports.router, prefix=settings.API_PREFIX)

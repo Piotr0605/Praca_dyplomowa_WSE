@@ -1,5 +1,8 @@
 # Import wyciągów bankowych
 
+Aplikacja przyjmuje dwa rodzaje plików: **wyciąg PDF z ING** i **plik CSV z dowolnego banku**. Parserów PDF innych
+banków celowo nie ma (decyzja w planie, sekcja 1): PDF innego banku dostaje komunikat z prośbą o eksport CSV.
+
 Wyciągi PDF z ING obsługuje osobny parser (`ing_pdf.py`). Pliki CSV obsługują dwa poziomy:
 
 1. **Profile** (`csv_profile.py`): opis formatu pliku: kodowanie, separator, format daty, separator dziesiętny
@@ -43,10 +46,17 @@ Dalsze kroki (czyszczenie, deduplikacja, kategoryzacja) nie wiedzą, z jakiego b
   w pliku (dwie identyczne kawy tego samego dnia to dwie transakcje). Profil ING używa tego samego klucza co parser
   PDF, więc ta sama operacja z PDF i z CSV nie zostanie zapisana dwa razy.
 
-**Profil ING** (`profiles/ing.json`) opisuje eksport historii z bankowości ING: Windows-1250, średnik, daty RRRR-MM-DD,
-kolumny „Data transakcji”, „Dane kontrahenta”, „Tytuł”, „Szczegóły”, „Nr transakcji”, „Kwota transakcji (…)”.
-Został przygotowany na podstawie opisu formatu i sztucznego pliku; **nie był jeszcze sprawdzony na prawdziwym
-eksporcie**. Jeśli prawdziwy plik się różni, nie zostanie dopasowany do profilu i trafi do kreatora mapowania.
+**Profil ING** (`profiles/ing.json`) opisuje eksport historii z bankowości ING („Lista transakcji”): Windows-1250,
+średnik, 18 wierszy metadanych nad nagłówkiem, daty RRRR-MM-DD, kolumny „Data transakcji”, „Dane kontrahenta”, „Tytuł”,
+„Szczegóły”, „Nr transakcji”, „Kwota transakcji (waluta rachunku)”. Sprawdzony na prawdziwym eksporcie 8.11.2026
+(6 miesięcy, 669 transakcji):
+
+| Cecha eksportu CSV z ING | Konsekwencja |
+|---|---|
+| Blokady kartowe są osobnymi wierszami bez kwoty transakcji i bez numeru operacji | pomijane i liczone w podglądzie |
+| Numer operacji jest ten sam co w wyciągu PDF (zapisany z apostrofem) | ta sama operacja z PDF i CSV ma ten sam klucz duplikatów |
+| Brak automatycznych przelewów Smart Saver (w wyciągach PDF z tego okresu: 432) | saldo z CSV nie odtwarza salda rachunku; wydatki bez zmian, bo przelewy własne nie są wydatkami |
+| Data transakcji bywa o 1–2 dni inna niż data z tytułu w PDF (prowizje, część płatności kartą) | dopuszczalne; dla operacji z obu źródeł zostaje wersja zaimportowana jako pierwsza |
 Sprawdzenie: `python -m scripts.check_statements` (dla plików CSV w `data/private/` porównuje kwoty i daty
 z wyciągami PDF, wypisując wyłącznie liczby).
 
