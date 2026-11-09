@@ -33,6 +33,7 @@ zbudowany tak, żeby badanie H2 z `BADANIA.md` mierzyło dokładnie to, co robi 
 - [x] Transakcje: wybór kategorii w tabeli, pasek skuteczności, „Do przypisania”, źródło kategorii
 - [x] Narzędzia badania: `research.label`, `research.simulate`; tag `badanie-slownik`
 - [x] Backend przeładowuje się także po zmianie plików JSON (profile banków, słownik)
+- [x] `scripts/apply_labels.py`: etykiety z badania przenoszone na konto jako kategorie ręczne, z regułami dla kontrahentów, w których słownik się myli (wariant 1 wybrany przez użytkownika: etykietowanie raz, bez drugiego przeglądu w aplikacji)
 - [ ] Etykietowanie 632 transakcji przez autora (`python -m research.label`)
 
 ## 3. Definition of Done

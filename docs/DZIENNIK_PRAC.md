@@ -1206,3 +1206,21 @@ transakcją 1171.
 - Etykietowanie przez autora: `cd backend && .venv/bin/python -m research.label` (632 transakcje, grupy po kontrahencie).
 - Potem `python -m research.simulate` daje wstępny wynik H2, a przycisk „Przypisz kategorie automatycznie” przypisze kategorie na koncie.
 - Etap 6: analityka i dashboard (przelewy własne poza wydatkami, kolory kategorii).
+
+**Uzupełnienie 9.11.2026: etykiety z badania trafiają do aplikacji.** Użytkownik zapytał, czy etykietowanie da się
+pominąć albo zautomatyzować. Odpowiedź: w pełni nie.
+- **Etykiety z systemu** porównywałyby system z nim samym.
+- **Etykiety z modelu językowego** wymagałyby wysłania tytułów przelewów i nazw kontrahentów poza komputer, wbrew modelowi prywatności.
+- **Same sztuczne dane** przekreśliłyby sens badania.
+
+Wybrany wariant: etykietowanie raz, a potem `scripts/apply_labels.py` przenosi etykiety na konto. Dzięki temu nie
+trzeba drugi raz przeglądać kategorii w aplikacji. Skrypt:
+- ustawia kategorię jako decyzję użytkownika (`manual`);
+- zakłada brakujące kategorie dodane w trakcie etykietowania;
+- tworzy reguły tylko dla kontrahentów z jednolitą etykietą, przy których słownik się myli;
+- na koniec kategoryzuje pozostałe transakcje (np. z listopadowego CSV) regułami i słownikiem.
+
+Tryb `--proba` niczego nie zapisuje. Pierwsza próba na koncie użytkownika wykazała błąd w podsumowaniu: sesja
+aplikacji ma `autoflush=False`, więc liczba transakcji bez kategorii była liczona przed zapisaniem zmian. Dodano
+`flush()`. Testy (7) obejmują m.in. ponowne uruchomienie, różne etykiety u jednego kontrahenta i izolację innego
+użytkownika. Razem 338 testów.
