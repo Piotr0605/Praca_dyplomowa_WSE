@@ -24,6 +24,7 @@ from app.parsers.csv_generic import CsvTransaction, parse_csv
 from app.parsers.csv_profile import CsvProfile, builtin_profiles
 from app.parsers.ing_pdf import ParsedTransaction, StatementSummary
 from app.schemas.imports import BankProfileRead, ImportPreview, PreviewTransaction
+from app.services.categorization_service import category_fields, load_rules, text_of
 
 __all__ = ["MAX_FILE_SIZE", "normalize_description"]
 
@@ -249,6 +250,8 @@ def confirm_import(
     source = (
         TransactionSource.PDF if statement.format == "pdf" else TransactionSource.CSV
     )
+    # Kategoria od razu przy zapisie: reguły użytkownika, a po nich słownik systemowy.
+    rules = load_rules(session, user_id)
     values = [
         {
             "user_id": user_id,
@@ -263,6 +266,11 @@ def confirm_import(
             "source": source,
             "import_batch_id": batch.id,
             "dedup_hash": t.dedup_hash,
+            **category_fields(
+                rules.categorize(
+                    text_of(t.description, t.counterparty, t.amount, t.kind)
+                )
+            ),
         }
         for t in statement.transactions
     ]

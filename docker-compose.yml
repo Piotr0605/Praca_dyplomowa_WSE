@@ -42,7 +42,8 @@ services:
       - ./backend:/app
       # Automatycznie wygenerowany klucz JWT: poza katalogiem kodu i repozytorium.
       - backend_data:/data
-    command: ["sh", "start.sh", "--reload", "--reload-dir", "app"]
+    # Przeładowanie także po zmianie profili banków (app/parsers/profiles/*.json), nie tylko kodu.
+    command: ["sh", "start.sh", "--reload", "--reload-dir", "app", "--reload-include", "*.json"]
 
   frontend:
     build: ./frontend

@@ -6,10 +6,10 @@ ją razem z przykładowymi wierszami, a użytkownik ją potwierdza lub poprawia.
 """
 
 import re
-import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
 
+from app.core.text import fold
 from app.parsers.csv_generic import (
     HEADER_SEARCH_ROWS,
     CsvFormatError,
@@ -107,13 +107,6 @@ class Detection:
     date_format: str | None
     decimal_separator: str
     missing: list[str] = field(default_factory=list)
-
-
-def fold(text: str) -> str:
-    """Małe litery bez polskich znaków: „Tytuł” i „TYTUL” dają to samo."""
-    text = text.lower().replace("ł", "l")
-    text = unicodedata.normalize("NFKD", text)
-    return " ".join("".join(c for c in text if not unicodedata.combining(c)).split())
 
 
 def guess_encoding(data: bytes) -> str:

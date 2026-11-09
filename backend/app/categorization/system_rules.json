@@ -1,0 +1,94 @@
+{
+  "version": "2026-11-09",
+  "description": "Reguły systemowe: fragmenty nazw sklepów i usług (całe słowa, bez względu na wielkość liter i polskie znaki). Zbudowane z ogólnej wiedzy o popularnych sieciach w Polsce, bez wglądu w dane użytkownika. Sklepy wielobranżowe (np. Allegro, Amazon, Pepco) celowo bez reguły: o ich kategorii decyduje użytkownik.",
+  "rules": [
+    {
+      "category": "Zakupy spożywcze",
+      "contains": [
+        "biedronka", "lidl", "żabka", "kaufland", "auchan", "carrefour", "netto", "dino",
+        "stokrotka", "lewiatan", "polomarket", "intermarche", "aldi", "spar", "eurospar",
+        "freshmarket", "frisco", "groszek", "sklep spożywczy", "delikatesy", "mięsny", "warzywniak"
+      ]
+    },
+    {
+      "category": "Restauracje",
+      "contains": [
+        "mcdonalds", "mc donalds", "kfc", "burger king", "pizza hut", "da grasso", "telepizza",
+        "domino's", "pyszne.pl", "glovo", "wolt", "uber eats", "bolt food", "starbucks", "costa coffee",
+        "north fish", "sushi", "kebab", "restauracja", "bistro", "pizzeria", "kawiarnia", "bar mleczny",
+        "subway", "max premium burgers"
+      ]
+    },
+    {
+      "category": "Jedzenie",
+      "contains": ["piekarnia", "cukiernia", "lodziarnia"]
+    },
+    {
+      "category": "Transport",
+      "contains": [
+        "uber", "bolt", "freenow", "free now", "jakdojade", "pkp", "intercity", "koleo", "polregio",
+        "koleje mazowieckie", "flixbus", "mpk", "ztm", "mobilet", "skycash", "parking", "ryanair",
+        "wizz air", "lot polish", "autostrada", "panek", "traficar", "hulajnoga", "lime"
+      ]
+    },
+    {
+      "category": "Paliwo",
+      "contains": ["orlen", "bp", "shell", "circle k", "lotos", "moya", "amic", "avia", "stacja paliw"]
+    },
+    {
+      "category": "Mieszkanie",
+      "contains": [
+        "ikea", "castorama", "leroy merlin", "obi", "jysk", "agata meble", "black red white",
+        "bricomarche", "psb mrówka", "czynsz", "wspólnota mieszkaniowa", "spółdzielnia mieszkaniowa"
+      ]
+    },
+    {
+      "category": "Rachunki",
+      "contains": [
+        "pge", "tauron", "enea", "energa", "pgnig", "e.on", "innogy", "orange", "play", "t-mobile",
+        "polkomtel", "upc", "vectra", "netia", "inea", "multimedia polska", "wodociągi", "mpwik",
+        "fortum", "veolia"
+      ]
+    },
+    {
+      "category": "Subskrypcje",
+      "contains": [
+        "netflix", "spotify", "hbo max", "max.com", "disney plus", "disneyplus", "youtube premium",
+        "apple.com/bill", "icloud", "google play", "amazon prime", "canal+", "player.pl", "tidal",
+        "openai", "chatgpt", "anthropic", "claude.ai", "adobe", "microsoft 365", "storytel", "audioteka",
+        "legimi"
+      ]
+    },
+    {
+      "category": "Rozrywka",
+      "contains": [
+        "cinema city", "multikino", "helios", "kino", "ebilet", "eventim", "biletyna", "steam",
+        "playstation", "xbox", "nintendo", "empik", "bowling", "escape room", "teatr", "muzeum"
+      ]
+    },
+    {
+      "category": "Zdrowie",
+      "contains": [
+        "apteka", "doz", "super-pharm", "rossmann", "hebe", "medicover", "luxmed", "lux med",
+        "enel-med", "enelmed", "dentysta", "stomatolog", "przychodnia", "diagnostyka", "alab", "optyk"
+      ]
+    },
+    {
+      "category": "Odzież",
+      "contains": [
+        "zalando", "reserved", "h&m", "zara", "sinsay", "cropp", "mohito", "bershka", "pull&bear",
+        "ccc", "deichmann", "eobuwie", "modivo", "tk maxx", "half price", "decathlon", "4f", "vinted",
+        "answear", "born2be"
+      ]
+    },
+    {
+      "category": "Edukacja",
+      "contains": ["udemy", "coursera", "czesne", "księgarnia", "uczelnia", "szkoła językowa"]
+    },
+    {
+      "category": "Wynagrodzenie",
+      "sign": 1,
+      "contains": ["wynagrodzenie", "pensja", "wynagr."]
+    }
+  ]
+}
