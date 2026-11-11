@@ -1240,3 +1240,61 @@ użytkownika. Razem 338 testów.
   `categorized_by`.
 - **Problem:** `docker compose exec` z plikiem na wejściu przekroczył limit 2 minut przy próbie, ale skończył się
   poprawnie. Przyczyną było obciążenie komputera, a nie blokada w bazie: w bazie nie było oczekujących zapytań.
+
+## Tydzień 6: analityka i pulpit (wykonano 11.11.2026)
+
+Etap planowany na 30.11–6.12 wykonano 11 listopada. Szczegóły decyzji w `docs/TYDZIEN_6.md`.
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/app/services/analytics_service.py` | wczytanie transakcji do `DataFrame` i czyste funkcje: podział na przychody, wydatki i przelewy własne, sumy kategorii, trend, zmiany, odbiorcy |
+| `backend/app/api/routes/analytics.py`, `schemas/analytics.py` | `summary`, `by-category`, `monthly`, `changes`, `top` |
+| migracja `kolory_kategorii` | kolory 16 kategorii systemowych |
+| `frontend/src/pages/DashboardPage.tsx` | strona „Pulpit”, startowa po zalogowaniu |
+| `frontend/src/components/charts/` | `CategoryBars` (słupki kategorii), `MonthlyChart` (SVG: przychody i wydatki, podpowiedź, tabela) |
+| `backend/tests/unit/test_analytics.py`, `tests/integration/test_analytics_api.py` | 33 testy z ręcznie policzonymi wynikami |
+
+### Dlaczego
+- **Przelewy własne poza wydatkami:** na koncie autora jest 488 przelewów Smart Saver i własnych. Wliczone w wydatki
+  zawyżyłyby je o ponad 23 tys. zł w pół roku (suma wypływów na własne konta). Pulpit pokazuje je osobno jako kwotę przelaną na własne konta.
+- **Kategoria po saldzie:** autor oznaczał zwroty w kategorii zakupu, a wpływy od znajomych (32 wpływy BLIK) w „Inne”.
+  Saldo kategorii odejmuje je od wydatków. Gdy wpływy przewyższają wydatki w okresie, nadwyżka jest wpływem: żadna kategoria
+  nie jest ujemna, a przychody − wydatki zawsze równa się sumie kwot poza przelewami własnymi.
+- **Niepełne miesiące oznaczone:** dane autora zaczynają się 23.04, a listopad trwa. Porównanie z takim miesiącem
+  pokazałoby fałszywy spadek wydatków, więc nie jest on punktem odniesienia w zmianach ani w średniej.
+- **Słupki zamiast koła:** przy kilkunastu kategoriach koło wymaga kilkunastu rozróżnialnych barw, a bezpieczna paleta
+  ma ich 8. Posortowane słupki w jednym kolorze z kwotą i udziałem czyta się szybciej.
+
+### W jaki sposób
+- Jedno zapytanie (transakcje z kategoriami) → `DataFrame`, kwoty w groszach (`int64`). Funkcja `classify` nadaje każdej
+  transakcji stronę: `own`, `income` albo `expense`. `category_totals` grupuje po stronie i kategorii i liczy saldo. Z tych
+  dwóch funkcji korzystają podsumowanie, trend i zmiany, więc zasady są w jednym miejscu.
+- Testy jednostkowe na przykładzie 13 transakcji z trzech miesięcy, z oczekiwanymi wartościami policzonymi ręcznie
+  w docstringu testu. Testy API na fikcyjnym wyciągu ING ze Smart Saver i na transakcjach ręcznych.
+- Wykresy w SVG bez biblioteki: barwy z palety sprawdzonej pod kątem daltonizmu, cienkie słupki z zaokrągloną górą,
+  legenda, podpowiedź po najechaniu i z klawiatury, tabela z wartościami.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Brak koloru kategorii wracał z Pandas jako `NaN`, a nie `None` | zamiana w `category_totals`, w jednym miejscu |
+| Oczekiwania testu API zakładały daty księgowania; parser zapisuje datę operacji (płatność z 29.09 zaksięgowana 1.10) | oczekiwania poprawione; to zamierzone zachowanie z etapu 4 |
+| Zwrot 113,98 w „Restauracje” bez wydatków w tej kategorii trafiał do przychodów, wbrew pierwszemu oczekiwaniu testu | zasada zostaje (spójne sumy, brak ujemnych kategorii); opisana w kodzie i w `TYDZIEN_6.md` |
+| Napisy osi wykresu były za małe: wykres o szerokości 720 skalowany do ok. 520 pikseli | szerokość rysunku zbliżona do wyświetlanej |
+| Przyciemnianie nieaktywnych miesięcy myliło się z oznaczeniem niepełnego miesiąca | usunięte; zostaje podpowiedź |
+| Odbiorcy z transakcji ręcznych łączyli się w jedną grupę „(bez kontrahenta)” | bez kontrahenta grupą jest opis |
+| Odstęp między nazwą odbiorcy a liczbą był tylko wizualny („Biedronka×1” dla czytnika ekranu) | prawdziwa spacja w treści |
+| Przeglądarka Playwrighta była usunięta po poprzednim teście | ponowna instalacja na czas testu, potem usunięta; 8 tymczasowych kont testowych usuniętych |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 371 testów zaliczonych (33 nowe) |
+| analityka a niezależne zapytanie SQL na koncie autora (saldo i przelewy własne w każdym miesiącu, tylko wynik zbiorczy) | 8 z 8 miesięcy zgodnych |
+| przeglądarka na fikcyjnym koncie: pusty pulpit, karty, kategorie, trend z niepełnym miesiącem, podpowiedź, zmiany m/m, odbiorcy, wybór okresu, kolory kategorii | 22 z 22; połączenia tylko z `localhost` |
+| `typecheck`, `oxlint`, `prettier`, `ruff`, `vite build` | bez błędów |
+
+### Dalej
+- Etap 7: moduł porad AI. Pakiet dla modelu powstanie z tych samych funkcji analityki: sumy kategorii, zmiany, stopa
+  oszczędności, bez pojedynczych transakcji. Zaczyna się od anonimizacji i korpusu testowego (badanie P3).
