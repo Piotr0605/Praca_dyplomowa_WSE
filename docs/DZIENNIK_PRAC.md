@@ -1206,3 +1206,95 @@ transakcją 1171.
 - Etykietowanie przez autora: `cd backend && .venv/bin/python -m research.label` (632 transakcje, grupy po kontrahencie).
 - Potem `python -m research.simulate` daje wstępny wynik H2, a przycisk „Przypisz kategorie automatycznie” przypisze kategorie na koncie.
 - Etap 6: analityka i dashboard (przelewy własne poza wydatkami, kolory kategorii).
+
+**Uzupełnienie 9.11.2026: etykiety z badania trafiają do aplikacji.** Użytkownik zapytał, czy etykietowanie da się
+pominąć albo zautomatyzować. Odpowiedź: w pełni nie.
+- **Etykiety z systemu** porównywałyby system z nim samym.
+- **Etykiety z modelu językowego** wymagałyby wysłania tytułów przelewów i nazw kontrahentów poza komputer, wbrew modelowi prywatności.
+- **Same sztuczne dane** przekreśliłyby sens badania.
+
+Wybrany wariant: etykietowanie raz, a potem `scripts/apply_labels.py` przenosi etykiety na konto. Dzięki temu nie
+trzeba drugi raz przeglądać kategorii w aplikacji. Skrypt:
+- ustawia kategorię jako decyzję użytkownika (`manual`);
+- zakłada brakujące kategorie dodane w trakcie etykietowania;
+- tworzy reguły tylko dla kontrahentów z jednolitą etykietą, przy których słownik się myli;
+- na koniec kategoryzuje pozostałe transakcje (np. z listopadowego CSV) regułami i słownikiem.
+
+Tryb `--proba` niczego nie zapisuje. Pierwsza próba na koncie użytkownika wykazała błąd w podsumowaniu: sesja
+aplikacji ma `autoflush=False`, więc liczba transakcji bez kategorii była liczona przed zapisaniem zmian. Dodano
+`flush()`. Testy (7) obejmują m.in. ponowne uruchomienie, różne etykiety u jednego kontrahenta i izolację innego
+użytkownika. Razem 338 testów.
+
+**Uzupełnienie 9.11.2026: etykiety gotowe, wstępny wynik H2 i kategorie na koncie.**
+- **Co:** autor oznaczył 632 z 632 transakcji. `research.simulate --zapisz` zapisał wyniki zbiorcze
+  w `docs/badania/h2_kategoryzacja.json`, a `scripts.apply_labels` przeniósł etykiety na konto: najpierw próba,
+  potem zapis.
+- **Wynik H2 (miesiące 4–6):** trafność słownika 38,3%, słownika z regułami z poprawek 82,7%. H2a potwierdzona
+  (McNemar p < 0,001). H2b niespełniona: spadek poprawek o 46% przy progu 50%. H2c niespełniona: 82,7% przy progu 85%,
+  ale próg mieści się w przedziale ufności. Prawie wszystkie błędy to brak kategorii u nowych kontrahentów
+  (2 złe kategorie na 347). Szczegóły w `BADANIA.md`, rozdz. 5.
+- **Dlaczego progi bez zmian:** protokół zapisano przed pomiarem. Zmiana progów po zobaczeniu wyniku podważyłaby
+  badanie, więc wynik opisujemy tak, jak wyszedł.
+- **Konto:** 632 kategorie ręczne, 133 reguły, 510 kategorii ze słownika (głównie przelewy własne), 16 z reguł,
+  12 transakcji bez kategorii. Jedna transakcja ma kategorię bez źródła: dodano ją przed powstaniem pola
+  `categorized_by`.
+- **Problem:** `docker compose exec` z plikiem na wejściu przekroczył limit 2 minut przy próbie, ale skończył się
+  poprawnie. Przyczyną było obciążenie komputera, a nie blokada w bazie: w bazie nie było oczekujących zapytań.
+
+## Tydzień 6: analityka i pulpit (wykonano 11.11.2026)
+
+Etap planowany na 30.11–6.12 wykonano 11 listopada. Szczegóły decyzji w `docs/TYDZIEN_6.md`.
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/app/services/analytics_service.py` | wczytanie transakcji do `DataFrame` i czyste funkcje: podział na przychody, wydatki i przelewy własne, sumy kategorii, trend, zmiany, odbiorcy |
+| `backend/app/api/routes/analytics.py`, `schemas/analytics.py` | `summary`, `by-category`, `monthly`, `changes`, `top` |
+| migracja `kolory_kategorii` | kolory 16 kategorii systemowych |
+| `frontend/src/pages/DashboardPage.tsx` | strona „Pulpit”, startowa po zalogowaniu |
+| `frontend/src/components/charts/` | `CategoryBars` (słupki kategorii), `MonthlyChart` (SVG: przychody i wydatki, podpowiedź, tabela) |
+| `backend/tests/unit/test_analytics.py`, `tests/integration/test_analytics_api.py` | 33 testy z ręcznie policzonymi wynikami |
+
+### Dlaczego
+- **Przelewy własne poza wydatkami:** na koncie autora jest 488 przelewów Smart Saver i własnych. Wliczone w wydatki
+  zawyżyłyby je o ponad 23 tys. zł w pół roku (suma wypływów na własne konta). Pulpit pokazuje je osobno jako kwotę przelaną na własne konta.
+- **Kategoria po saldzie:** autor oznaczał zwroty w kategorii zakupu, a wpływy od znajomych (32 wpływy BLIK) w „Inne”.
+  Saldo kategorii odejmuje je od wydatków. Gdy wpływy przewyższają wydatki w okresie, nadwyżka jest wpływem: żadna kategoria
+  nie jest ujemna, a przychody − wydatki zawsze równa się sumie kwot poza przelewami własnymi.
+- **Niepełne miesiące oznaczone:** dane autora zaczynają się 23.04, a listopad trwa. Porównanie z takim miesiącem
+  pokazałoby fałszywy spadek wydatków, więc nie jest on punktem odniesienia w zmianach ani w średniej.
+- **Słupki zamiast koła:** przy kilkunastu kategoriach koło wymaga kilkunastu rozróżnialnych barw, a bezpieczna paleta
+  ma ich 8. Posortowane słupki w jednym kolorze z kwotą i udziałem czyta się szybciej.
+
+### W jaki sposób
+- Jedno zapytanie (transakcje z kategoriami) → `DataFrame`, kwoty w groszach (`int64`). Funkcja `classify` nadaje każdej
+  transakcji stronę: `own`, `income` albo `expense`. `category_totals` grupuje po stronie i kategorii i liczy saldo. Z tych
+  dwóch funkcji korzystają podsumowanie, trend i zmiany, więc zasady są w jednym miejscu.
+- Testy jednostkowe na przykładzie 13 transakcji z trzech miesięcy, z oczekiwanymi wartościami policzonymi ręcznie
+  w docstringu testu. Testy API na fikcyjnym wyciągu ING ze Smart Saver i na transakcjach ręcznych.
+- Wykresy w SVG bez biblioteki: barwy z palety sprawdzonej pod kątem daltonizmu, cienkie słupki z zaokrągloną górą,
+  legenda, podpowiedź po najechaniu i z klawiatury, tabela z wartościami.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Brak koloru kategorii wracał z Pandas jako `NaN`, a nie `None` | zamiana w `category_totals`, w jednym miejscu |
+| Oczekiwania testu API zakładały daty księgowania; parser zapisuje datę operacji (płatność z 29.09 zaksięgowana 1.10) | oczekiwania poprawione; to zamierzone zachowanie z etapu 4 |
+| Zwrot 113,98 w „Restauracje” bez wydatków w tej kategorii trafiał do przychodów, wbrew pierwszemu oczekiwaniu testu | zasada zostaje (spójne sumy, brak ujemnych kategorii); opisana w kodzie i w `TYDZIEN_6.md` |
+| Napisy osi wykresu były za małe: wykres o szerokości 720 skalowany do ok. 520 pikseli | szerokość rysunku zbliżona do wyświetlanej |
+| Przyciemnianie nieaktywnych miesięcy myliło się z oznaczeniem niepełnego miesiąca | usunięte; zostaje podpowiedź |
+| Odbiorcy z transakcji ręcznych łączyli się w jedną grupę „(bez kontrahenta)” | bez kontrahenta grupą jest opis |
+| Odstęp między nazwą odbiorcy a liczbą był tylko wizualny („Biedronka×1” dla czytnika ekranu) | prawdziwa spacja w treści |
+| Przeglądarka Playwrighta była usunięta po poprzednim teście | ponowna instalacja na czas testu, potem usunięta; 8 tymczasowych kont testowych usuniętych |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 371 testów zaliczonych (33 nowe) |
+| analityka a niezależne zapytanie SQL na koncie autora (saldo i przelewy własne w każdym miesiącu, tylko wynik zbiorczy) | 8 z 8 miesięcy zgodnych |
+| przeglądarka na fikcyjnym koncie: pusty pulpit, karty, kategorie, trend z niepełnym miesiącem, podpowiedź, zmiany m/m, odbiorcy, wybór okresu, kolory kategorii | 22 z 22; połączenia tylko z `localhost` |
+| `typecheck`, `oxlint`, `prettier`, `ruff`, `vite build` | bez błędów |
+
+### Dalej
+- Etap 7: moduł porad AI. Pakiet dla modelu powstanie z tych samych funkcji analityki: sumy kategorii, zmiany, stopa
+  oszczędności, bez pojedynczych transakcji. Zaczyna się od anonimizacji i korpusu testowego (badanie P3).

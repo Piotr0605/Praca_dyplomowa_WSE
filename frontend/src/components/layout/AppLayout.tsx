@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router'
 import { useAuth } from '../../hooks/useAuth'
 
 const NAV = [
+  { to: '/dashboard', label: 'Pulpit' },
   { to: '/transactions', label: 'Transakcje' },
   { to: '/categories', label: 'Kategorie' },
   { to: '/import', label: 'Import wyciągu' },

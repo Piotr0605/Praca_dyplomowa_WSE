@@ -113,4 +113,5 @@ Port frontendu (5173) jest stały, bo tylko ten adres jest dopuszczony przez COR
 | Sztuczne pliki CSV do pokazu (ING i inny bank) | `docker compose exec backend python -m tests.fixtures.csv_samples /tmp/csv` |
 | Badanie H2: etykietowanie własnych transakcji z `data/private/` | `cd backend && .venv/bin/python -m research.label` |
 | Badanie H2: symulacja kategoryzacji (wyniki zbiorcze) | `cd backend && .venv/bin/python -m research.simulate` |
+| Przeniesienie etykiet na konto w aplikacji (z katalogu głównego; `--proba` nic nie zapisuje) | `docker compose exec -T backend python -m scripts.apply_labels EMAIL < data/private/etykiety.csv` |
 | Sprawdzenie parsera na własnych wyciągach PDF i plikach CSV z `data/private/` (wypisuje tylko liczby) | `cd backend && DATABASE_URL=postgresql+psycopg://x:x@localhost/x .venv/bin/python -m scripts.check_statements` |

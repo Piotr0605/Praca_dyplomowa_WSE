@@ -105,7 +105,9 @@ def category_fields(match: Match | None) -> dict[str, object]:
     }
 
 
-def apply_rules(session: Session, user_id: int, *, recategorize: bool = False) -> int:
+def apply_rules(
+    session: Session, user_id: int, *, recategorize: bool = False, commit: bool = True
+) -> int:
     """Przypisuje kategorie według reguł i zwraca liczbę zmienionych transakcji.
 
     Domyślnie tylko transakcjom bez kategorii. Z `recategorize=True` przelicza też kategorie
@@ -140,7 +142,8 @@ def apply_rules(session: Session, user_id: int, *, recategorize: bool = False) -
             for field, value in fields.items():
                 setattr(transaction, field, value)
             changed += 1
-    session.commit()
+    if commit:
+        session.commit()
     return changed
 
 

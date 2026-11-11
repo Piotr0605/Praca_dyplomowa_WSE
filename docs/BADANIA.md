@@ -165,6 +165,33 @@ przelewów Smart Saver, a 6 transakcji zaksięgowano po ostatnim wyciągu PDF.
 **P2 (informacja wstępna, 9.11.2026, bez etykiet):** słownik w wersji `2026-11-09` przypisuje kategorię 234 z 632
 transakcji D1 poza przelewami własnymi (37%). To pokrycie, a nie trafność: trafność wymaga etykiet.
 
+**P2 (wstępnie, 9.11.2026, po etykietowaniu):** etykiety ma 632 z 632 transakcji, słownik w wersji `2026-11-09`,
+wyniki zbiorcze w `docs/badania/h2_kategoryzacja.json`.
+
+| Miesiąc | n | A: trafność | A: pokrycie | B: trafność | B: pokrycie | B: poprawek/100 |
+|---|---|---|---|---|---|---|
+| 1 | 92 | 34,8% | 37,0% | 34,8% | 37,0% | 65,2 |
+| 2 | 95 | 24,2% | 24,2% | 72,6% | 72,6% | 27,4 |
+| 3 | 98 | 30,6% | 32,7% | 65,3% | 67,3% | 34,7 |
+| 4 | 131 | 37,4% | 41,2% | 77,1% | 78,6% | 22,9 |
+| 5 | 95 | 40,0% | 44,2% | 87,4% | 87,4% | 12,6 |
+| 6 | 121 | 38,0% | 40,5% | 85,1% | 85,1% | 14,9 |
+
+Miesiące testowe 4–6 (n = 347):
+- **H2a: potwierdzona.** Trafność A 38,3% (95% CI Wilsona 33,4–43,5%), B 82,7% (78,4–86,3%). Pary niezgodne:
+  154 transakcje dobrze tylko w B, 0 dobrze tylko w A; dokładny test McNemara p < 0,001.
+- **H2b: niespełniona.** Poprawek na 100 transakcji: 27,4 w miesiącu 2 i 14,9 w miesiącu 6, czyli spadek o 46%
+  przy progu 50% (miesiąc 6 wymagałby co najwyżej 13,7). Nakład pracy wyraźnie maleje, ale nie tak mocno, jak
+  zakładano.
+- **H2c: niespełniona.** Trafność B 82,7% przy progu 85%. Próg mieści się w przedziale ufności (78,4–86,3%),
+  więc wynik jest niejednoznaczny, a nie wyraźnie zły.
+
+Struktura błędów wariantu B w miesiącach testowych (60 z 347): tylko 2 to zła kategoria, a 58 to brak kategorii.
+Z tych 58 transakcji 50 pochodzi od kontrahentów, którzy pojawili się pierwszy raz, a 8 od już widzianych. Precyzja
+przypisań B wynosi 98–100%. System prawie się nie myli, gdy przypisuje kategorię; ogranicza go to, że nowego
+kontrahenta nie zna ani słownik, ani reguły z poprawek. Wniosek do dyskusji: dalszy wzrost trafności zależy od
+pokrycia słownika, a nie od uczenia się z poprawek. Progów hipotez nie zmieniono po pomiarze.
+
 P3–P4: brak (moduły jeszcze nie istnieją).
 
 ## 6. Ograniczenia (do dyskusji)
@@ -173,6 +200,8 @@ P3–P4: brak (moduły jeszcze nie istnieją).
   na wszystkich użytkowników. To ograniczenie trzeba nazwać wprost.
 - **Etykiety nadaje autor systemu.** Ograniczają to: narzędzie etykietowania niezależne od kategoryzacji, etykiety
   przed pomiarem i podział na część roboczą i testową.
+- **H2b porównuje dwa pojedyncze miesiące.** Liczba poprawek w jednym miesiącu zależy od tego, ilu nowych kontrahentów
+  w nim się pojawiło (miesiąc 5: 12,6, miesiąc 6: 14,9), więc wynik jest wrażliwy na losowe wahania.
 - **Korpus anonimizacji jest sztuczny.** Szablony odwzorowują strukturę prawdziwych tytułów, ale nie ich różnorodność.
   Uzupełnia go kontrola wycieków na prawdziwych danych.
 - **Przydatność porad ocenia jedna osoba, autor systemu.** Ocena jest subiektywna; ograniczają to ślepa ocena (bez nazwy

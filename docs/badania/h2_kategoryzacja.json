@@ -1,0 +1,146 @@
+{
+  "summary": {
+    "rules_version": "2026-11-09",
+    "date": "2026-11-09",
+    "labelled": 632,
+    "unlabelled": 0,
+    "test_months": [
+      4,
+      5,
+      6
+    ],
+    "n_test": 347,
+    "accuracy_test": {
+      "A": 0.38328530259365995,
+      "B": 0.8270893371757925
+    },
+    "wilson_95": {
+      "A": [
+        0.3336723183015295,
+        0.43545426189876607
+      ],
+      "B": [
+        0.7837741055980946,
+        0.863241527667744
+      ]
+    },
+    "discordant": {
+      "A_dobrze_B_zle": 0,
+      "A_zle_B_dobrze": 154
+    },
+    "mcnemar_p": 8.758115402030107e-47,
+    "H2a": true,
+    "H2b": false,
+    "H2c": false
+  },
+  "months": [
+    {
+      "variant": "A",
+      "month": 1,
+      "n": 92,
+      "accuracy": 0.34782608695652173,
+      "coverage": 0.3695652173913043,
+      "precision": 0.9411764705882353,
+      "corrections_per_100": 65.21739130434783
+    },
+    {
+      "variant": "A",
+      "month": 2,
+      "n": 95,
+      "accuracy": 0.24210526315789474,
+      "coverage": 0.24210526315789474,
+      "precision": 1.0,
+      "corrections_per_100": 75.78947368421052
+    },
+    {
+      "variant": "A",
+      "month": 3,
+      "n": 98,
+      "accuracy": 0.30612244897959184,
+      "coverage": 0.32653061224489793,
+      "precision": 0.9375,
+      "corrections_per_100": 69.38775510204081
+    },
+    {
+      "variant": "A",
+      "month": 4,
+      "n": 131,
+      "accuracy": 0.37404580152671757,
+      "coverage": 0.4122137404580153,
+      "precision": 0.9074074074074074,
+      "corrections_per_100": 62.595419847328245
+    },
+    {
+      "variant": "A",
+      "month": 5,
+      "n": 95,
+      "accuracy": 0.4,
+      "coverage": 0.4421052631578947,
+      "precision": 0.9047619047619048,
+      "corrections_per_100": 60.0
+    },
+    {
+      "variant": "A",
+      "month": 6,
+      "n": 121,
+      "accuracy": 0.38016528925619836,
+      "coverage": 0.4049586776859504,
+      "precision": 0.9387755102040817,
+      "corrections_per_100": 61.98347107438016
+    },
+    {
+      "variant": "B",
+      "month": 1,
+      "n": 92,
+      "accuracy": 0.34782608695652173,
+      "coverage": 0.3695652173913043,
+      "precision": 0.9411764705882353,
+      "corrections_per_100": 65.21739130434783
+    },
+    {
+      "variant": "B",
+      "month": 2,
+      "n": 95,
+      "accuracy": 0.7263157894736842,
+      "coverage": 0.7263157894736842,
+      "precision": 1.0,
+      "corrections_per_100": 27.36842105263158
+    },
+    {
+      "variant": "B",
+      "month": 3,
+      "n": 98,
+      "accuracy": 0.6530612244897959,
+      "coverage": 0.673469387755102,
+      "precision": 0.9696969696969697,
+      "corrections_per_100": 34.69387755102041
+    },
+    {
+      "variant": "B",
+      "month": 4,
+      "n": 131,
+      "accuracy": 0.7709923664122137,
+      "coverage": 0.7862595419847328,
+      "precision": 0.9805825242718447,
+      "corrections_per_100": 22.900763358778626
+    },
+    {
+      "variant": "B",
+      "month": 5,
+      "n": 95,
+      "accuracy": 0.8736842105263158,
+      "coverage": 0.8736842105263158,
+      "precision": 1.0,
+      "corrections_per_100": 12.631578947368421
+    },
+    {
+      "variant": "B",
+      "month": 6,
+      "n": 121,
+      "accuracy": 0.8512396694214877,
+      "coverage": 0.8512396694214877,
+      "precision": 1.0,
+      "corrections_per_100": 14.87603305785124
+    }
+  ]
+}

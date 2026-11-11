@@ -106,11 +106,11 @@ na zasobie użytkownika A.
 | POST | `/api/imports/detect` | auto-wykrycie formatu CSV → propozycja mapowania kolumn |
 | POST | `/api/imports/preview` | wgranie PDF lub CSV → podgląd (bez zapisu); proponowane kategorie od etapu 5 |
 | POST | `/api/imports/confirm` | zapis zaimportowanych transakcji |
-| GET | `/api/analytics/summary?from&to` | przychody, wydatki, saldo okresu |
-| GET | `/api/analytics/by-category?from&to` | sumy i udziały % w kategoriach |
-| GET | `/api/analytics/monthly?months=6` | trend miesięczny |
-| GET | `/api/analytics/changes?month=` | zmiana m/m w kategoriach |
-| GET | `/api/analytics/top-merchants` | najczęstsi / najdrożsi odbiorcy |
+| GET | `/api/analytics/summary?date_from&date_to` | przychody, wydatki, saldo, stopa oszczędności, przelewy własne netto |
+| GET | `/api/analytics/by-category?date_from&date_to` | sumy i udziały % w kategoriach (wydatki i wpływy) |
+| GET | `/api/analytics/monthly?months=12` | trend miesięczny z oznaczeniem niepełnych miesięcy |
+| GET | `/api/analytics/changes?month=` | zmiana m/m i wobec średniej z 3 mies. w kategoriach |
+| GET | `/api/analytics/top?date_from&date_to&limit` | odbiorcy z największą sumą i największe wydatki |
 | POST | `/api/advice` | wygeneruj poradę dla okresu |
 | GET | `/api/advice` | historia porad |
 | GET | `/api/advice/preview-payload` | **pokaż, co zostanie wysłane do AI** (transparentność — świetne do pracy) |
@@ -222,18 +222,18 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 **DoD:** po poprawieniu kategorii jednej transakcji kolejne podobne transakcje (także z następnego importu) trafiają do właściwej kategorii.
 
 ### Etap 6 · 30 XI–6 XII — Analityka (Pandas) i dashboard
-- [ ] `services/analytics_service.py` (czyste funkcje na `DataFrame` → łatwe testy):
+- [x] `services/analytics_service.py` (czyste funkcje na `DataFrame` → łatwe testy):
   - podsumowanie okresu (przychody, wydatki, saldo, stopa oszczędności),
   - sumy i udziały w kategoriach,
   - trend miesięczny,
   - zmiana m/m i względem średniej z 3 mies. per kategoria,
   - top odbiorcy, średni wydatek dzienny, największe pojedyncze wydatki,
-  - (COULD) wykrywanie powtarzalnych płatności = subskrypcje
-- [ ] Endpointy `/analytics/*` + schematy odpowiedzi
-- [ ] Testy z ręcznie policzonymi oczekiwanymi wynikami
-- [ ] Przelewy własne (`kind = own_transfer`) poza wydatkami i przychodami; zwroty pomniejszają wydatki; test na danych ze Smart Saver
-- [ ] Kolory kategorii systemowych (`color`, `icon` są na razie puste) dobrane pod wykresy
-- [ ] Frontend „Dashboard”: karty (saldo, wydatki, przychody, stopa oszczędności), wykres kołowy/donut kategorii, słupkowy trend miesięczny, tabela zmian m/m, wybór okresu
+  - (COULD) wykrywanie powtarzalnych płatności = subskrypcje — odłożone
+- [x] Endpointy `/analytics/*` + schematy odpowiedzi
+- [x] Testy z ręcznie policzonymi oczekiwanymi wynikami
+- [x] Przelewy własne (`kind = own_transfer`) poza wydatkami i przychodami; zwroty pomniejszają wydatki; test na danych ze Smart Saver
+- [x] Kolory kategorii systemowych (`color`, `icon` są na razie puste) dobrane pod wykresy
+- [x] Frontend „Dashboard” (strona „Pulpit”): karty (saldo, wydatki, przychody, stopa oszczędności), posortowane słupki kategorii zamiast koła (decyzja 11.11, `TYDZIEN_6.md`), słupkowy trend miesięczny, tabela zmian m/m, wybór okresu
 
 **DoD:** dashboard pokazuje realny obraz Twoich wydatków; liczby zgadzają się z testami.
 
@@ -340,8 +340,8 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | 2. Model danych + auth | ✅ | 2026-11-05 | |
 | 3. CRUD + frontend logowania | ✅ | 2026-11-07 | |
 | 4. Import wyciągów | ✅ | 2026-11-07 | PDF z ING i importer uniwersalny CSV z kreatorem mapowania; profil ING CSV sprawdzony na prawdziwym pliku 8.11 |
-| 5. Kategoryzacja | ✅ | 2026-11-09 | słownik + reguły z poprawek, strona „Kategorie”, narzędzia badania H2; etykietowanie czeka na autora |
-| 6. Analityka + dashboard | ⏳ | | |
+| 5. Kategoryzacja | ✅ | 2026-11-09 | słownik + reguły z poprawek, strona „Kategorie”, narzędzia badania H2; etykiety i wstępny wynik H2 9.11 |
+| 6. Analityka + dashboard | ✅ | 2026-11-11 | Pandas, 5 endpointów, strona „Pulpit”; zgodność z SQL na prawdziwych danych 8/8 miesięcy |
 | 7. Moduł AI | ⏳ | | |
 | 8. Frontend porad | ⏳ | | |
 | 9. Jakość + Docker | ⏳ | | |
