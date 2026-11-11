@@ -196,3 +196,75 @@ export type TransactionFilters = {
   page: number
   page_size: number
 }
+
+/** Analityka: kwoty dodatnie w PLN jako tekst (np. "12.50"). */
+export type AnalyticsTotals = {
+  income: string
+  expenses: string
+  balance: string
+  /** Część przychodów, która nie została wydana (0.25 = 25%); bez przychodów null. */
+  savings_rate: number | null
+}
+
+export type AnalyticsSummary = AnalyticsTotals & {
+  date_from: string
+  date_to: string
+  /** Ile netto przelano na własne konta; nie jest wydatkiem. */
+  own_transfers_net: string
+  transactions: number
+  uncategorized: number
+  days: number
+  avg_daily_expense: string
+  other_currency: number
+}
+
+export type CategoryAmount = {
+  category_id: number | null
+  name: string
+  color: string | null
+  amount: string
+  share: number
+  count: number
+}
+
+export type AnalyticsByCategory = {
+  expenses: CategoryAmount[]
+  income: CategoryAmount[]
+}
+
+export type AnalyticsMonth = AnalyticsTotals & {
+  month: string
+  complete: boolean
+}
+
+export type CategoryChange = {
+  category_id: number | null
+  name: string
+  color: string | null
+  current: string
+  previous: string | null
+  average: string | null
+  change_previous: number | null
+  change_average: number | null
+}
+
+export type AnalyticsChanges = {
+  month: string | null
+  complete: boolean
+  previous_month: string | null
+  average_months: string[]
+  items: CategoryChange[]
+}
+
+export type AnalyticsTop = {
+  counterparties: { name: string; amount: string; count: number }[]
+  largest: {
+    date: string
+    amount: string
+    counterparty: string | null
+    description: string
+    category: string
+  }[]
+}
+
+export type Period = { date_from?: string; date_to?: string }

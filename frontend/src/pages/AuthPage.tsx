@@ -17,7 +17,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const [sending, setSending] = useState(false)
   const isLogin = mode === 'login'
 
-  if (user) return <Navigate to="/transactions" replace />
+  if (user) return <Navigate to="/dashboard" replace />
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -26,7 +26,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     try {
       await (isLogin ? login(email, password) : register(email, password))
       const from = (location.state as { from?: string } | null)?.from
-      navigate(from ?? '/transactions', { replace: true })
+      navigate(from ?? '/dashboard', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Nie udało się połączyć z serwerem')
     } finally {

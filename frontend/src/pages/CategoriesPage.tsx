@@ -8,6 +8,7 @@ import {
   primaryButton,
   secondaryButton,
 } from '../components/ui/FormField'
+import { ColorDot } from '../components/ui/ColorDot'
 import type { Category } from '../types/api'
 
 const DEFAULT_COLOR = '#64748b'
@@ -243,15 +244,5 @@ export function CategoriesPage() {
         </ul>
       </section>
     </div>
-  )
-}
-
-function ColorDot({ color }: { color: string | null }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-block h-3 w-3 rounded-full ring-1 ring-slate-300"
-      style={{ backgroundColor: color ?? 'transparent' }}
-    />
   )
 }

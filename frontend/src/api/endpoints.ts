@@ -1,4 +1,9 @@
 import type {
+  AnalyticsByCategory,
+  AnalyticsChanges,
+  AnalyticsMonth,
+  AnalyticsSummary,
+  AnalyticsTop,
   BankProfile,
   CategorizationStats,
   Category,
@@ -10,6 +15,7 @@ import type {
   ImportBatch,
   ImportOptions,
   ImportPreview,
+  Period,
   Transaction,
   TransactionFilters,
   TransactionInput,
@@ -92,4 +98,16 @@ export const transactionsApi = {
   update: (id: number, data: Partial<TransactionInput>) =>
     request<Transaction>(`/transactions/${id}`, { method: 'PATCH', json: data }),
   remove: (id: number) => request<void>(`/transactions/${id}`, { method: 'DELETE' }),
+}
+
+export const analyticsApi = {
+  summary: (period: Period) => request<AnalyticsSummary>('/analytics/summary', { query: period }),
+  byCategory: (period: Period) =>
+    request<AnalyticsByCategory>('/analytics/by-category', { query: period }),
+  monthly: (months = 12) => request<AnalyticsMonth[]>('/analytics/monthly', { query: { months } }),
+  /** Bez miesiąca: ostatni pełny miesiąc. */
+  changes: (month?: string) =>
+    request<AnalyticsChanges>('/analytics/changes', { query: { month } }),
+  top: (period: Period, limit = 5) =>
+    request<AnalyticsTop>('/analytics/top', { query: { ...period, limit } }),
 }
