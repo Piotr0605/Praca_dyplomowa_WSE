@@ -1,9 +1,10 @@
 """Porada wygenerowana przez model językowy wraz z danymi, które do niego wysłano."""
 
 import datetime as dt
+from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -30,4 +31,8 @@ class AIAdvice(Base):
     response_text: Mapped[str] = mapped_column(Text)
     tokens_in: Mapped[int | None] = mapped_column(Integer)
     tokens_out: Mapped[int | None] = mapped_column(Integer)
+    # Warunki powtórzenia porady w badaniu P4: wersja promptu, temperatura i czas odpowiedzi.
+    prompt_version: Mapped[str] = mapped_column(String(20), server_default="?")
+    temperature: Mapped[Decimal | None] = mapped_column(Numeric(3, 2))
+    response_time_ms: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[CreatedAt]

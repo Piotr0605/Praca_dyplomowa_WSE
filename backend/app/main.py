@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes import (
+    advice,
     analytics,
     auth,
     categories,
@@ -66,3 +67,4 @@ app.include_router(categorization.router, prefix=settings.API_PREFIX)
 app.include_router(rules.router, prefix=settings.API_PREFIX)
 app.include_router(imports.router, prefix=settings.API_PREFIX)
 app.include_router(analytics.router, prefix=settings.API_PREFIX)
+app.include_router(advice.router, prefix=settings.API_PREFIX)

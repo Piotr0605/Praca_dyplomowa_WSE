@@ -224,9 +224,16 @@ pomiar na zamrożonej części testowej (1000 tytułów), wyniki w `docs/badania
   pomiar. Bez reguł kontekstowych (końcówka nazwiska, słowa przed adresem, kontakt przy przelewie na telefon) czułość
   wynosiła 70,7%. Nadal nie są wykrywane pojedyncze imiona pisane małą literą bez kontekstu („Za obiad hans”) i krótkie
   nazwiska bez typowej końcówki („PIERRE BARAN”).
-- Kontrola wycieków na prawdziwych danych (pakiety wysyłane do modelu): po zbudowaniu pakietu porad (etap 7, część B).
+- **Kontrola wycieków na prawdziwych danych (11.11.2026):** dla każdego z 8 miesięcy konta autora zbudowano dokładnie
+  ten pakiet agregatów, który poszedłby do modelu (`scripts/check_payloads.py`), i przeszukano go wzorcami danych
+  o stałym formacie oraz 20 imionami występującymi w kontrahentach i tytułach transakcji autora. **Wycieki: 0 we
+  wszystkich 8 miesiącach** (pakiety po ok. 2,7–3,1 tys. znaków). Przegląd ręczny pakietów: do powtórzenia przy
+  pomiarze końcowym w etapie 10.
 
-P4: brak (moduł porad jeszcze nie istnieje).
+**P4 (stan na 11.11.2026):** moduł porad istnieje (pakiet agregatów, dostawcy OpenAI/Anthropic/mock, stała
+temperatura 0,2 i wersja promptu `2026-11-11`, zapis tokenów i czasu odpowiedzi w `ai_advice`). Skrypt zgodności
+liczb (H4a) działa: reguły pokrycia zapisane w `backend/research/advice_numbers.py`, a porada dostawcy `mock`
+przechodzi kontrolę w teście. Pomiar H4a–H4c wymaga kluczy API obu dostawców i odbędzie się w etapach 8–10.
 
 ## 6. Ograniczenia (do dyskusji)
 
@@ -255,4 +262,5 @@ P4: brak (moduł porad jeszcze nie istnieje).
 | 8.11.2026 | ocena porad tylko przez autora; bez badania SUS; bez konsultacji z promotorem | brak innych oceniających i uczestników; promotor na razie niedostępny |
 | 9.11.2026 | słownik niestrojony na D1 (zamiast strojenia na miesiącach 1–3); przelewy własne bez etykiet | słownik powstał bez wglądu w dane autora, co usuwa ryzyko przecieku danych testowych; przelewy własne rozpoznaje parser |
 | 11.11.2026 | korpus D4: pule imion, nazwisk, ulic i miast rozdzielone między część roboczą i testową; ustalona definicja dopasowania | ograniczenie przecieku: autor pisze i generator, i anonimizator, więc rozłączne pule zastępują niezależnego autora korpusu |
+| 11.11.2026 | H4a: doprecyzowanie reguł pokrycia liczb (procent-parametr scenariusza pokryty tylko z wynikiem działania w tekście porady) | reguły zapisane przed pomiarem, przy budowie narzędzia |
 | 11.11.2026 | dodatkowy zestaw kontrolny „poza słownikiem” (300 tytułów) | po strojeniu okazało się, że wszystkie imiona D4 są w słowniku anonimizatora; zestaw mierzy wykrywanie z kontekstu |

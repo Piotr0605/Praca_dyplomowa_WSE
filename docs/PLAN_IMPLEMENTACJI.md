@@ -238,18 +238,18 @@ uniwersalny, który sam zgaduje większość ustawień, a resztę dopytuje użyt
 **DoD:** dashboard pokazuje realny obraz Twoich wydatków; liczby zgadzają się z testami.
 
 ### Etap 7 · 7–13 XII — Moduł doradczy AI
-- [ ] `ai/anonymizer.py` (regex): numery kont/IBAN (`PL\d{26}`, 26 cyfr), numery kart, PESEL, telefony, e-maile, kody pocztowe/adresy, imiona i nazwiska (słownik polskich imion + heurystyka „Imię Nazwisko” wielkimi literami w przelewach)
-- [ ] (badanie) Anonimizator jako czysta funkcja zwracająca też listę zamaskowanych fragmentów z typem
-- [ ] (badanie) Generator sztucznego korpusu tytułów z oznaczonymi danymi osobowymi (stałe ziarno), część robocza i testowa; testową zamrozić przed strojeniem reguł
-- [ ] Testy anonimizacji — **dużo przypadków**, to mocny punkt pracy; także dane z tytułów przelewów: imiona i nazwiska, nazwy kontaktów, telefony częściowo zamaskowane, dowolny tekst. Tylko sztuczne przypadki w repozytorium
-- [ ] `ai/prompt_builder.py`: tylko agregaty (sumy w kategoriach, zmiany %, top kategorie, stopa oszczędności) → JSON; **bez pojedynczych transakcji**; prompt systemowy z rolą doradcy, zakazem wymyślania liczb i wymaganym formatem odpowiedzi (np. 3–5 rekomendacji z uzasadnieniem i szacowaną kwotą oszczędności)
-- [ ] `ai/providers/base.py` (interfejs `generate_advice(payload) -> AdviceResult`), `openai.py`, `anthropic.py`, `mock.py`; wybór przez `AI_PROVIDER`
-- [ ] Obsługa błędów (timeout, brak klucza, limit) + zapis do `ai_advice` (tokeny ⇒ koszt)
-- [ ] (badanie) `ai_advice`: wersja promptu, temperatura, czas odpowiedzi w ms (migracja); stała temperatura i wersja promptu
-- [ ] (badanie) Skrypt zgodności liczb: czy kwoty i procenty z porady wynikają z wysłanego pakietu agregatów
-- [ ] Ograniczenie kosztów: cache porady dla tego samego okresu i niezmienionych danych, limit zapytań/dzień na użytkownika
-- [ ] `GET /advice/preview-payload` — użytkownik widzi dokładnie, co wychodzi do API
-- [ ] Testy endpointu z providerem `mock`
+- [x] `ai/anonymizer.py` (regex): numery kont/IBAN (`PL\d{26}`, 26 cyfr), numery kart, PESEL, telefony, e-maile, kody pocztowe/adresy, imiona i nazwiska (słownik polskich imion + heurystyka „Imię Nazwisko” wielkimi literami w przelewach)
+- [x] (badanie) Anonimizator jako czysta funkcja zwracająca też listę zamaskowanych fragmentów z typem
+- [x] (badanie) Generator sztucznego korpusu tytułów z oznaczonymi danymi osobowymi (stałe ziarno), część robocza i testowa; testową zamrozić przed strojeniem reguł
+- [x] Testy anonimizacji — **dużo przypadków**, to mocny punkt pracy; także dane z tytułów przelewów: imiona i nazwiska, nazwy kontaktów, telefony częściowo zamaskowane, dowolny tekst. Tylko sztuczne przypadki w repozytorium
+- [x] `ai/prompt_builder.py`: tylko agregaty (sumy w kategoriach, zmiany %, top kategorie, stopa oszczędności) → JSON; **bez pojedynczych transakcji**; prompt systemowy z rolą doradcy, zakazem wymyślania liczb i wymaganym formatem odpowiedzi (np. 3–5 rekomendacji z uzasadnieniem i szacowaną kwotą oszczędności)
+- [x] `ai/providers/base.py` (interfejs `generate_advice(payload) -> AdviceResult`), `openai.py`, `anthropic.py`, `mock.py`; wybór przez `AI_PROVIDER`
+- [x] Obsługa błędów (timeout, brak klucza, limit) + zapis do `ai_advice` (tokeny; przeliczenie na koszt według cennika w etapie 10)
+- [x] (badanie) `ai_advice`: wersja promptu, temperatura, czas odpowiedzi w ms (migracja); stała temperatura i wersja promptu
+- [x] (badanie) Skrypt zgodności liczb: czy kwoty i procenty z porady wynikają z wysłanego pakietu agregatów
+- [x] Ograniczenie kosztów: cache porady dla tego samego okresu i niezmienionych danych, limit zapytań/dzień na użytkownika
+- [x] `GET /advice/preview-payload` — użytkownik widzi dokładnie, co wychodzi do API
+- [x] Testy endpointu z providerem `mock`
 
 **DoD:** przycisk „Wygeneruj porady” zwraca sensowne rekomendacje na Twoich danych; w logach/bazie nie ma żadnych danych osobowych.
 
@@ -342,7 +342,7 @@ Model **nigdy** nie dostaje: pojedynczych transakcji, numerów kont, imion i naz
 | 4. Import wyciągów | ✅ | 2026-11-07 | PDF z ING i importer uniwersalny CSV z kreatorem mapowania; profil ING CSV sprawdzony na prawdziwym pliku 8.11 |
 | 5. Kategoryzacja | ✅ | 2026-11-09 | słownik + reguły z poprawek, strona „Kategorie”, narzędzia badania H2; etykiety i wstępny wynik H2 9.11 |
 | 6. Analityka + dashboard | ✅ | 2026-11-11 | Pandas, 5 endpointów, strona „Pulpit”; zgodność z SQL na prawdziwych danych 8/8 miesięcy |
-| 7. Moduł AI | ⏳ | | |
+| 7. Moduł AI | ✅ | 2026-11-11 | anonimizacja z badaniem P3 (korpus D4, tag `badanie-korpus`), pakiet agregatów, dostawcy openai/anthropic/mock, cache i limit dzienny; kontrola wycieków 0/8 miesięcy |
 | 8. Frontend porad | ⏳ | | |
 | 9. Jakość + Docker | ⏳ | | |
 | 10. Stabilizacja → v1.0 | ⏳ | | |

@@ -1350,3 +1350,44 @@ w etapie 10; zastrzeżenia opisane w `BADANIA.md`, sekcje 5 i 6.
 ### Dalej
 - Etap 7, część B: pakiet agregatów (`prompt_builder`), dostawcy OpenAI/Anthropic/mock, endpointy porad,
   kontrola wycieków na prawdziwych pakietach.
+
+## Tydzień 7, część B: pakiet agregatów, dostawcy AI i porady (wykonano 11.11.2026)
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/app/ai/prompt_builder.py` | pakiet agregatów dla modelu + prompt systemowy; stała temperatura 0,2 i wersja promptu |
+| `backend/app/ai/providers/` | interfejs, `mock`, OpenAI i Anthropic (biblioteka standardowa, bez nowych zależności) |
+| `backend/app/services/advice_service.py` | generowanie, cache, dzienny limit, zapis w `ai_advice` |
+| `backend/app/api/routes/advice.py` | `POST /advice`, `GET /advice`, `GET /advice/preview-payload` |
+| migracja `porady_dane_badania` | `prompt_version`, `temperature`, `response_time_ms` (badanie P4) |
+| `backend/research/advice_numbers.py`, `scripts/check_advice.py` | zgodność liczb porady z pakietem (H4a) |
+| `backend/scripts/check_payloads.py` | kontrola wycieków w pakietach na prawdziwych danych |
+
+### Dlaczego
+- **Tylko agregaty:** pakiet budują te same funkcje co dashboard, więc do modelu idzie to, co widać na pulpicie:
+  sumy kategorii, zmiany, stopa oszczędności. Pojedyncze transakcje, kontrahenci i tytuły nie opuszczają komputera.
+- **Nazwy kategorii użytkownika przez anonimizację:** własna kategoria może nazywać się „Pożyczka dla Ani”;
+  w pakiecie jest „Pożyczka dla [OSOBA]”.
+- **Cache i limit:** porada dla niezmienionych danych wraca z bazy bez pytania modelu, a dzienny limit
+  (domyślnie 10) chroni przed kosztami w pętli.
+- **Biblioteka standardowa zamiast SDK:** produkcyjny obraz nie dostaje nowych pakietów; `httpx` jest tylko
+  w zależnościach deweloperskich do testów.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| `GROUP BY to_char(...)` w Postgresie: te same wyrażenia dostają osobne parametry i grupowanie się nie klei | miesiące wyliczane w Pythonie z zakresu dat |
+| Puste `OPENAI_MODEL=` w `.env` nadpisywało domyślny model pustym tekstem | walidator: pusta wartość oznacza model domyślny |
+| Procent „o 10%” w poradzie `mock` nie miał pokrycia w pakiecie | reguła H4a doprecyzowana przed pomiarem: procent-parametr scenariusza jest pokryty tylko, gdy jego wynik od kwoty z pakietu pada w tekście; wpis w zmianach protokołu |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 464 testy zaliczone (18 nowych: pakiet bez danych osobowych, anonimizacja nazwy kategorii, cache, unieważnienie cache po zmianie danych, limit dzienny, 422/429/502, izolacja, zgodność liczb porady mock) |
+| kontrola wycieków na pakietach z konta autora (tylko liczby) | 0 wycieków w 8 z 8 miesięcy; 20 imion z danych transakcji sprawdzonych, żadne nie występuje w pakietach |
+| `ruff`, format | bez błędów |
+
+### Dalej
+- Etap 8: strona „Porady AI” (podgląd pakietu przed wysłaniem, wynik, historia); test w przeglądarce z dostawcą `mock`.
+- Pomiar H4a–H4c z prawdziwymi dostawcami wymaga kluczy API (OpenAI i Anthropic) — poproszę o nie przy etapie 8.

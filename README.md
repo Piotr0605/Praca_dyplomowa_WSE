@@ -106,6 +106,9 @@ Port frontendu (5173) jest stały, bo tylko ten adres jest dopuszczony przez COR
 | Zatrzymanie (dane zostają) | `docker compose down` |
 | Zatrzymanie i **usunięcie danych** | `docker compose down -v` |
 | Testy backendu | `docker compose exec backend pytest` |
+| Pomiar anonimizacji (badanie P3) | `cd backend && .venv/bin/python -m research.anonymization [--testowa\|--poza-slownikiem] [--zapisz]` |
+| Kontrola wycieków w pakietach dla AI | `docker compose exec -T backend python -m scripts.check_payloads EMAIL` |
+| Zgodność liczb porad z pakietami (H4a) | `docker compose exec -T backend python -m scripts.check_advice EMAIL` |
 | Lint backendu | `docker compose exec backend ruff check .` |
 | Po zmianie zależności frontendu | `docker compose up --build -V` |
 | Migracje bazy | zobacz [`backend/alembic/README.md`](backend/alembic/README.md) |

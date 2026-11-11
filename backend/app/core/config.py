@@ -34,12 +34,29 @@ class Settings(BaseSettings):
     # Adresy, z których przeglądarka może wywoływać API (CORS).
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 
+    # --- Moduł porad AI ---
+    # mock: bez internetu i kosztów (development, testy, pokaz bez kluczy).
+    AI_PROVIDER: Literal["mock", "openai", "anthropic"] = "mock"
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-5-mini"
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_MODEL: str = "claude-haiku-5-5"
+    AI_TIMEOUT_SECONDS: int = Field(default=60, gt=0)
+    # Dzienny limit wygenerowanych porad na użytkownika (odpowiedź z cache się nie liczy).
+    ADVICE_DAILY_LIMIT: int = Field(default=10, gt=0)
+
     # Pusty klucz oznacza: wygeneruj losowy i zapisz w JWT_SECRET_FILE (zob. core/jwt_key.py).
     JWT_SECRET_KEY: str = ""
     JWT_SECRET_FILE: Path = Path("/data/jwt_secret")
     # Tylko HS256: wartość "none" wyłączałaby podpis, a silniejsze warianty wymagają dłuższego klucza.
     JWT_ALGORITHM: Literal["HS256"] = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60, gt=0)
+
+    @field_validator("OPENAI_MODEL", "ANTHROPIC_MODEL", mode="before")
+    @classmethod
+    def default_model_when_empty(cls, value: str, info) -> str:
+        """Puste `OPENAI_MODEL=` w .env oznacza: użyj modelu domyślnego."""
+        return value or cls.model_fields[info.field_name].default
 
     @field_validator("JWT_SECRET_KEY")
     @classmethod
