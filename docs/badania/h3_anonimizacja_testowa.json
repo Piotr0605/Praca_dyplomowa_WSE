@@ -1,0 +1,128 @@
+{
+  "czesc": "testowa",
+  "data": "2026-11-11",
+  "czulosc": {
+    "IBAN": {
+      "wykryte": 205,
+      "wszystkie": 205,
+      "odsetek": 1.0,
+      "wilson_95": [
+        0.9816051974319293,
+        1.0
+      ]
+    },
+    "KARTA": {
+      "wykryte": 259,
+      "wszystkie": 259,
+      "odsetek": 1.0,
+      "wilson_95": [
+        0.985384353161752,
+        0.9999999999999999
+      ]
+    },
+    "TELEFON": {
+      "wykryte": 162,
+      "wszystkie": 162,
+      "odsetek": 1.0,
+      "wilson_95": [
+        0.976835727585841,
+        1.0
+      ]
+    },
+    "EMAIL": {
+      "wykryte": 18,
+      "wszystkie": 18,
+      "odsetek": 1.0,
+      "wilson_95": [
+        0.8241154494176252,
+        1.0
+      ]
+    },
+    "PESEL": {
+      "wykryte": 16,
+      "wszystkie": 16,
+      "odsetek": 1.0,
+      "wilson_95": [
+        0.8063865817272802,
+        1.0
+      ]
+    },
+    "ADRES": {
+      "wykryte": 551,
+      "wszystkie": 551,
+      "odsetek": 1.0,
+      "wilson_95": [
+        0.9930762221145639,
+        1.0
+      ]
+    },
+    "OSOBA": {
+      "wykryte": 667,
+      "wszystkie": 667,
+      "odsetek": 1.0,
+      "wilson_95": [
+        0.9942734618723703,
+        0.9999999999999998
+      ]
+    }
+  },
+  "czulosc_staly_format": {
+    "wykryte": 660,
+    "wszystkie": 660,
+    "odsetek": 1.0,
+    "wilson_95": [
+      0.9942130773365212,
+      1.0
+    ]
+  },
+  "czulosc_osoby_w_slowniku": {
+    "wykryte": 667,
+    "wszystkie": 667,
+    "odsetek": 1.0,
+    "wilson_95": [
+      0.9942734618723703,
+      0.9999999999999998
+    ]
+  },
+  "czulosc_osoby_poza_slownikiem": {
+    "wykryte": 0,
+    "wszystkie": 0,
+    "odsetek": null,
+    "wilson_95": [
+      0.0,
+      1.0
+    ]
+  },
+  "precyzja": {
+    "wykryte": 1878,
+    "wszystkie": 1881,
+    "odsetek": 0.9984051036682615,
+    "wilson_95": [
+      0.9953210970969333,
+      0.9994574561777823
+    ]
+  },
+  "nadmierne_maskowanie": {
+    "FIRMA": {
+      "wykryte": 0,
+      "wszystkie": 480,
+      "odsetek": 0.0,
+      "wilson_95": [
+        -8.673617379884035e-19,
+        0.00793978855890027
+      ]
+    },
+    "NUMER": {
+      "wykryte": 3,
+      "wszystkie": 107,
+      "odsetek": 0.028037383177570093,
+      "wilson_95": [
+        0.009580293417619429,
+        0.07920947504476293
+      ]
+    }
+  },
+  "H3_staly_format_99": true,
+  "H3_osoby_90": true,
+  "H3_precyzja_90": true
+}

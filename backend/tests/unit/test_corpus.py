@@ -4,13 +4,17 @@ from itertools import pairwise
 
 import pytest
 
+from app.ai.names import FIRST_NAMES as DICTIONARY
+from app.core.text import fold
 from research.corpus import (
     FIRST_NAMES,
     NEGATIVE_TYPES,
     PII_TYPES,
+    RARE_FIRST_NAMES,
     SEEDS,
     SURNAMES,
     generate,
+    generate_outside,
     load,
 )
 
@@ -39,3 +43,10 @@ def test_oznaczenia_w_granicach_tekstu_i_rozlaczne(part: str) -> None:
 def test_pule_czesci_rozlaczne() -> None:
     assert not set(FIRST_NAMES["A"]) & set(FIRST_NAMES["B"])
     assert not set(SURNAMES["A"]) & set(SURNAMES["B"])
+
+
+def test_zestaw_poza_slownikiem() -> None:
+    """Zestaw kontrolny jest odtwarzalny, a jego imiona naprawdę leżą poza słownikiem anonimizatora."""
+    assert load("poza_slownikiem") == generate_outside()
+    slownik = {fold(n) for n in DICTIONARY}
+    assert not {fold(n) for n in RARE_FIRST_NAMES} & slownik

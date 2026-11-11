@@ -10,7 +10,8 @@ konkretnych osób z części testowej. Część testowa jest zapisana w repozyto
 `badanie-korpus` przed napisaniem anonimizatora.
 
 Uruchomienie z katalogu backend/:
-    .venv/bin/python -m research.corpus            # zapisuje obie części w research/korpus/
+    .venv/bin/python -m research.corpus                     # zapisuje obie części w research/korpus/
+    .venv/bin/python -m research.corpus --poza-slownikiem   # oraz zestaw kontrolny z imionami spoza słownika
 """
 
 import json
@@ -24,6 +25,17 @@ from typing import ClassVar
 CORPUS_DIR = Path(__file__).resolve().parent / "korpus"
 SIZE = 1000
 SEEDS = {"robocza": 20261111, "testowa": 20261112}
+# Zestaw kontrolny: imiona spoza słownika anonimizatora (rzadkie polskie i obce). Powstał po napisaniu
+# anonimizatora, więc to test obciążeniowy wykrywania z kontekstu, a nie ślepy pomiar.
+OUTSIDE_SEED = 20261113
+OUTSIDE_SIZE = 300
+RARE_FIRST_NAMES = [
+    "Bożydar", "Wieńczysław", "Gniewomir", "Jarogniew", "Przybysław", "Dobrosław", "Mścisław", "Ludomira",
+    "Dobrosława", "Radosława", "Bogna", "Jagna", "Grzymisława", "Sobiesław", "Lubomir", "Kazimiera",
+    "Leonarda", "Teodor", "Teodora", "Florian", "Hieronim", "Euzebiusz", "Kevin", "Jessica", "Brajan",
+    "Dżesika", "Mohammed", "Ahmed", "Ngoc", "Giulia", "Pierre", "Hans", "Svetlana", "Aliaksandr",
+    "Siarhei", "Zhanna", "Mehmet", "Fatima",
+]  # fmt: skip
 
 # Typy danych osobowych, które anonimizacja ma usunąć.
 PII_TYPES = ("IBAN", "KARTA", "TELEFON", "EMAIL", "PESEL", "ADRES", "OSOBA")
@@ -150,11 +162,14 @@ def female(surname: str) -> str:
 
 
 class Generator:
-    def __init__(self, seed: int, half: str) -> None:
+    def __init__(self, seed: int, half: str, rare_names: bool = False) -> None:
         self.r = random.Random(seed)
         self.half = half
+        self.rare_names = rare_names
 
     def pick(self, pool: dict[str, list[str]]) -> str:
+        if self.rare_names and pool in (FIRST_NAMES, DIMINUTIVES):
+            return self.r.choice(RARE_FIRST_NAMES)
         return self.r.choice(pool[self.half])
 
     # --- wartości ---
@@ -344,6 +359,8 @@ class Generator:
 
     def item(self, index: int, part: str) -> Item:
         names = list(self.TEMPLATES)
+        if self.rare_names:
+            names = ["telefon", "przelew_osoba", "wolny_tekst", "wlasny"]
         name = self.r.choices(names, weights=[self.TEMPLATES[n][1] for n in names])[0]
         b = Builder()
         self.TEMPLATES[name][0](self, b)
@@ -353,6 +370,11 @@ class Generator:
 def generate(part: str, size: int = SIZE) -> list[Item]:
     generator = Generator(SEEDS[part], "A" if part == "robocza" else "B")
     return [generator.item(i, part) for i in range(size)]
+
+
+def generate_outside(size: int = OUTSIDE_SIZE) -> list[Item]:
+    generator = Generator(OUTSIDE_SEED, "B", rare_names=True)
+    return [generator.item(i, "poza_slownikiem") for i in range(size)]
 
 
 def path(part: str) -> Path:
@@ -394,6 +416,8 @@ def main(argv: list[str]) -> int:
         print(
             f"{save(part, items)}: {len(items)} tytułów, fragmenty: {dict(sorted(counts.items()))}"
         )
+    if "--poza-slownikiem" in argv:
+        print(f"{save('poza_slownikiem', generate_outside())}: {OUTSIDE_SIZE} tytułów")
     return 0
 
 

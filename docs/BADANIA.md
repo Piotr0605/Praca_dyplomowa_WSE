@@ -200,7 +200,33 @@ przypisań B wynosi 98–100%. System prawie się nie myli, gdy przypisuje kateg
 kontrahenta nie zna ani słownik, ani reguły z poprawek. Wniosek do dyskusji: dalszy wzrost trafności zależy od
 pokrycia słownika, a nie od uczenia się z poprawek. Progów hipotez nie zmieniono po pomiarze.
 
-P3–P4: brak (moduły jeszcze nie istnieją).
+**P3 (wstępnie, 11.11.2026):** anonimizator (`backend/app/ai/anonymizer.py`) strojony wyłącznie na części roboczej D4,
+pomiar na zamrożonej części testowej (1000 tytułów), wyniki w `docs/badania/h3_anonimizacja_testowa.json`.
+
+| Typ | Wykryte | Czułość |
+|---|---|---|
+| IBAN | 205/205 | 100% |
+| KARTA | 259/259 | 100% |
+| TELEFON | 162/162 | 100% |
+| EMAIL | 18/18 | 100% |
+| PESEL | 16/16 | 100% |
+| ADRES | 551/551 | 100% |
+| OSOBA | 667/667 | 100% |
+
+- Precyzja 99,8% (1878 z 1881 zamaskowanych fragmentów). Nazwy firm zamaskowane niepotrzebnie: 0 z 480, w tym nazwy
+  przypominające imiona („SALON ANNA”, „KWIACIARNIA ROZA”). Numery transakcji zamaskowane niepotrzebnie: 3 ze 107 (2,8%):
+  11 cyfr losowo spełnia sumę kontrolną i datę PESEL; teoretycznie ok. 2% losowych numerów.
+- **H3 na korpusie D4: progi spełnione.** Ten wynik trzeba czytać z zastrzeżeniem: wszystkie imiona z korpusu są w słowniku
+  imion anonimizatora (oba spisał autor), więc 100% dla osób mierzy głównie pokrycie słownika.
+- **Zestaw kontrolny „poza słownikiem”** (300 tytułów, 38 rzadkich polskich i obcych imion spoza słownika, np. Bożydar,
+  Kevin, Ngoc; `docs/badania/h3_anonimizacja_poza_slownikiem.json`): czułość dla osób 94,2% (360/382), dla pozostałych typów
+  100%, precyzja 100%. Powstał po napisaniu anonimizatora, więc to test obciążeniowy wykrywania z kontekstu, a nie ślepy
+  pomiar. Bez reguł kontekstowych (końcówka nazwiska, słowa przed adresem, kontakt przy przelewie na telefon) czułość
+  wynosiła 70,7%. Nadal nie są wykrywane pojedyncze imiona pisane małą literą bez kontekstu („Za obiad hans”) i krótkie
+  nazwiska bez typowej końcówki („PIERRE BARAN”).
+- Kontrola wycieków na prawdziwych danych (pakiety wysyłane do modelu): po zbudowaniu pakietu porad (etap 7, część B).
+
+P4: brak (moduł porad jeszcze nie istnieje).
 
 ## 6. Ograniczenia (do dyskusji)
 
@@ -212,6 +238,9 @@ P3–P4: brak (moduły jeszcze nie istnieją).
   w nim się pojawiło (miesiąc 5: 12,6, miesiąc 6: 14,9), więc wynik jest wrażliwy na losowe wahania.
 - **Korpus anonimizacji jest sztuczny.** Szablony odwzorowują strukturę prawdziwych tytułów, ale nie ich różnorodność.
   Uzupełnia go kontrola wycieków na prawdziwych danych.
+- **Autor napisał i korpus, i anonimizator.** Rozłączne pule imion w częściach roboczej i testowej nie usuwają tego, że
+  słownik imion anonimizatora obejmuje imiona z obu pul. Dlatego czułość dla osób podajemy też na zestawie z imionami
+  spoza słownika.
 - **Przydatność porad ocenia jedna osoba, autor systemu.** Ocena jest subiektywna; ograniczają to ślepa ocena (bez nazwy
   dostawcy), kryteria ustalone z góry i obiektywna miara zgodności liczb (H4a), która nie zależy od oceniającego.
   Ślepota jest częściowa: styl odpowiedzi może zdradzać model, mimo usunięcia nazw dostawcy i zdań, w których
@@ -226,3 +255,4 @@ P3–P4: brak (moduły jeszcze nie istnieją).
 | 8.11.2026 | ocena porad tylko przez autora; bez badania SUS; bez konsultacji z promotorem | brak innych oceniających i uczestników; promotor na razie niedostępny |
 | 9.11.2026 | słownik niestrojony na D1 (zamiast strojenia na miesiącach 1–3); przelewy własne bez etykiet | słownik powstał bez wglądu w dane autora, co usuwa ryzyko przecieku danych testowych; przelewy własne rozpoznaje parser |
 | 11.11.2026 | korpus D4: pule imion, nazwisk, ulic i miast rozdzielone między część roboczą i testową; ustalona definicja dopasowania | ograniczenie przecieku: autor pisze i generator, i anonimizator, więc rozłączne pule zastępują niezależnego autora korpusu |
+| 11.11.2026 | dodatkowy zestaw kontrolny „poza słownikiem” (300 tytułów) | po strojeniu okazało się, że wszystkie imiona D4 są w słowniku anonimizatora; zestaw mierzy wykrywanie z kontekstu |

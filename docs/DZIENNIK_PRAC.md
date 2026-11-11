@@ -1298,3 +1298,55 @@ Etap planowany na 30.11–6.12 wykonano 11 listopada. Szczegóły decyzji w `doc
 ### Dalej
 - Etap 7: moduł porad AI. Pakiet dla modelu powstanie z tych samych funkcji analityki: sumy kategorii, zmiany, stopa
   oszczędności, bez pojedynczych transakcji. Zaczyna się od anonimizacji i korpusu testowego (badanie P3).
+
+## Tydzień 7, część A: anonimizacja i badanie P3 (wykonano 11.11.2026)
+
+Etap 7 zaczął się od badania: najpierw korpus testowy, potem anonimizator, na końcu pomiar.
+
+### Co zostało zrobione
+| Plik | Rola |
+|---|---|
+| `backend/research/corpus.py`, `research/korpus/*.jsonl` | korpus D4: po 1000 sztucznych tytułów (robocza i testowa) z oznaczonymi fragmentami; zestaw kontrolny 300 tytułów z imionami spoza słownika |
+| `backend/app/ai/names.py` | słownik ok. 400 imion: pełne, zdrobnienia, ukraińskie |
+| `backend/app/ai/anonymizer.py` | czysta funkcja `anonymize`: tekst ze znacznikami i lista zamaskowanych fragmentów z typem |
+| `backend/research/anonymization.py` | pomiar czułości, precyzji i nadmiernego maskowania na korpusie |
+| `backend/tests/unit/test_corpus.py`, `test_anonymizer.py` | 6 + 69 testów; razem 446 |
+
+### Dlaczego w tej kolejności
+Część testowa korpusu została wygenerowana i zamrożona tagiem `badanie-korpus`, zanim powstała pierwsza linia
+anonimizatora. Reguły strojono wyłącznie na części roboczej z rozłącznymi pulami imion, nazwisk, ulic i miast.
+Dzięki temu pomiar na części testowej nie mierzy reguł dopasowanych do konkretnych przykładów.
+
+### W jaki sposób
+- **Stały format przez wyrażenia regularne z walidacją:** IBAN/NRB, karta (pełny numer tylko z sumą Luhna albo
+  zamaskowany „1234xx5678” jak w ING), telefon (też „+48xxxxxx123”), e-mail, PESEL (suma kontrolna i data, a po
+  słowie „PESEL” zawsze), ulica z numerem, kod pocztowy z miastem.
+- **Osoby:** imię ze słownika z sąsiednim nazwiskiem o tym samym zapisie; spoza słownika z kontekstu: po „Dla”/„Od”,
+  po numerze rachunku, przed adresem (poza płatnościami kartą/BLIK, gdzie przed adresem stoi sklep), nazwisko
+  z typową końcówką (-ski, -czyk, -enko…) obok drugiego słowa, nazwa kontaktu przy przelewie na telefon.
+- **Ochrona nazw firm:** słowa firmowe („SALON”, „URZĄD”, „SP. Z O.O.”) blokują maskowanie w swoim polu, więc
+  „SALON ANNA” i „PIEKARNIA JAN” zostają; zapis z wielką literą w środku („PayU”) nigdy nie jest osobą.
+
+### Problemy i rozwiązania
+| Problem | Rozwiązanie |
+|---|---|
+| Wszystkie imiona korpusu były w słowniku anonimizatora, więc 100% czułości dla osób mierzyło pokrycie słownika | zestaw kontrolny 300 tytułów z 38 imionami spoza słownika (np. Bożydar, Kevin, Ngoc); zapisany w protokole jako zmiana z 11.11 |
+| „URZĄD SKARBOWY” po numerze rachunku maskowany jak osoba | słowa firmowe rozszerzone o instytucje (urząd, bank, gmina, ZUS…) |
+| „PayU” przed adresem maskowane regułą „osoba przed adresem” | zapis mieszany („PayU”) wyklucza osobę; przy płatnościach przed adresem stoi sklep |
+| Mutacja „płatność nie chroni sklepu” przeżyła testy: jedyny test używał „PayU”, które chroni sam zapis | test ze sklepem „Stokrotka”, którego broni dopiero reguła płatności |
+| Wzorce poprawek nie pasowały po przeformatowaniu pliku przez `ruff format` | poprawki nanoszone na sformatowany plik narzędziem edycji zamiast skryptem |
+
+### Weryfikacja
+| Test | Wynik |
+|---|---|
+| `pytest` | 446 testów zaliczonych (75 nowych) |
+| część testowa D4 (1000 tytułów, zamrożona przed strojeniem) | czułość 100% dla wszystkich typów; precyzja 99,8%; firmy maskowane niepotrzebnie 0/480; numery transakcji 3/107 (losowo poprawny PESEL) |
+| zestaw kontrolny poza słownikiem (300 tytułów) | osoby 94,2%, reszta 100%, precyzja 100%; bez reguł kontekstowych było 70,7% |
+| celowe błędy: PESEL bez sumy, Luhn wyłączony, brak ochrony firm, brak „Dla/Od”, brak końcówek nazwisk, brak kontaktu przy telefonie, płatność nie chroni sklepu | 7 z 7 wykrytych; mutant kontrolny (komentarz) przeżył zgodnie z oczekiwaniem |
+
+Progi H3 są na razie spełnione (stały format 100% ≥ 99%, osoby 94,2–100% ≥ 90%, precyzja ≥ 90%). Ostateczny pomiar
+w etapie 10; zastrzeżenia opisane w `BADANIA.md`, sekcje 5 i 6.
+
+### Dalej
+- Etap 7, część B: pakiet agregatów (`prompt_builder`), dostawcy OpenAI/Anthropic/mock, endpointy porad,
+  kontrola wycieków na prawdziwych pakietach.
