@@ -105,10 +105,18 @@ w kolejnych miesiącach.
 
 ### 3.4. P3: anonimizacja
 
-- **Korpus D4:** tytuły przelewów budowane z szablonów o strukturze prawdziwych tytułów (płatność kartą, BLIK, przelew
-  na telefon, przelew z imieniem i nazwiskiem, adres), z oznaczonymi fragmentami danych osobowych. Generator ma stałe
-  ziarno losowania. Część testowa jest generowana i zamrażana przed dostrajaniem reguł; reguły rozwija się na części
-  roboczej.
+- **Korpus D4** (`backend/research/corpus.py`, pliki w `backend/research/korpus/`): tytuły przelewów budowane z szablonów
+  o strukturze prawdziwych tytułów (płatność kartą, BLIK, przelew na telefon, przelew z imieniem i nazwiskiem, adres,
+  wolny tekst, przelew do firmy), z oznaczonymi fragmentami danych osobowych (IBAN, KARTA, TELEFON, EMAIL, PESEL, ADRES,
+  OSOBA) oraz fragmentów, które nie są danymi osobowymi (FIRMA, NUMER transakcji). Po 1000 tytułów w części roboczej
+  i testowej, stałe ziarno. Pule imion, nazwisk, ulic i miast są podzielone na dwie rozłączne połowy: część robocza
+  losuje z jednej, testowa z drugiej, więc strojenie reguł na części roboczej nie uczy ich osób z części testowej.
+  Nazwy firm są wspólne, w tym trudne przypadki przypominające imiona („KWIACIARNIA ROZA”, „SALON ANNA”). Część testowa
+  została zamrożona tagiem `badanie-korpus` przed napisaniem anonimizatora; reguły rozwija się na części roboczej.
+- **Dopasowanie:** fragment danych osobowych jest wykryty, gdy zamaskowane fragmenty pokrywają wszystkie jego znaki
+  (typ nie musi się zgadzać: liczy się, czy dane opuszczą komputer). Precyzja: odsetek zamaskowanych fragmentów, które
+  nachodzą na fragment danych osobowych. Nadmierne maskowanie: odsetek fragmentów FIRMA i NUMER, które zostały choć
+  częściowo zamaskowane. Imiona i nazwiska raportujemy też osobno dla osób spoza słownika imion anonimizatora.
 - **Miary:** czułość, precyzja i F1 dla każdego typu danych osobowych, liczone na poziomie fragmentów. Do tego odsetek
   nazw firm zamaskowanych niepotrzebnie, bo nadmierne maskowanie psuje porady.
 - **Kontrola na prawdziwych danych:** dla każdego miesiąca D1 powstaje dokładnie ten pakiet danych, który poszedłby do
@@ -217,3 +225,4 @@ P3–P4: brak (moduły jeszcze nie istnieją).
 | 8.11.2026 | pierwsza wersja | — |
 | 8.11.2026 | ocena porad tylko przez autora; bez badania SUS; bez konsultacji z promotorem | brak innych oceniających i uczestników; promotor na razie niedostępny |
 | 9.11.2026 | słownik niestrojony na D1 (zamiast strojenia na miesiącach 1–3); przelewy własne bez etykiet | słownik powstał bez wglądu w dane autora, co usuwa ryzyko przecieku danych testowych; przelewy własne rozpoznaje parser |
+| 11.11.2026 | korpus D4: pule imion, nazwisk, ulic i miast rozdzielone między część roboczą i testową; ustalona definicja dopasowania | ograniczenie przecieku: autor pisze i generator, i anonimizator, więc rozłączne pule zastępują niezależnego autora korpusu |
